@@ -49,7 +49,7 @@ public class PayrollEntry extends RawObject {
         return Double.parseDouble(owedRaw);
     }
 
-    public boolean executeBenefits(Person person) {
+    public boolean executeBenefits(Person person, int dMonth) {
         set("person", person.getId());
         String monthly_benefits = person.get("monthly_benefits");
         if (monthly_benefits == null) {
@@ -58,7 +58,7 @@ public class PayrollEntry extends RawObject {
         set("benefits", monthly_benefits);
         sharedNormalize(person);
         set("reported", RawObject.isoTimestamp());
-        set("fiscal_day", person.getCurrentMonth() + "01");
+        set("fiscal_day", person.getFutureMonth(dMonth) + "01");
         set("unpaid", person.getId());
         return true;
     }

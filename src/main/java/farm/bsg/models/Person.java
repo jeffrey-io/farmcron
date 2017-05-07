@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.TimeZone;
 
 import org.apache.commons.codec.binary.Hex;
+import org.joda.time.DateTime;
 
 import farm.bsg.data.RawObject;
 import farm.bsg.data.Value;
@@ -95,6 +96,10 @@ public class Person extends RawObject {
 
     public String getCurrentMonth() {
         return fiscalTimeZone(getFiscalTimezone(), "yyyyMM").format(new Date());
+    }
+    
+    public String getFutureMonth(int dMonth) {
+        return fiscalTimeZone(getFiscalTimezone(), "yyyyMM").format(DateTime.now().plusMonths(dMonth).toDate());
     }
 
     public String getCurrentHour() {

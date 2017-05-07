@@ -83,6 +83,10 @@ public class Payroll extends SessionPage {
         }
     }
 
+    public HtmlPump getClaimBenefitMonthLink(Person person, int dMonth) {
+        return Html.link("/cash-advance?dmonth=" + dMonth, "Desire Benefits for " + person.getFutureMonth(dMonth)).btn_warning();
+    }
+    
     public String payroll() {
         Block page = Html.block();
 
@@ -97,6 +101,8 @@ public class Payroll extends SessionPage {
         page.add(Html.wrapped().h5().wrap("Actions"));
         page.add(Html.wrapped().ul() //
                 .wrap(Html.wrapped().li().wrap(getReportPayrollLink(person()))) //
+                .wrap_if(isMonthlyBenefitAvailable(1), Html.wrapped().li().wrap(getClaimBenefitMonthLink(person(), 1))) //
+                
         );
         return finish_pump(page);
     }
@@ -117,20 +123,53 @@ public class Payroll extends SessionPage {
         sb.append("</form>");
         return sb.toString();
     }
+    
+    private boolean isMonthlyBenefitAvailable(int dMonth) {
+        String id = person().getId() + ";benefits_for_" + person().getFutureMonth(dMonth);
+        String key = "payroll/" + id;
+        Value v = session.engine.storage.get(key);
+        return v == null;
+    }
+    
+    public String cash_advance() {
+        Block page = Html.block();
+        page.add(Html.wrapped().h5().wrap("Cash Advance"));
+        String dmonthRaw = session.getParam("dmonth");
+        if (dmonthRaw == null) {
+            page.add(Html.tag().danger().pill().content("no parameter 'dmonth' given"));
+        }
+        try {
+            if (lockMonthlyBenefits(Integer.parseInt(dmonthRaw))) {
+                page.add(Html.tag().success().pill().content("granted!"));
+            } else {
+                page.add(Html.tag().warning().pill().content("already allocated..."));
+            }
+        } catch (NumberFormatException nfe) {
+            page.add(Html.tag().danger().pill().content("'dmonth' is not an integer"));
+            
+        }
+        return finish_pump(page);
+    }
 
-    private void lockMonthlyBenefits() {
-        String id = person().getId() + ";benefits_for_" + person().getCurrentMonth();
+    private boolean lockMonthlyBenefits(int dMonth) {
+        if (dMonth < 0 || dMonth > 2) {
+            // TODO: look up site policy for how many months we can look ahead
+            return false;
+        }
+        String id = person().getId() + ";benefits_for_" + person().getFutureMonth(dMonth);
         String key = "payroll/" + id;
         Value v = session.engine.storage.get(key);
         if (v == null) {
             PayrollEntry payroll = new PayrollEntry();
             payroll.set("id", id);
-            if (payroll.executeBenefits(person())) {
+            if (payroll.executeBenefits(person(), dMonth)) {
                 if (payroll.getOwed() > 0) {
                     session.engine.save(payroll);
+                    return true;
                 }
             }
         }
+        return false;
     }
 
     public String commit() {
@@ -140,7 +179,7 @@ public class Payroll extends SessionPage {
             return "Not sure how this happened, but this record has been committed to a check... so that's awkward";
         }
 
-        lockMonthlyBenefits();
+        lockMonthlyBenefits(0);
 
         // fix up the payroll
         if (payroll.get("person").equals(person().getId())) {
@@ -216,6 +255,7 @@ public class Payroll extends SessionPage {
         routing.get_or_post("/payroll", (session) -> new Payroll(session).payroll());
 
         routing.get_or_post("/payroll-edit", (session) -> new Payroll(session).full_edit());
+        routing.get_or_post("/cash-advance", (session) -> new Payroll(session).cash_advance());
 
         routing.get_or_post("/payroll-wizard", (session) -> new Payroll(session).wizard());
         routing.get_or_post("/commit-payroll-edit", (session) -> new Payroll(session).commit());
