@@ -81,7 +81,8 @@ public class Chores extends SessionPage {
             }
             Block name = Html.block() //
                     .add(chore.get("name")) //
-                    .add_if(chore.late(), Html.tag().pill().warning().content("late")) //
+                    .add_if(chore.late(), Html.tag().pill().danger().content("late")) //
+                    .add_if(chore.isTodayGood(), Html.tag().pill().info().content("today")) //
                     .add_if(!chore.complete(), Html.tag().pill().warning().content("incomplete"));
             table.row(//
                     name, //

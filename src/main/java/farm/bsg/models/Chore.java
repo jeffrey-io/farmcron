@@ -58,6 +58,7 @@ public class Chore extends RawObject {
         final boolean  complete;
         final int      timesLeftPerYear;
         final int[]    timesByDay;
+        final boolean  isTodayGood;
 
         Cache() {
             // extract the frequency, slack, and last_performed
@@ -104,7 +105,7 @@ public class Chore extends RawObject {
                     break;
                 }
 
-                boolean available = monthsAvailale.contains(consideration.getMonthOfYear()) && daysAvailable.contains(consideration.getDayOfWeek());
+                boolean available = monthsAvailale.contains(consideration.getMonthOfYear());
 
                 if (consideration.compareTo(idealDay) < 0 && available) {
                     daysAvailableUntilLate++;
@@ -137,6 +138,7 @@ public class Chore extends RawObject {
             this.daysAvailable = daysAvailableUntilLate;
             this.firstAvailableDay = firstAvailableDay;
             this.ready = firstAvailableDay.compareTo(now) <= 0;
+            this.isTodayGood = this.ready && daysAvailable.contains(now.getDayOfWeek());
             this.late = this.ready && maybeLate;
             this.complete = getAsDouble("time_to_perform_hours") > 0.0001;
         }
@@ -163,6 +165,10 @@ public class Chore extends RawObject {
     
     public int[] futureByDay() {
         return cache().timesByDay;
+    }
+    
+    public boolean isTodayGood() {
+        return cache().isTodayGood;
     }
 
 
