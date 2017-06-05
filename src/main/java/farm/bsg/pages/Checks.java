@@ -63,7 +63,7 @@ public class Checks extends SessionPage {
     }
 
     private HtmlPump fragmentChecksPaidWithin() {
-        List<Check> checks = query().select_check().where_ready_eq("yes").to_list().inline_order_lexographically_desc_by("generated").limit(12).done();
+        List<Check> checks = query().select_check().where_ready_eq("yes").to_list().inline_order_lexographically_desc_by("generated").limit(50).done();
         if (checks.size() == 0) {
             return null;
         }

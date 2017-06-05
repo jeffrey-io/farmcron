@@ -4,12 +4,15 @@ import java.io.File;
 import java.nio.file.Files;
 
 import farm.bsg.data.SchemaCodeGenerator;
+import farm.bsg.models.Cart;
+import farm.bsg.models.CartItem;
 import farm.bsg.models.Check;
 import farm.bsg.models.Chore;
 import farm.bsg.models.Event;
 import farm.bsg.models.Habit;
 import farm.bsg.models.PayrollEntry;
 import farm.bsg.models.Person;
+import farm.bsg.models.Product;
 import farm.bsg.models.SiteProperties;
 import farm.bsg.models.Subscriber;
 import farm.bsg.models.Subscription;
@@ -21,6 +24,7 @@ import farm.bsg.pages.Events;
 import farm.bsg.pages.Habits;
 import farm.bsg.pages.Payroll;
 import farm.bsg.pages.People;
+import farm.bsg.pages.Products;
 import farm.bsg.pages.SignIn;
 import farm.bsg.pages.Site;
 import farm.bsg.pages.Subscriptions;
@@ -36,12 +40,15 @@ public class CodeGen {
     private void buildQueryEngine() throws Exception {
         SchemaCodeGenerator codegen = new SchemaCodeGenerator("farm.bsg", "QueryEngine");
 
+        codegen.addSample(new Cart());
+        codegen.addSample(new CartItem());
         codegen.addSample(new Check());
         codegen.addSample(new Chore());
         codegen.addSample(new Event());
         codegen.addSample(new Habit());
         codegen.addSample(new PayrollEntry());
         codegen.addSample(new Person());
+        codegen.addSample(new Product());
         codegen.addSample(new SiteProperties());
         codegen.addSample(new Subscriber());
         codegen.addSample(new Subscription());
@@ -69,12 +76,15 @@ public class CodeGen {
     }
 
     private void Data(CounterCodeGen c) {
+        Cart.link(c);
+        CartItem.link(c);
         Check.link(c);
         Chore.link(c);
         Event.link(c);
         Habit.link(c);
         PayrollEntry.link(c);
         Person.link(c);
+        Product.link(c);
         SiteProperties.link(c);
         Subscriber.link(c);
         Subscription.link(c);
@@ -88,6 +98,7 @@ public class CodeGen {
         Habits.link(c);
         Payroll.link(c);
         People.link(c);
+        Products.link(c);
         SignIn.link(c);
         Site.link(c);
         Subscriptions.link(c);
@@ -105,7 +116,7 @@ public class CodeGen {
     }
 
     public static void main(String[] args) throws Exception {
-        CodeGen codegen = new CodeGen("/home/jeffrey/projects/bsg-farm-core/src/main/java/farm/bsg/");
+        CodeGen codegen = new CodeGen("/home/jeffrey/projects/farmcron/src/main/java/farm/bsg/");
         codegen.buildQueryEngine();
         codegen.buildCounters();
     }

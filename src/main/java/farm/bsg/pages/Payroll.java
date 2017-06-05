@@ -8,8 +8,10 @@ import farm.bsg.html.Block;
 import farm.bsg.html.Html;
 import farm.bsg.html.HtmlPump;
 import farm.bsg.html.Input;
+import farm.bsg.html.Link;
 import farm.bsg.html.Table;
 import farm.bsg.html.shit.ObjectModelForm;
+import farm.bsg.models.Check;
 import farm.bsg.models.PayrollEntry;
 import farm.bsg.models.Person;
 import farm.bsg.ops.CounterCodeGen;
@@ -82,7 +84,7 @@ public class Payroll extends SessionPage {
             }
         }
     }
-
+    
     public HtmlPump getClaimBenefitMonthLink(Person person, int dMonth) {
         return Html.link("/cash-advance?dmonth=" + dMonth, "Desire Benefits for " + person.getFutureMonth(dMonth)).btn_warning();
     }
@@ -97,12 +99,11 @@ public class Payroll extends SessionPage {
                 .inline_order_lexographically_asc_by("reported") //
                 .done();
         page.add(payrollTable(unpaid, true, true));
-
         page.add(Html.wrapped().h5().wrap("Actions"));
         page.add(Html.wrapped().ul() //
                 .wrap(Html.wrapped().li().wrap(getReportPayrollLink(person()))) //
+                .wrap(Html.wrapped().li().wrap(Html.link("/payroll-summary", "Summary of Checks Written").btn_info()))
                 .wrap_if(isMonthlyBenefitAvailable(1), Html.wrapped().li().wrap(getClaimBenefitMonthLink(person(), 1))) //
-                
         );
         return finish_pump(page);
     }
@@ -249,6 +250,24 @@ public class Payroll extends SessionPage {
 
         return formalize_html(sb.toString());
     }
+    
+    public String summary() {
+        List<Check> checks = query().select_check().where_ready_eq("yes").where_person_eq(session.getPerson().getId()).to_list().inline_order_lexographically_desc_by("generated").done();
+        Table table = Table.start("Date", "Payment");
+        
+        double paid = 0;
+        
+        for (Check check : checks) {
+            table.row(check.get("fiscal_day"), check.get("payment"));
+            paid += check.getAsDouble("payment");
+        }
+        Block fragment = Html.block();
+        fragment.add(Html.W().h5().wrap("Checks Written"));
+        fragment.add(table);
+        fragment.add(Html.W().h5().wrap("Summary"));
+        fragment.add(Html.table("Key", "Value").row("Total Paid", paid));
+        return finish_pump(fragment);
+    }
 
     public static void link(RoutingTable routing) {
         routing.navbar("/payroll", "Payroll", Permission.SeePayrollTab);
@@ -259,6 +278,9 @@ public class Payroll extends SessionPage {
 
         routing.get_or_post("/payroll-wizard", (session) -> new Payroll(session).wizard());
         routing.get_or_post("/commit-payroll-edit", (session) -> new Payroll(session).commit());
+
+        routing.get_or_post("/payroll-summary", (session) -> new Payroll(session).summary());
+
     }
 
     public static void link(CounterCodeGen c) {

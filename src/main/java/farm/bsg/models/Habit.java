@@ -28,7 +28,7 @@ public class Habit extends RawObject {
             Field.STRING("unlock_time").addProjection("edit"), // DONE; USED
             Field.STRING("warn_time").addProjection("edit"), // DONE; INPUTED; USED
 
-            Field.STRING("name").addProjection("edit"), // DONE; USED
+            Field.STRING("name").emptyStringSameAsNull().alwaysTrim().addProjection("edit"), // DONE; USED
             Field.STRING("has_arg").addProjection("edit"), // DONE; USED
             Field.STRING("last_arg_given"), // DONE; COMPUTED
             Field.STRING("history") // DONE; COMPUTED

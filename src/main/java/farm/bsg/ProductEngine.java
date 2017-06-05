@@ -37,4 +37,10 @@ public class ProductEngine extends QueryEngine {
         PutResult result = storage.put(key, new Value(o.toJson()));
         return result.success();
     }
+    
+    public boolean remove(RawObject o) {
+        String key = o.getStorageKey();
+        PutResult result = storage.put(key, null);
+        return result.success();
+    }
 }

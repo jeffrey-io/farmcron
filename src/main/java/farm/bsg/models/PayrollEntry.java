@@ -23,10 +23,11 @@ public class PayrollEntry extends RawObject {
                 Field.NUMBER("mileage_compensation"), // done; copied
                 Field.NUMBER("owed"), // done; computed
                 Field.NUMBER("tax_withholding"), // done; copied
-                Field.NUMBER("taxes"), Field.NUMBER("benefits"), // done; used (NEED INPUT)
+                Field.NUMBER("taxes"), // done; computed
+                Field.NUMBER("benefits"), // done; used (NEED INPUT)
+                Field.BOOL("is_performance_related_bonus"),
                 Field.STRING("check").makeIndex(false), // indicates a payment was made
                 Field.STRING("unpaid").makeIndex(false) // if not "paid", then it is the employee id; DONE; indexed
-
         );
     }
 

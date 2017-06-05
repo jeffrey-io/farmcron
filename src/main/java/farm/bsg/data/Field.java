@@ -15,7 +15,7 @@ public class Field {
         return new TypeUUID(name);
     }
 
-    public static Type STRING(String name) {
+    public static TypeString STRING(String name) {
         return new TypeString(name);
     }
 

@@ -98,6 +98,14 @@ public abstract class RawObject {
         }
         return value;
     }
+    
+    public boolean isNullOrEmpty(String name) {
+        String value = get(name);
+        if (value == null) {
+            return true;
+        }
+        return value.equals("");
+    }
 
     public Set<String> getTokenList(String name) {
         String value = get(name);

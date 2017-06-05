@@ -6,12 +6,15 @@ import farm.bsg.data.MultiPrefixLogger;
 
 import farm.bsg.data.contracts.*;
 
+import farm.bsg.models.Cart;
+import farm.bsg.models.CartItem;
 import farm.bsg.models.Check;
 import farm.bsg.models.Chore;
 import farm.bsg.models.Event;
 import farm.bsg.models.Habit;
 import farm.bsg.models.PayrollEntry;
 import farm.bsg.models.Person;
+import farm.bsg.models.Product;
 import farm.bsg.models.SiteProperties;
 import farm.bsg.models.Subscriber;
 import farm.bsg.models.Subscription;
@@ -34,6 +37,14 @@ easy to take a simple Persistence mechanism into a real DB
 public class QueryEngine {
   public final MultiPrefixLogger indexing;
 
+  // INDEX[Cart]
+  public final KeyIndex cart_user;  // BY[user]
+
+  // INDEX[CartItem]
+  public final KeyIndex cartitem_cart;  // BY[cart]
+  public final KeyIndex cartitem_product;  // BY[product]
+  public final KeyIndex cartitem_customizations;  // BY[customizations]
+
   // INDEX[Check]
   public final KeyIndex check_person;  // BY[person]
   public final KeyIndex check_fiscal_day;  // BY[fiscal_day]
@@ -53,6 +64,10 @@ public class QueryEngine {
   public QueryEngine(PersistenceLogger persistence) throws Exception {
     InMemoryStorage memory = new InMemoryStorage();
     this.indexing = new MultiPrefixLogger();
+    this.cart_user = indexing.add("cart/", new KeyIndex("user", false));
+    this.cartitem_cart = indexing.add("cart-item/", new KeyIndex("cart", false));
+    this.cartitem_product = indexing.add("cart-item/", new KeyIndex("product", false));
+    this.cartitem_customizations = indexing.add("cart-item/", new KeyIndex("customizations", false));
     this.check_person = indexing.add("checks/", new KeyIndex("person", false));
     this.check_fiscal_day = indexing.add("checks/", new KeyIndex("fiscal_day", false));
     this.check_ready = indexing.add("checks/", new KeyIndex("ready", false));
@@ -84,6 +99,80 @@ public class QueryEngine {
       }
     return values;
   }
+
+  /**************************************************
+  Basic Operations (look up, type transfer, keys, immutable copies) (cart/)
+  **************************************************/
+
+  public Cart cart_by_id(String id, boolean create) {
+    Value v = storage.get("cart/" + id);
+    if (v == null && !create) {
+      return null;
+    }
+    Cart result = cart_of(v);
+    result.set("id", id);
+    return result;
+  }
+
+  private Cart cart_of(Value v) {
+    Cart item = new Cart();
+    if (v != null) {
+      item.injectValue(v);
+    }
+    return item;
+  }
+
+  private ArrayList<Cart> carts_of(ArrayList<Value> values) {
+    ArrayList<Cart> list = new ArrayList<>(values.size());
+    for (Value v : values) {
+      list.add(cart_of(v));
+    }
+    return list;
+  }
+
+  public String make_key_cart(String id) {
+    StringBuilder key = new StringBuilder();
+    key.append("cart/");
+    key.append(id);
+    return key.toString();
+}
+
+  /**************************************************
+  Basic Operations (look up, type transfer, keys, immutable copies) (cart-item/)
+  **************************************************/
+
+  public CartItem cartitem_by_id(String id, boolean create) {
+    Value v = storage.get("cart-item/" + id);
+    if (v == null && !create) {
+      return null;
+    }
+    CartItem result = cartitem_of(v);
+    result.set("id", id);
+    return result;
+  }
+
+  private CartItem cartitem_of(Value v) {
+    CartItem item = new CartItem();
+    if (v != null) {
+      item.injectValue(v);
+    }
+    return item;
+  }
+
+  private ArrayList<CartItem> cartitems_of(ArrayList<Value> values) {
+    ArrayList<CartItem> list = new ArrayList<>(values.size());
+    for (Value v : values) {
+      list.add(cartitem_of(v));
+    }
+    return list;
+  }
+
+  public String make_key_cartitem(String id) {
+    StringBuilder key = new StringBuilder();
+    key.append("cart-item/");
+    key.append(id);
+    return key.toString();
+}
 
   /**************************************************
   Basic Operations (look up, type transfer, keys, immutable copies) (checks/)
@@ -310,6 +399,43 @@ public class QueryEngine {
 }
 
   /**************************************************
+  Basic Operations (look up, type transfer, keys, immutable copies) (product/)
+  **************************************************/
+
+  public Product product_by_id(String id, boolean create) {
+    Value v = storage.get("product/" + id);
+    if (v == null && !create) {
+      return null;
+    }
+    Product result = product_of(v);
+    result.set("id", id);
+    return result;
+  }
+
+  private Product product_of(Value v) {
+    Product item = new Product();
+    if (v != null) {
+      item.injectValue(v);
+    }
+    return item;
+  }
+
+  private ArrayList<Product> products_of(ArrayList<Value> values) {
+    ArrayList<Product> list = new ArrayList<>(values.size());
+    for (Value v : values) {
+      list.add(product_of(v));
+    }
+    return list;
+  }
+
+  public String make_key_product(String id) {
+    StringBuilder key = new StringBuilder();
+    key.append("product/");
+    key.append(id);
+    return key.toString();
+}
+
+  /**************************************************
   Basic Operations (look up, type transfer, keys, immutable copies) (site/)
   **************************************************/
 
@@ -421,6 +547,30 @@ public class QueryEngine {
 }
 
   /**************************************************
+  Indexing (cart/)
+  **************************************************/
+
+  public HashSet<String> get_cart_user_index_keys() {
+    return cart_user.getIndexKeys();
+  }
+
+  /**************************************************
+  Indexing (cart-item/)
+  **************************************************/
+
+  public HashSet<String> get_cartitem_cart_index_keys() {
+    return cartitem_cart.getIndexKeys();
+  }
+
+  public HashSet<String> get_cartitem_product_index_keys() {
+    return cartitem_product.getIndexKeys();
+  }
+
+  public HashSet<String> get_cartitem_customizations_index_keys() {
+    return cartitem_customizations.getIndexKeys();
+  }
+
+  /**************************************************
   Indexing (checks/)
   **************************************************/
 
@@ -481,6 +631,10 @@ public class QueryEngine {
   }
 
   /**************************************************
+  Indexing (product/)
+  **************************************************/
+
+  /**************************************************
   Indexing (site/)
   **************************************************/
 
@@ -491,6 +645,320 @@ public class QueryEngine {
   /**************************************************
   Indexing (subscription/)
   **************************************************/
+
+  /**************************************************
+  Query Engine (cart/)
+  **************************************************/
+
+  public CartSetQuery select_cart() {
+    return new CartSetQuery();
+  }
+
+  public class CartListHolder {
+    private final ArrayList<Cart> list;
+
+    private CartListHolder(HashSet<String> keys, String scope) {
+      if (keys == null) {
+        this.list = carts_of(fetch_all("cart/" + scope));
+      } else {
+        this.list = carts_of(fetch(keys));
+      }
+    }
+
+    private CartListHolder(ArrayList<Cart> list) {
+      this.list = list;
+    }
+
+    public CartListHolder inline_filter(Predicate<Cart> filter) {
+      Iterator<Cart> it = list.iterator();
+      while (it.hasNext()) {
+        if (filter.test(it.next())) {
+          it.remove();
+        }
+      }
+      return this;
+    }
+
+    public CartListHolder limit(int count) {
+      Iterator<Cart> it = list.iterator();
+      int at = 0;
+      while (it.hasNext()) {
+        it.next();
+        if (at >= count) {
+          it.remove();
+        }
+        at++;
+      }
+      return this;
+    }
+
+    public CartListHolder inline_apply(Consumer<Cart> consumer) {
+      Iterator<Cart> it = list.iterator();
+      while (it.hasNext()) {
+        consumer.accept(it.next());
+      }
+      return this;
+    }
+
+    public CartListHolder fork() {
+      return new CartListHolder(this.list);
+    }
+
+    public CartListHolder inline_order_lexographically_asc_by(String... keys) {
+      Collections.sort(this.list, new LexographicalOrder<Cart>(keys, true, true));
+      return this;
+    }
+
+    public CartListHolder inline_order_lexographically_desc_by(String... keys) {
+      Collections.sort(this.list, new LexographicalOrder<Cart>(keys, false, true));
+      return this;
+    }
+
+    public CartListHolder inline_order_lexographically_by(boolean asc, boolean caseSensitive, String... keys) {
+      Collections.sort(this.list, new LexographicalOrder<Cart>(keys, asc, caseSensitive));
+      return this;
+    }
+
+    public CartListHolder inline_order_by(Comparator<Cart> comparator) {
+      Collections.sort(this.list, comparator);
+      return this;
+    }
+
+    public int count() {
+      return this.list.size();
+    }
+    public Cart first() {
+      if (this.list.size() == 0) {
+        return null;
+      }
+      return this.list.get(0);
+    }
+    public ArrayList<Cart> done() {
+      return this.list;
+    }
+  }
+
+  public class CartSetQuery {
+    private String scope;
+    private HashSet<String> keys;
+
+    private CartSetQuery() {
+      this.scope = "";
+      this.keys = null;
+    }
+
+    public CartListHolder to_list() {
+      return new CartListHolder(this.keys, this.scope);
+    }
+
+    public ArrayList<Cart> done() {
+      return new CartListHolder(this.keys, this.scope).done();
+    }
+
+    public int count() {
+      if (this.keys == null) {
+        return to_list().count();
+      } else {
+        return this.keys.size();
+      }
+    }
+
+    public CartSetQuery scope(String scope) {
+      this.scope += scope + "/";
+      return this;
+    }
+
+    private HashSet<String> lookup_user(String... values) {
+      HashSet<String> keys = new HashSet<>();
+      for(String value : values) {
+        keys.addAll(cart_user.getKeys(value));
+      }
+      return keys;
+    }
+
+    public CartSetQuery where_user_eq(String... values) {
+      if (this.keys == null) {
+        this.keys = lookup_user(values);
+      } else {
+        this.keys = BinaryOperators.intersect(this.keys, lookup_user(values));
+      }
+      return this;
+    }
+  }
+
+  /**************************************************
+  Query Engine (cart-item/)
+  **************************************************/
+
+  public CartItemSetQuery select_cartitem() {
+    return new CartItemSetQuery();
+  }
+
+  public class CartItemListHolder {
+    private final ArrayList<CartItem> list;
+
+    private CartItemListHolder(HashSet<String> keys, String scope) {
+      if (keys == null) {
+        this.list = cartitems_of(fetch_all("cart-item/" + scope));
+      } else {
+        this.list = cartitems_of(fetch(keys));
+      }
+    }
+
+    private CartItemListHolder(ArrayList<CartItem> list) {
+      this.list = list;
+    }
+
+    public CartItemListHolder inline_filter(Predicate<CartItem> filter) {
+      Iterator<CartItem> it = list.iterator();
+      while (it.hasNext()) {
+        if (filter.test(it.next())) {
+          it.remove();
+        }
+      }
+      return this;
+    }
+
+    public CartItemListHolder limit(int count) {
+      Iterator<CartItem> it = list.iterator();
+      int at = 0;
+      while (it.hasNext()) {
+        it.next();
+        if (at >= count) {
+          it.remove();
+        }
+        at++;
+      }
+      return this;
+    }
+
+    public CartItemListHolder inline_apply(Consumer<CartItem> consumer) {
+      Iterator<CartItem> it = list.iterator();
+      while (it.hasNext()) {
+        consumer.accept(it.next());
+      }
+      return this;
+    }
+
+    public CartItemListHolder fork() {
+      return new CartItemListHolder(this.list);
+    }
+
+    public CartItemListHolder inline_order_lexographically_asc_by(String... keys) {
+      Collections.sort(this.list, new LexographicalOrder<CartItem>(keys, true, true));
+      return this;
+    }
+
+    public CartItemListHolder inline_order_lexographically_desc_by(String... keys) {
+      Collections.sort(this.list, new LexographicalOrder<CartItem>(keys, false, true));
+      return this;
+    }
+
+    public CartItemListHolder inline_order_lexographically_by(boolean asc, boolean caseSensitive, String... keys) {
+      Collections.sort(this.list, new LexographicalOrder<CartItem>(keys, asc, caseSensitive));
+      return this;
+    }
+
+    public CartItemListHolder inline_order_by(Comparator<CartItem> comparator) {
+      Collections.sort(this.list, comparator);
+      return this;
+    }
+
+    public int count() {
+      return this.list.size();
+    }
+    public CartItem first() {
+      if (this.list.size() == 0) {
+        return null;
+      }
+      return this.list.get(0);
+    }
+    public ArrayList<CartItem> done() {
+      return this.list;
+    }
+  }
+
+  public class CartItemSetQuery {
+    private String scope;
+    private HashSet<String> keys;
+
+    private CartItemSetQuery() {
+      this.scope = "";
+      this.keys = null;
+    }
+
+    public CartItemListHolder to_list() {
+      return new CartItemListHolder(this.keys, this.scope);
+    }
+
+    public ArrayList<CartItem> done() {
+      return new CartItemListHolder(this.keys, this.scope).done();
+    }
+
+    public int count() {
+      if (this.keys == null) {
+        return to_list().count();
+      } else {
+        return this.keys.size();
+      }
+    }
+
+    public CartItemSetQuery scope(String scope) {
+      this.scope += scope + "/";
+      return this;
+    }
+
+    private HashSet<String> lookup_cart(String... values) {
+      HashSet<String> keys = new HashSet<>();
+      for(String value : values) {
+        keys.addAll(cartitem_cart.getKeys(value));
+      }
+      return keys;
+    }
+
+    public CartItemSetQuery where_cart_eq(String... values) {
+      if (this.keys == null) {
+        this.keys = lookup_cart(values);
+      } else {
+        this.keys = BinaryOperators.intersect(this.keys, lookup_cart(values));
+      }
+      return this;
+    }
+
+    private HashSet<String> lookup_product(String... values) {
+      HashSet<String> keys = new HashSet<>();
+      for(String value : values) {
+        keys.addAll(cartitem_product.getKeys(value));
+      }
+      return keys;
+    }
+
+    public CartItemSetQuery where_product_eq(String... values) {
+      if (this.keys == null) {
+        this.keys = lookup_product(values);
+      } else {
+        this.keys = BinaryOperators.intersect(this.keys, lookup_product(values));
+      }
+      return this;
+    }
+
+    private HashSet<String> lookup_customizations(String... values) {
+      HashSet<String> keys = new HashSet<>();
+      for(String value : values) {
+        keys.addAll(cartitem_customizations.getKeys(value));
+      }
+      return keys;
+    }
+
+    public CartItemSetQuery where_customizations_eq(String... values) {
+      if (this.keys == null) {
+        this.keys = lookup_customizations(values);
+      } else {
+        this.keys = BinaryOperators.intersect(this.keys, lookup_customizations(values));
+      }
+      return this;
+    }
+  }
 
   /**************************************************
   Query Engine (checks/)
@@ -1384,6 +1852,129 @@ public class QueryEngine {
   }
 
   /**************************************************
+  Query Engine (product/)
+  **************************************************/
+
+  public ProductSetQuery select_product() {
+    return new ProductSetQuery();
+  }
+
+  public class ProductListHolder {
+    private final ArrayList<Product> list;
+
+    private ProductListHolder(HashSet<String> keys, String scope) {
+      if (keys == null) {
+        this.list = products_of(fetch_all("product/" + scope));
+      } else {
+        this.list = products_of(fetch(keys));
+      }
+    }
+
+    private ProductListHolder(ArrayList<Product> list) {
+      this.list = list;
+    }
+
+    public ProductListHolder inline_filter(Predicate<Product> filter) {
+      Iterator<Product> it = list.iterator();
+      while (it.hasNext()) {
+        if (filter.test(it.next())) {
+          it.remove();
+        }
+      }
+      return this;
+    }
+
+    public ProductListHolder limit(int count) {
+      Iterator<Product> it = list.iterator();
+      int at = 0;
+      while (it.hasNext()) {
+        it.next();
+        if (at >= count) {
+          it.remove();
+        }
+        at++;
+      }
+      return this;
+    }
+
+    public ProductListHolder inline_apply(Consumer<Product> consumer) {
+      Iterator<Product> it = list.iterator();
+      while (it.hasNext()) {
+        consumer.accept(it.next());
+      }
+      return this;
+    }
+
+    public ProductListHolder fork() {
+      return new ProductListHolder(this.list);
+    }
+
+    public ProductListHolder inline_order_lexographically_asc_by(String... keys) {
+      Collections.sort(this.list, new LexographicalOrder<Product>(keys, true, true));
+      return this;
+    }
+
+    public ProductListHolder inline_order_lexographically_desc_by(String... keys) {
+      Collections.sort(this.list, new LexographicalOrder<Product>(keys, false, true));
+      return this;
+    }
+
+    public ProductListHolder inline_order_lexographically_by(boolean asc, boolean caseSensitive, String... keys) {
+      Collections.sort(this.list, new LexographicalOrder<Product>(keys, asc, caseSensitive));
+      return this;
+    }
+
+    public ProductListHolder inline_order_by(Comparator<Product> comparator) {
+      Collections.sort(this.list, comparator);
+      return this;
+    }
+
+    public int count() {
+      return this.list.size();
+    }
+    public Product first() {
+      if (this.list.size() == 0) {
+        return null;
+      }
+      return this.list.get(0);
+    }
+    public ArrayList<Product> done() {
+      return this.list;
+    }
+  }
+
+  public class ProductSetQuery {
+    private String scope;
+    private HashSet<String> keys;
+
+    private ProductSetQuery() {
+      this.scope = "";
+      this.keys = null;
+    }
+
+    public ProductListHolder to_list() {
+      return new ProductListHolder(this.keys, this.scope);
+    }
+
+    public ArrayList<Product> done() {
+      return new ProductListHolder(this.keys, this.scope).done();
+    }
+
+    public int count() {
+      if (this.keys == null) {
+        return to_list().count();
+      } else {
+        return this.keys.size();
+      }
+    }
+
+    public ProductSetQuery scope(String scope) {
+      this.scope += scope + "/";
+      return this;
+    }
+  }
+
+  /**************************************************
   Query Engine (site/)
   **************************************************/
 
@@ -1753,6 +2344,57 @@ public class QueryEngine {
   }
 
   /**************************************************
+  Projects (cart/)
+  **************************************************/
+
+  public class CartProjection_admin {
+    private final HashMap<String, String> data;
+    
+    public CartProjection_admin(ProjectionProvider pp) {
+      this.data = new HashMap<String, String>();
+      this.data.put("id", farm.bsg.data.types.TypeUUID.project(pp, "id"));
+      this.data.put("__token", farm.bsg.data.types.TypeString.project(pp, "__token"));
+      this.data.put("user", farm.bsg.data.types.TypeString.project(pp, "user"));
+    }
+
+    public PutResult apply(Cart cart) {
+      return cart.validateAndApplyProjection(this.data);
+    }
+  }
+
+  public CartProjection_admin projection_cart_admin_of(ProjectionProvider pp) {
+    return new CartProjection_admin(pp);
+  }
+
+
+  /**************************************************
+  Projects (cart-item/)
+  **************************************************/
+
+  public class CartItemProjection_admin {
+    private final HashMap<String, String> data;
+    
+    public CartItemProjection_admin(ProjectionProvider pp) {
+      this.data = new HashMap<String, String>();
+      this.data.put("id", farm.bsg.data.types.TypeUUID.project(pp, "id"));
+      this.data.put("__token", farm.bsg.data.types.TypeString.project(pp, "__token"));
+      this.data.put("cart", farm.bsg.data.types.TypeString.project(pp, "cart"));
+      this.data.put("product", farm.bsg.data.types.TypeString.project(pp, "product"));
+      this.data.put("quantiy", farm.bsg.data.types.TypeNumber.project(pp, "quantiy"));
+      this.data.put("customizations", farm.bsg.data.types.TypeString.project(pp, "customizations"));
+    }
+
+    public PutResult apply(CartItem cartitem) {
+      return cartitem.validateAndApplyProjection(this.data);
+    }
+  }
+
+  public CartItemProjection_admin projection_cartitem_admin_of(ProjectionProvider pp) {
+    return new CartItemProjection_admin(pp);
+  }
+
+
+  /**************************************************
   Projects (checks/)
   **************************************************/
 
@@ -1945,6 +2587,7 @@ public class QueryEngine {
       this.data.put("tax_withholding", farm.bsg.data.types.TypeNumber.project(pp, "tax_withholding"));
       this.data.put("taxes", farm.bsg.data.types.TypeNumber.project(pp, "taxes"));
       this.data.put("benefits", farm.bsg.data.types.TypeNumber.project(pp, "benefits"));
+      this.data.put("is_performance_related_bonus", farm.bsg.data.types.TypeBoolean.project(pp, "is_performance_related_bonus"));
       this.data.put("check", farm.bsg.data.types.TypeString.project(pp, "check"));
       this.data.put("unpaid", farm.bsg.data.types.TypeString.project(pp, "unpaid"));
     }
@@ -2021,6 +2664,34 @@ public class QueryEngine {
 
   public PersonProjection_admin projection_person_admin_of(ProjectionProvider pp) {
     return new PersonProjection_admin(pp);
+  }
+
+
+  /**************************************************
+  Projects (product/)
+  **************************************************/
+
+  public class ProductProjection_admin {
+    private final HashMap<String, String> data;
+    
+    public ProductProjection_admin(ProjectionProvider pp) {
+      this.data = new HashMap<String, String>();
+      this.data.put("id", farm.bsg.data.types.TypeUUID.project(pp, "id"));
+      this.data.put("__token", farm.bsg.data.types.TypeString.project(pp, "__token"));
+      this.data.put("name", farm.bsg.data.types.TypeString.project(pp, "name"));
+      this.data.put("description", farm.bsg.data.types.TypeString.project(pp, "description"));
+      this.data.put("category", farm.bsg.data.types.TypeString.project(pp, "category"));
+      this.data.put("customizations", farm.bsg.data.types.TypeString.project(pp, "customizations"));
+      this.data.put("price", farm.bsg.data.types.TypeNumber.project(pp, "price"));
+    }
+
+    public PutResult apply(Product product) {
+      return product.validateAndApplyProjection(this.data);
+    }
+  }
+
+  public ProductProjection_admin projection_product_admin_of(ProjectionProvider pp) {
+    return new ProductProjection_admin(pp);
   }
 
 

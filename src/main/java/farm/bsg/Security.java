@@ -93,7 +93,11 @@ public class Security {
         
         SeePeopleTab("see_people_tab", Roles.GOD, Roles.OWNER, Roles.MANAGER), //
         CreatePeople("create_people", Roles.GOD, Roles.OWNER), //
+
         
+        SeeProductsTab("see_products_tab", Roles.GOD, Roles.OWNER, Roles.MANAGER), //
+        CreateProduct("create_product", Roles.GOD, Roles.OWNER, Roles.MANAGER), //
+
 
         SeeSiteProperties("see_site_properties", Roles.GOD, Roles.OWNER), //
         EditSiteProperties("edit_site_properties", Roles.GOD, Roles.OWNER), //

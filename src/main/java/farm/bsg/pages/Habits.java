@@ -211,7 +211,12 @@ public class Habits extends SessionPage {
 
     public String commit() {
         Habit habit = pullHabit();
-        session.engine.save(habit);
+        if  (habit.isNullOrEmpty("name")) {
+            session.engine.remove(habit);
+        } else {
+            session.engine.save(habit);
+        }
+        
         redirect("/habits-all");
         return null;
     }
