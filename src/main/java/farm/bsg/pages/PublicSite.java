@@ -52,8 +52,8 @@ public class PublicSite {
             Block formInner = Html.block();
 
             formInner.add(Html.wrapped().form_group() //
-                    .wrap(Html.label("file1", "File 1")) //
-                    .wrap(Html.input("file1").id_from_name().file()));
+                    .wrap(Html.label("file_1", "File 1")) //
+                    .wrap(Html.input("file_1").id_from_name().file()));
 
             formInner.add(Html.wrapped().form_group() //
                     .wrap(Html.input("submit").id_from_name().value("Save").submit()));

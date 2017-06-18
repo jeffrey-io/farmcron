@@ -11,7 +11,7 @@ public class WakeInputFile extends RawObject {
 
     public static ObjectSchema SCHEMA = new ObjectSchema("wake_input/", //
             Field.STRING("filename"), // -
-            Field.BYTESB64("body") // -
+            Field.BYTESB64("contents") // -
     ).dirty("farm.bsg.models.WakeInputFile.DirtyWakeInputFile");
 
     public WakeInputFile() {

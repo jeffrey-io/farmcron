@@ -28,8 +28,6 @@ public class SparkBox implements RequestResponseWrapper {
         this.body = new HashMap<>();
         this.files = new HashMap<>();
 
-        // apache commons-fileupload to handle file upload
-
         String contentType = request.headers("Content-Type");
         if (contentType != null && contentType.toLowerCase().contains("multipart/form-data")) {
             HashMap<String, List<String>> assemble = new HashMap<>();
@@ -40,7 +38,7 @@ public class SparkBox implements RequestResponseWrapper {
                     if (item.getFieldName() == null) {
                         continue;
                     }
-                    boolean isFile = item.getName() != null || item.getFieldName().startsWith("file_");
+                    boolean isFile = item.getName() != null;
                     if (isFile) {
                         files.put(item.getFieldName(), new BinaryFile(item.getName(), item.getContentType(), item.get()));
                     } else {
