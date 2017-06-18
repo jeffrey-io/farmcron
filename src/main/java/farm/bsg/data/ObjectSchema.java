@@ -70,6 +70,10 @@ public class ObjectSchema {
         this.dirtyBitIndicesJavaTypes = new ArrayList<>();
     }
     
+    public boolean isSingleton() {
+        return singleton;
+    }
+    
     public ObjectSchema dirty(String javaClass) {
         this.dirtyBitIndicesJavaTypes.add(javaClass);
         return this;

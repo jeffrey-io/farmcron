@@ -8,6 +8,9 @@ import farm.bsg.data.Type;
 public class KeyFactory {
 
     public static void write(ArrayList<String> lines, String name, ObjectSchema object) {
+        if (object.isSingleton()) {
+            return;
+        }
         StringBuilder funcDef = new StringBuilder();
         funcDef.append("  public String make_key_" + name.toLowerCase() + "(");
         for (Type type : object.getTypes()) {

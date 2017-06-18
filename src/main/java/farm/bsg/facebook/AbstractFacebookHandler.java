@@ -33,7 +33,7 @@ public class AbstractFacebookHandler {
         TextMessage response = routing.handleText(engine, text);
         BsgCounters.I.fb_attempt_response.bump();
 
-        String fbToken = engine.properties().get("fb_page_token");
+        String fbToken = engine.siteproperties_get().get("fb_page_token");
         if (fbToken != null) {
             BsgCounters.I.fb_send_out_on_wire.bump();
             MessengerSend sender = new MessengerSend(fbToken);

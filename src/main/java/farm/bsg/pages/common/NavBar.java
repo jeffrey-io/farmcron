@@ -42,7 +42,7 @@ public class NavBar {
     }
 
     public String html(String href, SessionRequest session) {
-        String productName = engine.properties().get("product_name");
+        String productName = engine.siteproperties_get().get("product_name");
         StringBuilder sb = new StringBuilder();
         sb.append("<nav class=\"navbar navbar-fixed-top navbar-dark bg-inverse\"><div class=\"container\">");
         sb.append("<button class=\"navbar-toggler hidden-sm-up\" type=\"button\" data-toggle=\"collapse\" data-target=\"#navbar-header\" aria-controls=\"navbar-header\" aria-expanded=\"false\" aria-label=\"Toggle navigation\"></button>");

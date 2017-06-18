@@ -75,7 +75,7 @@ public class Authenticator {
                 p.set("name", "Generic Administrator");
                 p.set("permissions_and_roles", "god");
                 p.setPassword("default_password_42"); //
-                engine.save(p);
+                engine.put(p);
             } else {
                 return AuthResult.DENIED();
             }

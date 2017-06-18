@@ -6,7 +6,6 @@ import farm.bsg.data.RawObject;
 import farm.bsg.data.Value;
 import farm.bsg.data.contracts.PersistenceLogger;
 import farm.bsg.html.shit.GenericTemplate;
-import farm.bsg.models.SiteProperties;
 import farm.bsg.pages.common.NavBar;
 
 public class ProductEngine extends QueryEngine {
@@ -24,12 +23,6 @@ public class ProductEngine extends QueryEngine {
         this.alexa = new AlexaCommands(this);
 
         this.template = new GenericTemplate(pageTemplate);
-    }
-
-    public SiteProperties properties() {
-        SiteProperties prop = siteproperties_by_id("properties", true);
-        prop.set("id", "properties");
-        return prop;
     }
 
     public boolean save(RawObject o) {

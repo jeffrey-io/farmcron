@@ -60,7 +60,7 @@ public class SignIn {
                 if (invalidRaw != null && invalidRaw.length() > 0) {
                     invalid = true;
                 }
-                return new SignIn(template).signin(engine.properties().get("product_name"), username, invalid);
+                return new SignIn(template).signin(engine.siteproperties_get().get("product_name"), username, invalid);
             } catch (Exception err) {
                 err.printStackTrace();
                 throw err;

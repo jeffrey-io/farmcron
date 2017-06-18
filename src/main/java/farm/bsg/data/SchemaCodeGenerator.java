@@ -12,6 +12,7 @@ import farm.bsg.data.codegen.Lookups;
 import farm.bsg.data.codegen.Projections;
 import farm.bsg.data.codegen.StackQueryEngine;
 import farm.bsg.data.codegen.TypeTransfer;
+import farm.bsg.data.codegen.Writes;
 
 public class SchemaCodeGenerator {
 
@@ -104,6 +105,12 @@ public class SchemaCodeGenerator {
         for (Entry<String, ObjectSchema> entry : schemas.entrySet()) {
             section(lines, "Projects", entry.getValue());
             Projections.write(lines, entry.getKey(), entry.getValue());
+        }
+
+        
+        for (Entry<String, ObjectSchema> entry : schemas.entrySet()) {
+            section(lines, "Writing Back to DB", entry.getValue());
+            Writes.write(lines, entry.getKey(), entry.getValue());
         }
 
         return finishAndBuild(lines);

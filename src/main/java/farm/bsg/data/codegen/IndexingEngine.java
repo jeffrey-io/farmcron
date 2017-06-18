@@ -8,6 +8,9 @@ import farm.bsg.data.Type;
 public class IndexingEngine {
 
     public static void writeConstructor(ArrayList<String> lines, String name, ObjectSchema object) {
+        if (object.isSingleton()) {
+            return;
+        }
         String keyIndexPrefix = name.toLowerCase() + "_";
         for (Type type : object.getTypes()) {
             if (type.isIndexed()) {
@@ -20,6 +23,9 @@ public class IndexingEngine {
     }
 
     public static void writeFields(ArrayList<String> lines, String name, ObjectSchema object) {
+        if (object.isSingleton()) {
+            return;
+        }
         String keyIndexPrefix = name.toLowerCase() + "_";
         boolean first = true;
         for (Type type : object.getTypes()) {
@@ -35,6 +41,9 @@ public class IndexingEngine {
     }
 
     public static void write(ArrayList<String> lines, String name, ObjectSchema object) {
+        if (object.isSingleton()) {
+            return;
+        }
         String keyIndexPrefix = name.toLowerCase() + "_";
         for (Type type : object.getTypes()) {
             if (type.isIndexed()) {

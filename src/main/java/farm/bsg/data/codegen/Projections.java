@@ -33,7 +33,6 @@ public class Projections {
             lines.add("    public " + name + "Projection_" + projection + "(ProjectionProvider pp) {");
             lines.add("      this.data = new HashMap<String, String>();");
             for (Type type : types) {
-
                 if (!hasProjection(type)) {
                     throw new RuntimeException("Type '" + type.getClass().getName() + "' has no static project method");
                 }
@@ -64,8 +63,5 @@ public class Projections {
         } catch (Exception err) {
             return false;
         }
-        /*
-         * Method[] methods = type.getClass().getMethods(); for (Strin)
-         */
     }
 }

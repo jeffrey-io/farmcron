@@ -60,6 +60,9 @@ public class QueryEngine {
   public final KeyIndex person_phone;  // BY[phone]
   public final KeyIndex person_super_cookie;  // BY[super_cookie]
   public final KeyIndex person_notification_token;  // BY[notification_token]
+
+  // INDEX[WakeInputFile]
+  public final KeyIndex wakeinputfile_filename;  // BY[filename]
   public final StorageEngine storage;
 
   public QueryEngine(PersistenceLogger persistence) throws Exception {
@@ -78,6 +81,7 @@ public class QueryEngine {
     this.person_phone = indexing.add("person/", new KeyIndex("phone", false));
     this.person_super_cookie = indexing.add("person/", new KeyIndex("super_cookie", false));
     this.person_notification_token = indexing.add("person/", new KeyIndex("notification_token", false));
+    this.wakeinputfile_filename = indexing.add("wake_input/", new KeyIndex("filename", true));
     this.indexing.add("wake_input/", new farm.bsg.models.WakeInputFile.DirtyWakeInputFile());
     this.storage = new StorageEngine(memory, indexing, persistence);
   }
@@ -441,13 +445,10 @@ public class QueryEngine {
   Basic Operations (look up, type transfer, keys, immutable copies) (site/)
   **************************************************/
 
-  public SiteProperties siteproperties_by_id(String id, boolean create) {
-    Value v = storage.get("site/" + id);
-    if (v == null && !create) {
-      return null;
-    }
+  public SiteProperties siteproperties_get() {
+    Value v = storage.get("site/properties");
     SiteProperties result = siteproperties_of(v);
-    result.set("id", id);
+    result.set("id", "properties");
     return result;
   }
 
@@ -466,13 +467,6 @@ public class QueryEngine {
     }
     return list;
   }
-
-  public String make_key_siteproperties(String id) {
-    StringBuilder key = new StringBuilder();
-    key.append("site/");
-    key.append(id);
-    return key.toString();
-}
 
   /**************************************************
   Basic Operations (look up, type transfer, keys, immutable copies) (subscriber/)
@@ -688,6 +682,10 @@ public class QueryEngine {
   /**************************************************
   Indexing (wake_input/)
   **************************************************/
+
+  public HashSet<String> get_wakeinputfile_filename_index_keys() {
+    return wakeinputfile_filename.getIndexKeys();
+  }
 
   /**************************************************
   Query Engine (cart/)
@@ -2507,6 +2505,23 @@ public class QueryEngine {
       this.scope += scope + "/";
       return this;
     }
+
+    private HashSet<String> lookup_filename(String... values) {
+      HashSet<String> keys = new HashSet<>();
+      for(String value : values) {
+        keys.addAll(wakeinputfile_filename.getKeys(value));
+      }
+      return keys;
+    }
+
+    public WakeInputFileSetQuery where_filename_eq(String... values) {
+      if (this.keys == null) {
+        this.keys = lookup_filename(values);
+      } else {
+        this.keys = BinaryOperators.intersect(this.keys, lookup_filename(values));
+      }
+      return this;
+    }
   }
 
   /**************************************************
@@ -2957,7 +2972,9 @@ public class QueryEngine {
       this.data.put("id", farm.bsg.data.types.TypeUUID.project(pp, "id"));
       this.data.put("__token", farm.bsg.data.types.TypeString.project(pp, "__token"));
       this.data.put("filename", farm.bsg.data.types.TypeString.project(pp, "filename"));
-      this.data.put("body", farm.bsg.data.types.TypeBytesInBase64.project(pp, "body"));
+      this.data.put("content_type", farm.bsg.data.types.TypeString.project(pp, "content_type"));
+      this.data.put("description", farm.bsg.data.types.TypeString.project(pp, "description"));
+      this.data.put("contents", farm.bsg.data.types.TypeBytesInBase64.project(pp, "contents"));
     }
 
     public PutResult apply(WakeInputFile wakeinputfile) {
@@ -2969,4 +2986,160 @@ public class QueryEngine {
     return new WakeInputFileProjection_admin(pp);
   }
 
+
+  /**************************************************
+  Saving (cart/)
+  **************************************************/
+
+  public PutResult put(Cart cart) {
+    return storage.put(cart.getStorageKey(), new Value(cart.toJson()));
+  }
+
+  public PutResult del(Cart cart) {
+    return storage.put(cart.getStorageKey(), null);
+  }
+
+  /**************************************************
+  Saving (cart-item/)
+  **************************************************/
+
+  public PutResult put(CartItem cartitem) {
+    return storage.put(cartitem.getStorageKey(), new Value(cartitem.toJson()));
+  }
+
+  public PutResult del(CartItem cartitem) {
+    return storage.put(cartitem.getStorageKey(), null);
+  }
+
+  /**************************************************
+  Saving (checks/)
+  **************************************************/
+
+  public PutResult put(Check check) {
+    return storage.put(check.getStorageKey(), new Value(check.toJson()));
+  }
+
+  public PutResult del(Check check) {
+    return storage.put(check.getStorageKey(), null);
+  }
+
+  /**************************************************
+  Saving (chore/)
+  **************************************************/
+
+  public PutResult put(Chore chore) {
+    return storage.put(chore.getStorageKey(), new Value(chore.toJson()));
+  }
+
+  public PutResult del(Chore chore) {
+    return storage.put(chore.getStorageKey(), null);
+  }
+
+  /**************************************************
+  Saving (event/)
+  **************************************************/
+
+  public PutResult put(Event event) {
+    return storage.put(event.getStorageKey(), new Value(event.toJson()));
+  }
+
+  public PutResult del(Event event) {
+    return storage.put(event.getStorageKey(), null);
+  }
+
+  /**************************************************
+  Saving (habits/)
+  **************************************************/
+
+  public PutResult put(Habit habit) {
+    return storage.put(habit.getStorageKey(), new Value(habit.toJson()));
+  }
+
+  public PutResult del(Habit habit) {
+    return storage.put(habit.getStorageKey(), null);
+  }
+
+  /**************************************************
+  Saving (payroll/)
+  **************************************************/
+
+  public PutResult put(PayrollEntry payrollentry) {
+    return storage.put(payrollentry.getStorageKey(), new Value(payrollentry.toJson()));
+  }
+
+  public PutResult del(PayrollEntry payrollentry) {
+    return storage.put(payrollentry.getStorageKey(), null);
+  }
+
+  /**************************************************
+  Saving (person/)
+  **************************************************/
+
+  public PutResult put(Person person) {
+    return storage.put(person.getStorageKey(), new Value(person.toJson()));
+  }
+
+  public PutResult del(Person person) {
+    return storage.put(person.getStorageKey(), null);
+  }
+
+  /**************************************************
+  Saving (product/)
+  **************************************************/
+
+  public PutResult put(Product product) {
+    return storage.put(product.getStorageKey(), new Value(product.toJson()));
+  }
+
+  public PutResult del(Product product) {
+    return storage.put(product.getStorageKey(), null);
+  }
+
+  /**************************************************
+  Saving (site/)
+  **************************************************/
+
+  public PutResult put(SiteProperties siteproperties) {
+    return storage.put(siteproperties.getStorageKey(), new Value(siteproperties.toJson()));
+  }
+
+  public PutResult del(SiteProperties siteproperties) {
+    return storage.put(siteproperties.getStorageKey(), null);
+  }
+
+  /**************************************************
+  Saving (subscriber/)
+  **************************************************/
+
+  public PutResult put(Subscriber subscriber) {
+    return storage.put(subscriber.getStorageKey(), new Value(subscriber.toJson()));
+  }
+
+  public PutResult del(Subscriber subscriber) {
+    return storage.put(subscriber.getStorageKey(), null);
+  }
+
+  /**************************************************
+  Saving (subscription/)
+  **************************************************/
+
+  public PutResult put(Subscription subscription) {
+    return storage.put(subscription.getStorageKey(), new Value(subscription.toJson()));
+  }
+
+  public PutResult del(Subscription subscription) {
+    return storage.put(subscription.getStorageKey(), null);
+  }
+
+  /**************************************************
+  Saving (wake_input/)
+  **************************************************/
+
+  public PutResult put(WakeInputFile wakeinputfile) {
+    return storage.put(wakeinputfile.getStorageKey(), new Value(wakeinputfile.toJson()));
+  }
+
+  public PutResult del(WakeInputFile wakeinputfile) {
+    return storage.put(wakeinputfile.getStorageKey(), null);
+  }
 }

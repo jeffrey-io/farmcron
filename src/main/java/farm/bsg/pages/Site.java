@@ -14,9 +14,8 @@ public class Site extends SessionPage {
     }
 
     public SiteProperties pullSite() {
-        SiteProperties prop = session.engine.properties();
+        SiteProperties prop = query().siteproperties_get();
         prop.importValuesFromReqeust(session, "");
-        prop.set("id", "properties");
         return prop;
     }
 
