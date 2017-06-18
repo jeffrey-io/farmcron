@@ -76,7 +76,7 @@ public class ChoreTest {
         chore.set("month_filter", TypeMonthFilter.Month.encode("s"));
         chore.set("day_filter", TypeDayFilter.Day.encode("m"));
         Assert.assertEquals("20170121", chore.dayDue());
-        Assert.assertEquals("20170904", chore.firstAvailableDay());
+        Assert.assertEquals("20170901", chore.firstAvailableDay());
         Assert.assertEquals(0, chore.daysAvailable());
     }
 
@@ -126,6 +126,6 @@ public class ChoreTest {
         chore.set("day_filter", TypeDayFilter.Day.encode("t"));
         Assert.assertEquals("20170127", chore.dayDue());
         Assert.assertEquals("20170124", chore.firstAvailableDay());
-        Assert.assertEquals(1, chore.daysAvailable());
+        Assert.assertEquals(3, chore.daysAvailable());
     }
 }
