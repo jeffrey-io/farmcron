@@ -17,7 +17,7 @@ import farm.bsg.ops.Logs;
 public class Habit extends RawObject {
     private final static Logger LOG = Logs.of(Habit.class);
 
-    public static ObjectSchema SCHEMA = new ObjectSchema("habits/", //
+    public static ObjectSchema SCHEMA = ObjectSchema.persisted("habits/", //
             Field.STRING("who").markAsScope(), // DONE;
             Field.STRING("last_done"), // DONE; COMPUTED
 

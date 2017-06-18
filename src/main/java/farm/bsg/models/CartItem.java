@@ -7,7 +7,7 @@ import farm.bsg.ops.CounterCodeGen;
 
 public class CartItem extends RawObject {
     
-    public static final ObjectSchema SCHEMA = new ObjectSchema("cart-item/", //
+    public static final ObjectSchema SCHEMA = ObjectSchema.persisted("cart-item/", //
             Field.STRING("cart").makeIndex(false), //
             Field.STRING("product").makeIndex(false), //
             Field.NUMBER("quantiy"),

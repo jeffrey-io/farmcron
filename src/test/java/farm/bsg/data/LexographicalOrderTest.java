@@ -13,7 +13,7 @@ public class LexographicalOrderTest {
     
     @Test
     public void CompareString() {
-        ObjectSchema schema = new ObjectSchema("x/", Field.STRING("key"));
+        ObjectSchema schema = ObjectSchema.persisted("x/", Field.STRING("key"));
         RawObject a = new RawObject(schema) {
             @Override
             protected void invalidateCache() {

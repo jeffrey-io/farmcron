@@ -12,9 +12,42 @@ public class ObjectSchema {
     private final List<Type>            typesInOrder;
     private final HashMap<String, Type> schema;
     private final List<String> dirtyBitIndicesJavaTypes;
+    public final boolean singleton;
+    
+    public static class Properties {
+        public final String prefix;
+        public final boolean singleton;
+        public final boolean ephemeral;
+        
+        public Properties(String prefix, boolean singleton, boolean ephemeral) {
+            this.prefix = prefix;
+            this.singleton = singleton;
+            this.ephemeral = ephemeral;
+        }
+    }
 
-    public ObjectSchema(String prefix, Type... types) {
-        this.prefix = prefix;
+    /**
+     * Generate a schema that will be persisted
+     * @param prefix
+     * @param types
+     * @return
+     */
+    public static ObjectSchema persisted(String prefix, Type... types) {
+        return new ObjectSchema(new Properties(prefix, false, false), types);
+    }
+
+    public static ObjectSchema singleton(String key, Type... types) {
+        return new ObjectSchema(new Properties(key, true, false), types);
+    }
+
+    public static ObjectSchema ephemeral(String prefix, Type... types) {
+        return new ObjectSchema(new Properties(prefix, false, true), types);
+    }
+
+    private ObjectSchema(Properties properties, Type... types) {
+        this.prefix = properties.prefix;
+        this.singleton = properties.singleton;
+
         this.schema = new HashMap<String, Type>();
         ArrayList<Type> orderedTypes = new ArrayList<>();
         Type atomicRev = Field.STRING("__token");

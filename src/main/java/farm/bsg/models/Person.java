@@ -21,7 +21,7 @@ import farm.bsg.data.Field;
 import farm.bsg.data.ObjectSchema;
 
 public class Person extends RawObject {
-    public static final ObjectSchema SCHEMA = new ObjectSchema("person/", //
+    public static final ObjectSchema SCHEMA = ObjectSchema.persisted("person/", //
             Field.STRING("login").makeIndex(true), // used
             Field.STRING("name"), // -
             Field.STRING("phone").makeIndex(false), // -

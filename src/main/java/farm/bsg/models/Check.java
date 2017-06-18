@@ -6,7 +6,7 @@ import farm.bsg.data.RawObject;
 import farm.bsg.ops.CounterCodeGen;
 
 public class Check extends RawObject {
-    public static final ObjectSchema SCHEMA = new ObjectSchema("checks/", //
+    public static final ObjectSchema SCHEMA = ObjectSchema.persisted("checks/", //
             Field.STRING("ref"), // made; inserted
             Field.STRING("person").makeIndex(false), // made; copied into
             Field.DATETIME("generated"), // made

@@ -14,7 +14,7 @@ import farm.bsg.data.ObjectSchema;
 
 public class Chore extends RawObject {
 
-    public static final ObjectSchema SCHEMA = new ObjectSchema("chore/", //
+    public static final ObjectSchema SCHEMA = ObjectSchema.persisted("chore/", //
             Field.STRING("name").addProjection("edit"), // USED
             Field.STRING("last_performed"), // COMPUTED; USED
             Field.STRING("last_performed_by"), // COMPUTED

@@ -7,7 +7,7 @@ import farm.bsg.data.ObjectSchema;
 
 public class Event extends RawObject {
 
-    public static final ObjectSchema SCHEMA = new ObjectSchema("event/", //
+    public static final ObjectSchema SCHEMA = ObjectSchema.persisted("event/", //
             Field.STRING("name"), //
             Field.STRING("when") //
     );

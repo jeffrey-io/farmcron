@@ -9,7 +9,7 @@ import farm.bsg.data.ObjectSchema;
 
 public class PayrollEntry extends RawObject {
 
-    public static final ObjectSchema SCHEMA = new ObjectSchema("payroll/", //
+    public static final ObjectSchema SCHEMA = ObjectSchema.persisted("payroll/", //
             Field.STRING("person"), // done; copied
             Field.DATETIME("reported"), // done; generated
             Field.STRING("fiscal_day"), // done; generated

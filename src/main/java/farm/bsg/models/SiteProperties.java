@@ -7,7 +7,7 @@ import farm.bsg.ops.CounterCodeGen;
 
 public class SiteProperties extends RawObject {
     
-    public static final ObjectSchema SCHEMA = new ObjectSchema("site/", //
+    public static final ObjectSchema SCHEMA = ObjectSchema.singleton("site/", //
             Field.STRING("domain"), // i.e. bsg.farm (will be used once this data is global)
             Field.STRING("product_name"), //
 

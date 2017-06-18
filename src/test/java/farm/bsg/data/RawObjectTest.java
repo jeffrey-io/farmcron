@@ -7,7 +7,7 @@ public class RawObjectTest {
 
     @Test
     public void Coverage() {
-        ObjectSchema schema = new ObjectSchema("prefix/", Field.STRING("name"));
+        ObjectSchema schema = ObjectSchema.persisted("prefix/", Field.STRING("name"));
         RawObject o = new RawObject(schema) {
             @Override
             protected void invalidateCache() {

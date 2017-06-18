@@ -7,7 +7,7 @@ import farm.bsg.ops.CounterCodeGen;
 
 public class Product extends RawObject {
     
-    public static final ObjectSchema SCHEMA = new ObjectSchema("product/", //
+    public static final ObjectSchema SCHEMA = ObjectSchema.persisted("product/", //
             Field.STRING("name"), // -
             Field.STRING("description"), // -
             Field.STRING("category"), // -

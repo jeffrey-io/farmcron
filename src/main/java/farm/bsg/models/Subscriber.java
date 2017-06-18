@@ -7,7 +7,7 @@ import farm.bsg.ops.CounterCodeGen;
 
 public class Subscriber extends RawObject {
     
-    public static final ObjectSchema SCHEMA = new ObjectSchema("subscriber/", //
+    public static final ObjectSchema SCHEMA = ObjectSchema.persisted("subscriber/", //
             Field.STRING("source"), // DONE
             Field.STRING("from"), // DONE
             Field.STRING("destination"), // DONE
