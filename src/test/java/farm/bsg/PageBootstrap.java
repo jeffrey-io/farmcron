@@ -7,6 +7,7 @@ import org.junit.Assert;
 
 import farm.bsg.data.Authenticator.AuthResult;
 import farm.bsg.route.AnonymousRoute;
+import farm.bsg.route.BinaryFile;
 import farm.bsg.route.MultiTenantRouter;
 import farm.bsg.route.RequestResponseWrapper;
 import farm.bsg.route.RoutingTable;
@@ -44,6 +45,11 @@ public class PageBootstrap {
         Assert.assertTrue(result.allowed);
 
         RequestResponseWrapper request = new RequestResponseWrapper() {
+
+            @Override
+            public BinaryFile getFile(String key) {
+                return null;
+            }
 
             @Override
             public String getURI() {

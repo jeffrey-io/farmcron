@@ -4,16 +4,23 @@ import java.util.HashMap;
 
 public class MockRequestResponseWrapper implements RequestResponseWrapper {
 
-    public String uri;
-    public final HashMap<String, String> params;
-    public final HashMap<String, String> cookies;
-    private String                       redirected = null;
+    public String                            uri;
+    public final HashMap<String, String>     params;
+    public final HashMap<String, String>     cookies;
+    public final HashMap<String, BinaryFile> files;
+    private String                           redirected = null;
 
     public MockRequestResponseWrapper() {
         this.params = new HashMap<>();
         this.cookies = new HashMap<>();
+        this.files = new HashMap<>();
     }
-    
+
+    @Override
+    public BinaryFile getFile(String key) {
+        return files.get(key);
+    }
+
     @Override
     public String getURI() {
         return uri;

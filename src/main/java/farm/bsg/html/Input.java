@@ -54,6 +54,11 @@ public class Input extends HtmlPump {
         }
         return this;
     }
+    
+    public Input file() {
+        this.type = "file";
+        return this;
+    }
 
     public Input checkbox() {
         this.type = "checkbox";

@@ -35,7 +35,7 @@ public class TypeBytesInBase64 extends Type {
     }
     
     public static String project(ProjectionProvider provider, String key) {
-        // TODO, need to see if I should do anything special for files here....
+        // TODO, need to see if I should do anything special for files here.... I should also encode it, here...
         return provider.first(key);
     }    
 }

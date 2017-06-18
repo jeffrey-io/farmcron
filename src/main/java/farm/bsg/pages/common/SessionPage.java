@@ -1,22 +1,17 @@
 package farm.bsg.pages.common;
 
-import farm.bsg.ProductEngine;
-import farm.bsg.QueryEngine;
 import farm.bsg.Security.Permission;
 import farm.bsg.html.HtmlPump;
 import farm.bsg.models.Person;
 import farm.bsg.route.SessionRequest;
 
-public class SessionPage {
+public class SessionPage extends GenericPage {
     protected final SessionRequest session;
-    protected final ProductEngine  engine;
-    protected final String       href;
     protected String             currentTitle;
 
     public SessionPage(SessionRequest session, String href) {
+        super(session.engine, href);
         this.session = session;
-        this.engine = session.engine;
-        this.href = href;
         this.currentTitle = engine.navbar.title(href);
     }
 
@@ -31,9 +26,6 @@ public class SessionPage {
         return formalize_html(html.toString());
     }
 
-    public QueryEngine query() {
-        return engine;
-    }
 
     public Person person() {
         return session.getPerson();

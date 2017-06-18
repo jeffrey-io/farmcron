@@ -29,6 +29,9 @@ public class WakeInputFile extends RawObject {
     public static class DirtyWakeInputFile extends DirtyBitIndexer {
         @Override
         public void onDirty(AsyncTaskTarget target) {
+            target.begin();
+            System.out.println("Prefix Dirty");
+            target.complete(true);
         }
     }
 }

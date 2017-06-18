@@ -11,6 +11,13 @@ public interface RequestResponseWrapper {
      * @return the full uri of the request
      */
     public String getURI();
+    
+    /**
+     * return a binary file 
+     * @param key
+     * @return a binary file
+     */
+    public BinaryFile getFile(String key);
 
     /**
      * @return a single query parameter
