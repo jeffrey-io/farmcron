@@ -17,11 +17,7 @@ import farm.bsg.ops.Logs;
 public class Habit extends RawObject {
     private final static Logger LOG = Logs.of(Habit.class);
 
-    public Habit() {
-        super(HABIT_SCHEMA);
-    }
-
-    public static ObjectSchema HABIT_SCHEMA = new ObjectSchema("habits/", //
+    public static ObjectSchema SCHEMA = new ObjectSchema("habits/", //
             Field.STRING("who").markAsScope(), // DONE;
             Field.STRING("last_done"), // DONE; COMPUTED
 
@@ -33,6 +29,12 @@ public class Habit extends RawObject {
             Field.STRING("last_arg_given"), // DONE; COMPUTED
             Field.STRING("history") // DONE; COMPUTED
     );
+    
+    public Habit() {
+        super(SCHEMA);
+    }
+
+
 
     public TreeMap<String, String> getHistory() {
         String history = get("history");

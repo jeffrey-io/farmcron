@@ -10,31 +10,33 @@ import java.util.Set;
 import org.joda.time.DateTime;
 import farm.bsg.data.BinaryOperators;
 import farm.bsg.data.Field;
+import farm.bsg.data.ObjectSchema;
 
 public class Chore extends RawObject {
 
+    public static final ObjectSchema SCHEMA = new ObjectSchema("chore/", //
+            Field.STRING("name").addProjection("edit"), // USED
+            Field.STRING("last_performed"), // COMPUTED; USED
+            Field.STRING("last_performed_by"), // COMPUTED
+
+            Field.STRING("frequency").addProjection("edit"), // i.e. 7 day since last performed; USED
+            Field.STRING("slack").addProjection("edit"), // i.e. 2 days; USED
+
+            Field.MONTHFILTER("month_filter").addProjection("edit"), // HAS INPUT;
+            Field.DAYFILTER("day_filter").addProjection("edit"), // HAS INPUT;
+
+            Field.STRING("time_to_perform_hours").addProjection("edit"), // HAS_INPUT;
+
+            Field.STRING("equipment_skills_required").addProjection("edit"), // USED, crap input
+            Field.STRING("weather_requirements").addProjection("edit"), // NOT USED
+            Field.STRING("hour_filter").addProjection("edit"), // "", 1000|1700
+
+            Field.STRING("manual").addProjection("edit") // HAS INPUT
+    );
     private DateTime now;
 
     public Chore() {
-        super("chore/", //
-                Field.STRING("name").addProjection("edit"), // USED
-                Field.STRING("last_performed"), // COMPUTED; USED
-                Field.STRING("last_performed_by"), // COMPUTED
-
-                Field.STRING("frequency").addProjection("edit"), // i.e. 7 day since last performed; USED
-                Field.STRING("slack").addProjection("edit"), // i.e. 2 days; USED
-
-                Field.MONTHFILTER("month_filter").addProjection("edit"), // HAS INPUT;
-                Field.DAYFILTER("day_filter").addProjection("edit"), // HAS INPUT;
-
-                Field.STRING("time_to_perform_hours").addProjection("edit"), // HAS_INPUT;
-
-                Field.STRING("equipment_skills_required").addProjection("edit"), // USED, crap input
-                Field.STRING("weather_requirements").addProjection("edit"), // NOT USED
-                Field.STRING("hour_filter").addProjection("edit"), // "", 1000|1700
-
-                Field.STRING("manual").addProjection("edit") // HAS INPUT
-        );
+        super(SCHEMA);
         now = new DateTime();
     }
 

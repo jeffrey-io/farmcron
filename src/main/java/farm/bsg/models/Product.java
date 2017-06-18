@@ -1,19 +1,22 @@
 package farm.bsg.models;
 
 import farm.bsg.data.Field;
+import farm.bsg.data.ObjectSchema;
 import farm.bsg.data.RawObject;
 import farm.bsg.ops.CounterCodeGen;
 
 public class Product extends RawObject {
+    
+    public static final ObjectSchema SCHEMA = new ObjectSchema("product/", //
+            Field.STRING("name"), // -
+            Field.STRING("description"), // -
+            Field.STRING("category"), // -
+            Field.STRING("customizations"), // -
+            Field.NUMBER("price") //
+            );
+            
     public Product() {
-        super("product/", //
-                Field.STRING("name"), // -
-                Field.STRING("description"), // -
-                Field.STRING("category"), // -
-                Field.STRING("customizations"), // -
-                Field.NUMBER("price") //
-                );
-        
+        super(SCHEMA);
     }
 
     @Override

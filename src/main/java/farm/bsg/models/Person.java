@@ -18,36 +18,39 @@ import farm.bsg.Security;
 import farm.bsg.Security.Permission;
 import farm.bsg.data.Authenticator;
 import farm.bsg.data.Field;
+import farm.bsg.data.ObjectSchema;
 
 public class Person extends RawObject {
+    public static final ObjectSchema SCHEMA = new ObjectSchema("person/", //
+            Field.STRING("login").makeIndex(true), // used
+            Field.STRING("name"), // -
+            Field.STRING("phone").makeIndex(false), // -
+            Field.STRING("email"), // -
+
+            Field.STRING("salt"), // used
+            Field.STRING("hash"), // used
+
+            Field.STRING("super_cookie").makeIndex(false), // generated once
+            Field.STRING("notification_token").makeIndex(false), // token to map SMS, Facebook to user habits
+            Field.STRING("notification_uri"),
+
+            Field.STRING("country"), // -
+            Field.STRING("fiscal_timezone"), // defaults to PST, used
+            Field.NUMBER("default_mileage"), // copied; used
+            Field.NUMBER("hourly_wage_compesation"), // used
+            Field.NUMBER("mileage_compensation"), // copied
+
+            Field.NUMBER("bonus_target"), //
+            Field.NUMBER("min_performance_multiplier"), //
+            Field.NUMBER("max_performance_multiplier"), //
+            Field.NUMBER("monthly_benefits"), Field.NUMBER("tax_withholding"),
+
+            Field.TOKEN_STRING_LIST("equipment_skills"), //
+            Field.TOKEN_STRING_LIST("permissions_and_roles") //
+    );
+            
     public Person() {
-        super("person/", //
-                Field.STRING("login").makeIndex(true), // used
-                Field.STRING("name"), // -
-                Field.STRING("phone").makeIndex(false), // -
-                Field.STRING("email"), // -
-
-                Field.STRING("salt"), // used
-                Field.STRING("hash"), // used
-
-                Field.STRING("super_cookie").makeIndex(false), // generated once
-                Field.STRING("notification_token").makeIndex(false), // token to map SMS, Facebook to user habits
-                Field.STRING("notification_uri"),
-
-                Field.STRING("country"), // -
-                Field.STRING("fiscal_timezone"), // defaults to PST, used
-                Field.NUMBER("default_mileage"), // copied; used
-                Field.NUMBER("hourly_wage_compesation"), // used
-                Field.NUMBER("mileage_compensation"), // copied
-
-                Field.NUMBER("bonus_target"), //
-                Field.NUMBER("min_performance_multiplier"), //
-                Field.NUMBER("max_performance_multiplier"), //
-                Field.NUMBER("monthly_benefits"), Field.NUMBER("tax_withholding"),
-
-                Field.TOKEN_STRING_LIST("equipment_skills"), //
-                Field.TOKEN_STRING_LIST("permissions_and_roles") //
-        );
+        super(SCHEMA);
         this.permissions = new HashSet<>();
     }
 

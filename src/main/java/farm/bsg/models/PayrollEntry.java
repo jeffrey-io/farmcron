@@ -5,30 +5,33 @@ import farm.bsg.ops.CounterCodeGen;
 import java.util.List;
 import farm.bsg.ProductEngine;
 import farm.bsg.data.Field;
+import farm.bsg.data.ObjectSchema;
 
 public class PayrollEntry extends RawObject {
 
+    public static final ObjectSchema SCHEMA = new ObjectSchema("payroll/", //
+            Field.STRING("person"), // done; copied
+            Field.DATETIME("reported"), // done; generated
+            Field.STRING("fiscal_day"), // done; generated
+
+            Field.NUMBER("mileage").addProjection("edit"), // done; used
+            Field.NUMBER("hours_worked").addProjection("edit"), // done; used
+            Field.NUMBER("pto_used").addProjection("edit"), // done; used
+            Field.NUMBER("sick_leave_used").addProjection("edit"), // done; used
+
+            Field.NUMBER("hourly_wage_compesation"), // done; copied
+            Field.NUMBER("mileage_compensation"), // done; copied
+            Field.NUMBER("owed"), // done; computed
+            Field.NUMBER("tax_withholding"), // done; copied
+            Field.NUMBER("taxes"), // done; computed
+            Field.NUMBER("benefits"), // done; used (NEED INPUT)
+            Field.BOOL("is_performance_related_bonus"),
+            Field.STRING("check").makeIndex(false), // indicates a payment was made
+            Field.STRING("unpaid").makeIndex(false) // if not "paid", then it is the employee id; DONE; indexed
+    );
+
     public PayrollEntry() {
-        super("payroll/", //
-                Field.STRING("person"), // done; copied
-                Field.DATETIME("reported"), // done; generated
-                Field.STRING("fiscal_day"), // done; generated
-
-                Field.NUMBER("mileage").addProjection("edit"), // done; used
-                Field.NUMBER("hours_worked").addProjection("edit"), // done; used
-                Field.NUMBER("pto_used").addProjection("edit"), // done; used
-                Field.NUMBER("sick_leave_used").addProjection("edit"), // done; used
-
-                Field.NUMBER("hourly_wage_compesation"), // done; copied
-                Field.NUMBER("mileage_compensation"), // done; copied
-                Field.NUMBER("owed"), // done; computed
-                Field.NUMBER("tax_withholding"), // done; copied
-                Field.NUMBER("taxes"), // done; computed
-                Field.NUMBER("benefits"), // done; used (NEED INPUT)
-                Field.BOOL("is_performance_related_bonus"),
-                Field.STRING("check").makeIndex(false), // indicates a payment was made
-                Field.STRING("unpaid").makeIndex(false) // if not "paid", then it is the employee id; DONE; indexed
-        );
+        super(SCHEMA);
     }
 
     public boolean isOutstanding() {
