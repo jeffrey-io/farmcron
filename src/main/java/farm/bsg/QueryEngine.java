@@ -18,6 +18,7 @@ import farm.bsg.models.Product;
 import farm.bsg.models.SiteProperties;
 import farm.bsg.models.Subscriber;
 import farm.bsg.models.Subscription;
+import farm.bsg.models.WakeInputFile;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -77,6 +78,7 @@ public class QueryEngine {
     this.person_phone = indexing.add("person/", new KeyIndex("phone", false));
     this.person_super_cookie = indexing.add("person/", new KeyIndex("super_cookie", false));
     this.person_notification_token = indexing.add("person/", new KeyIndex("notification_token", false));
+    this.indexing.add("wake_input/", new farm.bsg.models.WakeInputFile.DirtyWakeInputFile());
     this.storage = new StorageEngine(memory, indexing, persistence);
   }
 
@@ -547,6 +549,43 @@ public class QueryEngine {
 }
 
   /**************************************************
+  Basic Operations (look up, type transfer, keys, immutable copies) (wake_input/)
+  **************************************************/
+
+  public WakeInputFile wakeinputfile_by_id(String id, boolean create) {
+    Value v = storage.get("wake_input/" + id);
+    if (v == null && !create) {
+      return null;
+    }
+    WakeInputFile result = wakeinputfile_of(v);
+    result.set("id", id);
+    return result;
+  }
+
+  private WakeInputFile wakeinputfile_of(Value v) {
+    WakeInputFile item = new WakeInputFile();
+    if (v != null) {
+      item.injectValue(v);
+    }
+    return item;
+  }
+
+  private ArrayList<WakeInputFile> wakeinputfiles_of(ArrayList<Value> values) {
+    ArrayList<WakeInputFile> list = new ArrayList<>(values.size());
+    for (Value v : values) {
+      list.add(wakeinputfile_of(v));
+    }
+    return list;
+  }
+
+  public String make_key_wakeinputfile(String id) {
+    StringBuilder key = new StringBuilder();
+    key.append("wake_input/");
+    key.append(id);
+    return key.toString();
+}
+
+  /**************************************************
   Indexing (cart/)
   **************************************************/
 
@@ -644,6 +683,10 @@ public class QueryEngine {
 
   /**************************************************
   Indexing (subscription/)
+  **************************************************/
+
+  /**************************************************
+  Indexing (wake_input/)
   **************************************************/
 
   /**************************************************
@@ -2344,6 +2387,129 @@ public class QueryEngine {
   }
 
   /**************************************************
+  Query Engine (wake_input/)
+  **************************************************/
+
+  public WakeInputFileSetQuery select_wakeinputfile() {
+    return new WakeInputFileSetQuery();
+  }
+
+  public class WakeInputFileListHolder {
+    private final ArrayList<WakeInputFile> list;
+
+    private WakeInputFileListHolder(HashSet<String> keys, String scope) {
+      if (keys == null) {
+        this.list = wakeinputfiles_of(fetch_all("wake_input/" + scope));
+      } else {
+        this.list = wakeinputfiles_of(fetch(keys));
+      }
+    }
+
+    private WakeInputFileListHolder(ArrayList<WakeInputFile> list) {
+      this.list = list;
+    }
+
+    public WakeInputFileListHolder inline_filter(Predicate<WakeInputFile> filter) {
+      Iterator<WakeInputFile> it = list.iterator();
+      while (it.hasNext()) {
+        if (filter.test(it.next())) {
+          it.remove();
+        }
+      }
+      return this;
+    }
+
+    public WakeInputFileListHolder limit(int count) {
+      Iterator<WakeInputFile> it = list.iterator();
+      int at = 0;
+      while (it.hasNext()) {
+        it.next();
+        if (at >= count) {
+          it.remove();
+        }
+        at++;
+      }
+      return this;
+    }
+
+    public WakeInputFileListHolder inline_apply(Consumer<WakeInputFile> consumer) {
+      Iterator<WakeInputFile> it = list.iterator();
+      while (it.hasNext()) {
+        consumer.accept(it.next());
+      }
+      return this;
+    }
+
+    public WakeInputFileListHolder fork() {
+      return new WakeInputFileListHolder(this.list);
+    }
+
+    public WakeInputFileListHolder inline_order_lexographically_asc_by(String... keys) {
+      Collections.sort(this.list, new LexographicalOrder<WakeInputFile>(keys, true, true));
+      return this;
+    }
+
+    public WakeInputFileListHolder inline_order_lexographically_desc_by(String... keys) {
+      Collections.sort(this.list, new LexographicalOrder<WakeInputFile>(keys, false, true));
+      return this;
+    }
+
+    public WakeInputFileListHolder inline_order_lexographically_by(boolean asc, boolean caseSensitive, String... keys) {
+      Collections.sort(this.list, new LexographicalOrder<WakeInputFile>(keys, asc, caseSensitive));
+      return this;
+    }
+
+    public WakeInputFileListHolder inline_order_by(Comparator<WakeInputFile> comparator) {
+      Collections.sort(this.list, comparator);
+      return this;
+    }
+
+    public int count() {
+      return this.list.size();
+    }
+    public WakeInputFile first() {
+      if (this.list.size() == 0) {
+        return null;
+      }
+      return this.list.get(0);
+    }
+    public ArrayList<WakeInputFile> done() {
+      return this.list;
+    }
+  }
+
+  public class WakeInputFileSetQuery {
+    private String scope;
+    private HashSet<String> keys;
+
+    private WakeInputFileSetQuery() {
+      this.scope = "";
+      this.keys = null;
+    }
+
+    public WakeInputFileListHolder to_list() {
+      return new WakeInputFileListHolder(this.keys, this.scope);
+    }
+
+    public ArrayList<WakeInputFile> done() {
+      return new WakeInputFileListHolder(this.keys, this.scope).done();
+    }
+
+    public int count() {
+      if (this.keys == null) {
+        return to_list().count();
+      } else {
+        return this.keys.size();
+      }
+    }
+
+    public WakeInputFileSetQuery scope(String scope) {
+      this.scope += scope + "/";
+      return this;
+    }
+  }
+
+  /**************************************************
   Projects (cart/)
   **************************************************/
 
@@ -2776,6 +2942,31 @@ public class QueryEngine {
 
   public SubscriptionProjection_admin projection_subscription_admin_of(ProjectionProvider pp) {
     return new SubscriptionProjection_admin(pp);
+  }
+
+
+  /**************************************************
+  Projects (wake_input/)
+  **************************************************/
+
+  public class WakeInputFileProjection_admin {
+    private final HashMap<String, String> data;
+    
+    public WakeInputFileProjection_admin(ProjectionProvider pp) {
+      this.data = new HashMap<String, String>();
+      this.data.put("id", farm.bsg.data.types.TypeUUID.project(pp, "id"));
+      this.data.put("__token", farm.bsg.data.types.TypeString.project(pp, "__token"));
+      this.data.put("filename", farm.bsg.data.types.TypeString.project(pp, "filename"));
+      this.data.put("body", farm.bsg.data.types.TypeBytesInBase64.project(pp, "body"));
+    }
+
+    public PutResult apply(WakeInputFile wakeinputfile) {
+      return wakeinputfile.validateAndApplyProjection(this.data);
+    }
+  }
+
+  public WakeInputFileProjection_admin projection_wakeinputfile_admin_of(ProjectionProvider pp) {
+    return new WakeInputFileProjection_admin(pp);
   }
 
 }

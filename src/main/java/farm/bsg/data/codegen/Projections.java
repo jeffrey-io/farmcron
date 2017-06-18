@@ -4,12 +4,12 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.TreeSet;
 
-import farm.bsg.data.RawObject;
+import farm.bsg.data.ObjectSchema;
 import farm.bsg.data.Type;
 import farm.bsg.data.contracts.ProjectionProvider;
 
 public class Projections {
-    public static void write(ArrayList<String> lines, String name, RawObject object) {
+    public static void write(ArrayList<String> lines, String name, ObjectSchema object) {
 
         TreeSet<String> projections = new TreeSet<>();
         for (Type type : object.getTypes()) {

@@ -25,6 +25,7 @@ public abstract class RawObject {
     private final HashMap<String, String> data;
     private final ObjectSchema            schema;
 
+    @Deprecated
     public RawObject(String prefix, Type... types) {
         this(new ObjectSchema(prefix, types));
     }
@@ -53,7 +54,7 @@ public abstract class RawObject {
     public String getStorageKey() {
         return getPrefix() + getId();
     }
-
+    
     public List<Type> getTypes() {
         return schema.getTypes();
     }

@@ -1,12 +1,13 @@
 package farm.bsg.data.codegen;
 
 import java.util.ArrayList;
-import farm.bsg.data.RawObject;
+
+import farm.bsg.data.ObjectSchema;
 import farm.bsg.data.Type;
 
 public class StackQueryEngine {
 
-    public static void write(ArrayList<String> lines, String name, RawObject object) {
+    public static void write(ArrayList<String> lines, String name, ObjectSchema object) {
         String keyIndexPrefix = name.toLowerCase() + "_";
         lines.add("");
         lines.add("  public " + name + "SetQuery select_" + name.toLowerCase() + "() {");

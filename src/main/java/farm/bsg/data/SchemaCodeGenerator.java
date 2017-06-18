@@ -15,9 +15,10 @@ import farm.bsg.data.codegen.TypeTransfer;
 
 public class SchemaCodeGenerator {
 
-    private final TreeMap<String, RawObject> schemas;
+    private final TreeMap<String, ObjectSchema> schemas;
     private String                           javaPackage;
     private String                           className;
+    private Imports imports = new Imports();
 
     public SchemaCodeGenerator(String javaPackage, String className) {
         this.schemas = new TreeMap<>();
@@ -26,18 +27,13 @@ public class SchemaCodeGenerator {
     }
 
     public <T extends RawObject> void addSample(T object) {
-        schemas.put(object.getClass().getSimpleName(), object);
+        imports.add(object.getClass().getName());
+        schemas.put(object.getClass().getSimpleName(), object.getSchema());
     }
 
     private void writeClassIntro(ArrayList<String> lines) {
         lines.add("package " + javaPackage + ";");
-
-        Imports imports = new Imports();
-        for (Entry<String, RawObject> entry : schemas.entrySet()) {
-            imports.add(entry.getValue().getClass().getName());
-        }
         imports.write(lines);
-
         lines.add("/****************************************************************");
         lines.add("WARNING: Generated");
         lines.add("This class is a generated database query engine that provides an");
@@ -48,7 +44,7 @@ public class SchemaCodeGenerator {
 
     private void writeClassFields(ArrayList<String> lines) {
         lines.add("  public final MultiPrefixLogger indexing;");
-        for (Entry<String, RawObject> entry : schemas.entrySet()) {
+        for (Entry<String, ObjectSchema> entry : schemas.entrySet()) {
             IndexingEngine.writeFields(lines, entry.getKey(), entry.getValue());
         }
         lines.add("  public final StorageEngine storage;");
@@ -59,7 +55,7 @@ public class SchemaCodeGenerator {
         lines.add("  public " + className + "(PersistenceLogger persistence) throws Exception {");
         lines.add("    InMemoryStorage memory = new InMemoryStorage();");
         lines.add("    this.indexing = new MultiPrefixLogger();");
-        for (Entry<String, RawObject> entry : schemas.entrySet()) {
+        for (Entry<String, ObjectSchema> entry : schemas.entrySet()) {
             IndexingEngine.writeConstructor(lines, entry.getKey(), entry.getValue());
         }
         lines.add("    this.storage = new StorageEngine(memory, indexing, persistence);");
@@ -75,7 +71,7 @@ public class SchemaCodeGenerator {
         return sb.toString();
     }
 
-    private void section(ArrayList<String> lines, String title, RawObject sample) {
+    private void section(ArrayList<String> lines, String title, ObjectSchema sample) {
         lines.add("");
         lines.add("  /**************************************************");
         lines.add("  " + title + " (" + sample.getPrefix() + ")");
@@ -88,24 +84,24 @@ public class SchemaCodeGenerator {
         writeClassFields(lines);
         writeConstructor(lines);
         Helpers.write(lines);
-        for (Entry<String, RawObject> entry : schemas.entrySet()) {
+        for (Entry<String, ObjectSchema> entry : schemas.entrySet()) {
             section(lines, "Basic Operations (look up, type transfer, keys, immutable copies)", entry.getValue());
             Lookups.write(lines, entry.getKey(), entry.getValue());
             TypeTransfer.write(lines, entry.getKey(), entry.getValue());
             KeyFactory.write(lines, entry.getKey(), entry.getValue());
         }
 
-        for (Entry<String, RawObject> entry : schemas.entrySet()) {
+        for (Entry<String, ObjectSchema> entry : schemas.entrySet()) {
             section(lines, "Indexing", entry.getValue());
             IndexingEngine.write(lines, entry.getKey(), entry.getValue());
         }
 
-        for (Entry<String, RawObject> entry : schemas.entrySet()) {
+        for (Entry<String, ObjectSchema> entry : schemas.entrySet()) {
             section(lines, "Query Engine", entry.getValue());
             StackQueryEngine.write(lines, entry.getKey(), entry.getValue());
         }
 
-        for (Entry<String, RawObject> entry : schemas.entrySet()) {
+        for (Entry<String, ObjectSchema> entry : schemas.entrySet()) {
             section(lines, "Projects", entry.getValue());
             Projections.write(lines, entry.getKey(), entry.getValue());
         }

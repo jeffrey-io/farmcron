@@ -11,6 +11,7 @@ public class ObjectSchema {
     private final String                prefix;
     private final List<Type>            typesInOrder;
     private final HashMap<String, Type> schema;
+    private final List<String> dirtyBitIndicesJavaTypes;
 
     public ObjectSchema(String prefix, Type... types) {
         this.prefix = prefix;
@@ -33,10 +34,20 @@ public class ObjectSchema {
             schema.put(t.name(), t);
         }
         this.typesInOrder = Collections.unmodifiableList(orderedTypes);
+        this.dirtyBitIndicesJavaTypes = new ArrayList<>();
+    }
+    
+    public ObjectSchema dirty(String javaClass) {
+        this.dirtyBitIndicesJavaTypes.add(javaClass);
+        return this;
     }
 
     public String getPrefix() {
         return prefix;
+    }
+    
+    public List<String> getDirtyBitIndicesJavaTypes() {
+        return Collections.unmodifiableList(dirtyBitIndicesJavaTypes);
     }
 
     public synchronized List<Type> getTypes() {
