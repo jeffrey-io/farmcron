@@ -25,11 +25,6 @@ public abstract class RawObject {
     private final HashMap<String, String> data;
     private final ObjectSchema            schema;
 
-    @Deprecated
-    public RawObject(String prefix, Type... types) {
-        this(new ObjectSchema(prefix, types));
-    }
-
     public RawObject(ObjectSchema schema) {
         this.schema = schema;
         this.data = new HashMap<>();

@@ -9,14 +9,17 @@ import org.junit.Assert;
 
 public class LexographicalOrderTest {
 
+    
+    
     @Test
     public void CompareString() {
-        RawObject a = new RawObject("x/", Field.STRING("key")) {
+        ObjectSchema schema = new ObjectSchema("x/", Field.STRING("key"));
+        RawObject a = new RawObject(schema) {
             @Override
             protected void invalidateCache() {
             }
         };
-        RawObject b = new RawObject("x/", Field.STRING("key")) {
+        RawObject b = new RawObject(schema) {
             @Override
             protected void invalidateCache() {
             }
