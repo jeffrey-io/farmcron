@@ -73,7 +73,7 @@ public class Server {
 
         LOG.info("mapping style.css");
         expose("style.css");
-
+        
         LOG.info("mapping favicon.ico");
         favicon();
 
@@ -137,6 +137,8 @@ public class Server {
         final String contentType;
         if (name.endsWith(".css")) {
             contentType = mimeCss;
+        } else if (name.endsWith(".js")) {
+            contentType = "text/javascript";
         } else {
             contentType = "";
         }

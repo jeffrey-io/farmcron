@@ -10,7 +10,9 @@ import farm.bsg.ops.CounterCodeGen;
 public class WakeInputFile extends RawObject {
 
     public static ObjectSchema SCHEMA = new ObjectSchema("wake_input/", //
-            Field.STRING("filename"), // -
+            Field.STRING("filename").makeIndex(true), // -
+            Field.STRING("content_type"), // -
+            Field.STRING("description"), // -
             Field.BYTESB64("contents") // -
     ).dirty("farm.bsg.models.WakeInputFile.DirtyWakeInputFile");
 
