@@ -24,7 +24,7 @@ public class Site extends SessionPage {
         StringBuilder sb = new StringBuilder();
         if (session.hasNonNullQueryParam("commit")) {
             if (has(Permission.EditSiteProperties)) {
-                session.engine.save(properties);
+                query().put(properties);
             } else {
                 sb.append("Unable to save");
                 // handle error

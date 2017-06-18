@@ -13,6 +13,7 @@ public class ObjectSchema {
     private final HashMap<String, Type> schema;
     private final List<String> dirtyBitIndicesJavaTypes;
     public final boolean singleton;
+    public final boolean ephemeral;
     
     public static class Properties {
         public final String prefix;
@@ -47,6 +48,7 @@ public class ObjectSchema {
     private ObjectSchema(Properties properties, Type... types) {
         this.prefix = properties.prefix;
         this.singleton = properties.singleton;
+        this.ephemeral = properties.ephemeral;
 
         this.schema = new HashMap<String, Type>();
         ArrayList<Type> orderedTypes = new ArrayList<>();
@@ -72,6 +74,10 @@ public class ObjectSchema {
     
     public boolean isSingleton() {
         return singleton;
+    }
+    
+    public boolean isEphemeral() {
+        return ephemeral;
     }
     
     public ObjectSchema dirty(String javaClass) {

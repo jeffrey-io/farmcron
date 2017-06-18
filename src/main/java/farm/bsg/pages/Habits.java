@@ -103,7 +103,7 @@ public class Habits extends SessionPage {
             }
             Habit habit = query().habit_by_id(id, false);
             habit.importValuesFromReqeust(session, k + "_");
-            engine.save(habit);
+            engine.put(habit);
             k++;
         }
         session.redirect("/habits-timeline");
@@ -212,9 +212,9 @@ public class Habits extends SessionPage {
     public String commit() {
         Habit habit = pullHabit();
         if  (habit.isNullOrEmpty("name")) {
-            session.engine.remove(habit);
+            query().del(habit);
         } else {
-            session.engine.save(habit);
+            query().put(habit);
         }
         
         redirect("/habits-all");
@@ -247,7 +247,7 @@ public class Habits extends SessionPage {
                 habit.set("last_arg_given", arg);
             }
             habit.set("history", Jackson.toJsonString(history));
-            session.engine.save(habit);
+            session.engine.put(habit);
             redirect("/habits");
             return null;
         }

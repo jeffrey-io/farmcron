@@ -84,7 +84,7 @@ public class You extends SessionPage {
             person.set("notification_token", Hex.encodeHexString(token).toLowerCase());
         }
         redirect("/you");
-        session.engine.save(person);
+        query().put(person);
         return null;
     }
 
@@ -95,7 +95,7 @@ public class You extends SessionPage {
         } else {
             person.set("super_cookie", makeSuperCookie(person));
         }
-        session.engine.save(person);
+        query().put(person);
         redirect("/you");
         return null;
     }
@@ -158,7 +158,7 @@ public class You extends SessionPage {
 
         if (new_password_1.equals(new_password_2)) {
             person.setPassword(new_password_1);
-            if (session.engine.save(person)) {
+            if (query().put(person).success()) {
                 person.sync(session.engine);
                 return true;
             }
@@ -196,11 +196,15 @@ public class You extends SessionPage {
                 if (person != null) {
                     LOG.info("recieved request associated!");
                     person.set("notification_uri", text.getNotificationUri());
-                    engine.save(person);
+                    if (engine.put(person).success()) {
+                        return text.generateResponse("Linked");
+                    } else {
+                        return text.generateResponse("Failed to write");
+                    }
                 } else {
                     LOG.info("was unable to find notification token: " + token);
+                    return text.generateResponse("Failed to find notification token");
                 }
-                return text.generateResponse("Linked");
             }
 
             return null;

@@ -70,7 +70,7 @@ public class Events extends SessionPage {
 
     public String commit() {
         Event event = pullEvent();
-        session.engine.save(event);
+        session.engine.put(event);
         redirect("/events");
         return null;
     }

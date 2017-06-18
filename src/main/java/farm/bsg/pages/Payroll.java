@@ -164,7 +164,7 @@ public class Payroll extends SessionPage {
             payroll.set("id", id);
             if (payroll.executeBenefits(person(), dMonth)) {
                 if (payroll.getOwed() > 0) {
-                    session.engine.save(payroll);
+                    session.engine.put(payroll);
                     return true;
                 }
             }

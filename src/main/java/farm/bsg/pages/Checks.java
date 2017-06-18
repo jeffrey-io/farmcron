@@ -170,19 +170,19 @@ public class Checks extends SessionPage {
         if (checksum == expected) {
             // create the check, so it exists
             Check check = makeCheck(employee, checksum);
-            session.engine.save(check);
+            session.engine.put(check);
 
             // associate the entries to the check
             for (PayrollEntry payrollEntry : entries) {
                 payrollEntry.set("check", check.getId());
                 payrollEntry.set("unpaid", "not_" + check.getId());
-                session.engine.save(payrollEntry);
+                session.engine.put(payrollEntry);
             }
 
             // commit the check to being ready
             check.set("ready", "yes");
             check.set("payment", owed);
-            session.engine.save(check);
+            query().put(check);
 
             // populate the check
             redirect("/check-view?id=" + check.getId());

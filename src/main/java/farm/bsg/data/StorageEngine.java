@@ -36,6 +36,10 @@ public class StorageEngine {
     }
 
     public synchronized PutResult put(String key, Value value) {
+        return put(key, value, false);
+    }
+    
+    public synchronized PutResult put(String key, Value value, boolean ephemeral) {
         PutResult result = new PutResult();
         Value prior = memory.get(key);
         // make sure the write is sane with respect to the indexing
@@ -43,12 +47,18 @@ public class StorageEngine {
         // the validation was successful, let's proceed
         if (result.success()) {
             // assume it is valid, now, let's replicate it out
-            if (persistence.put(key, value)) {
-                // local storage should always work
+            if (ephemeral) {
+                // only store in memory
                 memory.put(key, value);
                 logger.put(key, prior, value);
             } else {
-                result.setFailedStorage();
+                if (persistence.put(key, value)) {
+                    // local storage should always work
+                    memory.put(key, value);
+                    logger.put(key, prior, value);
+                } else {
+                    result.setFailedStorage();
+                }
             }
         }
         return result;

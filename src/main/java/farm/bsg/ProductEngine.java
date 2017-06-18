@@ -1,9 +1,6 @@
 package farm.bsg;
 
 import farm.bsg.data.Authenticator;
-import farm.bsg.data.PutResult;
-import farm.bsg.data.RawObject;
-import farm.bsg.data.Value;
 import farm.bsg.data.contracts.PersistenceLogger;
 import farm.bsg.html.shit.GenericTemplate;
 import farm.bsg.pages.common.NavBar;
@@ -23,17 +20,5 @@ public class ProductEngine extends QueryEngine {
         this.alexa = new AlexaCommands(this);
 
         this.template = new GenericTemplate(pageTemplate);
-    }
-
-    public boolean save(RawObject o) {
-        String key = o.getStorageKey();
-        PutResult result = storage.put(key, new Value(o.toJson()));
-        return result.success();
-    }
-    
-    public boolean remove(RawObject o) {
-        String key = o.getStorageKey();
-        PutResult result = storage.put(key, null);
-        return result.success();
     }
 }

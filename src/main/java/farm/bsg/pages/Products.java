@@ -53,7 +53,7 @@ public class Products extends SessionPage {
     
     public String commit() {
         Product product = pullProduct();
-        engine.save(product);
+        engine.put(product);
         redirect("/products");
         return null;
     }

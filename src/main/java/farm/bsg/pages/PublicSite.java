@@ -8,7 +8,6 @@ import farm.bsg.Security.Permission;
 import farm.bsg.html.Block;
 import farm.bsg.html.Html;
 import farm.bsg.html.Table;
-import farm.bsg.models.Product;
 import farm.bsg.models.WakeInputFile;
 import farm.bsg.ops.CounterCodeGen;
 import farm.bsg.pages.common.AnonymousPage;
@@ -142,7 +141,7 @@ public class PublicSite {
         public String update_wake_file() {
             WakeInputFile file = query().wakeinputfile_by_id(session.getParam("id"), false);
             file.importValuesFromReqeust(session, "");
-            engine.save(file);
+            engine.put(file);
             redirect("/public");
             return null;
         }
@@ -151,7 +150,7 @@ public class PublicSite {
             WakeInputFile file = new WakeInputFile();
             file.generateAndSetId();
             file.importValuesFromReqeust(session, "");
-            engine.save(file);
+            engine.put(file);
             redirect("/public");
             return null;
         }

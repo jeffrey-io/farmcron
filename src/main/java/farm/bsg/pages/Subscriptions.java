@@ -157,7 +157,7 @@ public class Subscriptions extends SessionPage {
             subscriber.set("destination", "");
             subscriber.set("subscription", id);
             subscriber.set("debug", "{}");
-            session.engine.save(subscriber);
+            query().put(subscriber);
         }
         redirect("/subscription-view?id=" + id);
         return null;
@@ -176,7 +176,7 @@ public class Subscriptions extends SessionPage {
 
     public String commit() {
         Subscription sub = pullSubscription();
-        session.engine.save(sub);
+        query().put(sub);
         redirect("/subscriptions");
         return null;
     }
@@ -200,11 +200,13 @@ public class Subscriptions extends SessionPage {
                 sub.set("destination", message.to);
                 sub.set("subscription", result.winner.getId());
                 sub.set("debug", message.debug);
-                engine.save(sub);
+                engine.put(sub);
             }
             if (result.action == Action.Unsubscribe) {
-                String key = "subscriber/" + id;
-                engine.storage.put(key, null);
+                Subscriber sub = engine.subscriber_by_id(id, false);
+                if (sub != null) {
+                  engine.del(sub);
+                }
             }
             return message.generateResponse(result.response);
         });
