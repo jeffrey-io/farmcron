@@ -14,6 +14,11 @@ public class DelegateRequest implements RequestResponseWrapper, ProjectionProvid
     public DelegateRequest(RequestResponseWrapper delegate) {
         this.delegate = delegate;
     }
+    
+    @Override
+    public String getURI() {
+        return delegate.getURI();
+    }
 
     @Override
     public String getParam(String key) {

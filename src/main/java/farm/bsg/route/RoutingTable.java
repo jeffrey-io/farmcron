@@ -60,4 +60,15 @@ public abstract class RoutingTable {
         get(path, route);
         post(path, route);
     }
+    
+    public abstract void public_get(String path, AnonymousRoute route);
+
+    public abstract void public_post(String path, AnonymousRoute route);
+
+    public abstract void set_404(AnonymousRoute route);
+    
+    public void public_get_or_post(String path, AnonymousRoute route) {
+        public_get(path, route);
+        public_post(path, route);
+    }
 }

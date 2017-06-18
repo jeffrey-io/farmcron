@@ -9,6 +9,8 @@ import com.amazonaws.util.json.Jackson;
 
 import farm.bsg.ProductEngine;
 import farm.bsg.ops.Logs;
+import farm.bsg.route.AnonymousRequest;
+import farm.bsg.route.AnonymousRoute;
 import farm.bsg.route.MultiTenantRouter;
 import farm.bsg.route.RoutingTable;
 import farm.bsg.route.SessionRequest;
@@ -108,6 +110,40 @@ public class SparkRouting extends RoutingTable {
             }
         });
     }
+    
+
+    @Override
+    public void public_post(String path, AnonymousRoute route) {
+        spark.Spark.post(path, (req, res) -> {
+            try {
+                log(req);
+                ProductEngine engine = engineOf(req);
+                SparkBox sparked = new SparkBox(req, res, secure);
+                AnonymousRequest anonymousRequest = new AnonymousRequest(engine, sparked);
+                log(anonymousRequest);
+                return route.handle(anonymousRequest);
+            } catch (Exception err) {
+                return exceptionalize(err);
+            }
+        });
+    }
+
+    @Override
+    public void public_get(String path, AnonymousRoute route) {
+        spark.Spark.get(path, (req, res) -> {
+            try {
+                log(req);
+                ProductEngine engine = engineOf(req);
+                SparkBox sparked = new SparkBox(req, res, secure);
+                AnonymousRequest anonymousRequest = new AnonymousRequest(engine, sparked);
+                log(anonymousRequest);
+                return route.handle(anonymousRequest);
+            } catch (Exception err) {
+                return exceptionalize(err);
+
+            }
+        });
+    }    
 
     private void log(Request req) {
         LOG.info("access host:{} uri:{} method:{}", req.headers("Host"), req.uri(), req.requestMethod());
@@ -117,4 +153,24 @@ public class SparkRouting extends RoutingTable {
         LOG.info("session person:{}", session.getPerson().get("login"));
     }
 
+    private void log(AnonymousRequest session) {
+        LOG.info("anonymous!");
+    }
+    
+    @Override
+    public void set_404(AnonymousRoute route) {
+        spark.Spark.notFound((req, res) -> {
+            try {
+                log(req);
+                ProductEngine engine = engineOf(req);
+                SparkBox sparked = new SparkBox(req, res, secure);
+                AnonymousRequest anonymousRequest = new AnonymousRequest(engine, sparked);
+                log(anonymousRequest);
+                return route.handle(anonymousRequest);
+            } catch (Exception err) {
+                return exceptionalize(err);
+
+            }
+        });
+    }
 }

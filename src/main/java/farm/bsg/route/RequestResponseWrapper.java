@@ -6,6 +6,11 @@ package farm.bsg.route;
  * @author jeffrey
  */
 public interface RequestResponseWrapper {
+    
+    /**
+     * @return the full uri of the request
+     */
+    public String getURI();
 
     /**
      * @return a single query parameter

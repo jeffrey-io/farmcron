@@ -19,10 +19,8 @@ public class SessionRequest extends DelegateRequest {
      * 
      * @param engine
      *            the engine powering the data
-     * @param req
-     *            the spark request
-     * @param res
-     *            the spark response
+     * @param delegate
+     *            the request and response wrapper
      */
     public SessionRequest(ProductEngine engine, RequestResponseWrapper delegate) {
         super(delegate);

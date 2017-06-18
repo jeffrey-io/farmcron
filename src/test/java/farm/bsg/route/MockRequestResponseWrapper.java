@@ -4,6 +4,7 @@ import java.util.HashMap;
 
 public class MockRequestResponseWrapper implements RequestResponseWrapper {
 
+    public String uri;
     public final HashMap<String, String> params;
     public final HashMap<String, String> cookies;
     private String                       redirected = null;
@@ -11,6 +12,11 @@ public class MockRequestResponseWrapper implements RequestResponseWrapper {
     public MockRequestResponseWrapper() {
         this.params = new HashMap<>();
         this.cookies = new HashMap<>();
+    }
+    
+    @Override
+    public String getURI() {
+        return uri;
     }
 
     @Override

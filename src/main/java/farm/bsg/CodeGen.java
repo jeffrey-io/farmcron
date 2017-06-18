@@ -25,6 +25,7 @@ import farm.bsg.pages.Habits;
 import farm.bsg.pages.Payroll;
 import farm.bsg.pages.People;
 import farm.bsg.pages.Products;
+import farm.bsg.pages.PublicSite;
 import farm.bsg.pages.SignIn;
 import farm.bsg.pages.Site;
 import farm.bsg.pages.Subscriptions;
@@ -99,6 +100,7 @@ public class CodeGen {
         Payroll.link(c);
         People.link(c);
         Products.link(c);
+        PublicSite.link(c);
         SignIn.link(c);
         Site.link(c);
         Subscriptions.link(c);

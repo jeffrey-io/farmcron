@@ -14,6 +14,11 @@ public class SparkBox implements RequestResponseWrapper {
         this.response = response;
         this.secure = secure;
     }
+    
+    @Override
+    public String getURI() {
+        return request.uri();
+    }
 
     @Override
     public String getParam(String key) {
