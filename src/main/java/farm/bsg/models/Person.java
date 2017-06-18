@@ -13,7 +13,7 @@ import org.joda.time.DateTime;
 import farm.bsg.data.RawObject;
 import farm.bsg.data.Value;
 import farm.bsg.ops.CounterCodeGen;
-import farm.bsg.ProductEngine;
+import farm.bsg.QueryEngine;
 import farm.bsg.Security;
 import farm.bsg.Security.Permission;
 import farm.bsg.data.Authenticator;
@@ -56,7 +56,7 @@ public class Person extends RawObject {
 
     private final HashSet<Permission> permissions;
 
-    public void sync(ProductEngine engine) {
+    public void sync(QueryEngine engine) {
         Value v = engine.storage.get(getStorageKey());
         injectValue(v);
         permissions.clear();

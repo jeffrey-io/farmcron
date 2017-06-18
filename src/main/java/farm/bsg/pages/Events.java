@@ -3,7 +3,7 @@ package farm.bsg.pages;
 import java.util.List;
 import java.util.UUID;
 
-import farm.bsg.ProductEngine;
+import farm.bsg.QueryEngine;
 import farm.bsg.Security.Permission;
 import farm.bsg.html.Table;
 import farm.bsg.html.shit.ObjectModelForm;
@@ -18,7 +18,7 @@ public class Events extends SessionPage {
         super(session, "/events");
     }
 
-    public static List<Event> getEvents(ProductEngine engine) {
+    public static List<Event> getEvents(QueryEngine engine) {
         return engine.select_event().to_list().done();
     }
 
@@ -26,7 +26,7 @@ public class Events extends SessionPage {
         StringBuilder sb = new StringBuilder();
         sb.append("<h5>All Events</h5>");
         Table table = new Table("Name", "When", "Actions");
-        List<Event> events = Events.getEvents(session.engine);
+        List<Event> events = Events.getEvents(query());
 
         for (Event event : events) {
             String actions = "<a class=\"btn btn-secondary\" href=\"/event-edit?id=" + event.get("id") + "\">edit</a>";
@@ -70,7 +70,7 @@ public class Events extends SessionPage {
 
     public String commit() {
         Event event = pullEvent();
-        session.engine.put(event);
+        query().put(event);
         redirect("/events");
         return null;
     }

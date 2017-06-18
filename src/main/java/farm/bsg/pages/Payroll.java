@@ -69,7 +69,7 @@ public class Payroll extends SessionPage {
         String label = "Report";
         int attempt = 1;
         while (true) {
-            PayrollEntry entry = session.engine.payrollentry_by_id(payrollId, false);
+            PayrollEntry entry = query().payrollentry_by_id(payrollId, false);
             if (entry == null) {
                 return Html.link("/payroll-wizard?id=" + payrollId, label + " Payroll (" + fiscalDay + ")").btn_primary();
             } else {
@@ -92,7 +92,7 @@ public class Payroll extends SessionPage {
         Block page = Html.block();
 
         page.add(Html.wrapped().h5().wrap("Unpaid Work"));
-        List<PayrollEntry> unpaid = session.engine.select_payrollentry() //
+        List<PayrollEntry> unpaid = query().select_payrollentry() //
                 .where_unpaid_eq(person().getId()) //
                 .to_list() //
                 .inline_order_lexographically_asc_by("reported") //
@@ -127,7 +127,7 @@ public class Payroll extends SessionPage {
     private boolean isMonthlyBenefitAvailable(int dMonth) {
         String id = person().getId() + ";benefits_for_" + person().getFutureMonth(dMonth);
         String key = "payroll/" + id;
-        Value v = session.engine.storage.get(key);
+        Value v = query().storage.get(key);
         return v == null;
     }
     
@@ -158,13 +158,13 @@ public class Payroll extends SessionPage {
         }
         String id = person().getId() + ";benefits_for_" + person().getFutureMonth(dMonth);
         String key = "payroll/" + id;
-        Value v = session.engine.storage.get(key);
+        Value v = query().storage.get(key);
         if (v == null) {
             PayrollEntry payroll = new PayrollEntry();
             payroll.set("id", id);
             if (payroll.executeBenefits(person(), dMonth)) {
                 if (payroll.getOwed() > 0) {
-                    session.engine.put(payroll);
+                    query().put(payroll);
                     return true;
                 }
             }
@@ -190,7 +190,7 @@ public class Payroll extends SessionPage {
         if (payroll.getOwed() > 0.01) {
             commitValue = new Value(payroll.toJson());
         }
-        session.engine.storage.put("payroll/" + payroll.get("id"), commitValue);
+        query().storage.put("payroll/" + payroll.get("id"), commitValue);
         redirect("/payroll");
         return null;
 

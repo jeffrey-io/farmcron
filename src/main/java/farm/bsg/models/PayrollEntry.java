@@ -3,7 +3,7 @@ package farm.bsg.models;
 import farm.bsg.data.RawObject;
 import farm.bsg.ops.CounterCodeGen;
 import java.util.List;
-import farm.bsg.ProductEngine;
+import farm.bsg.QueryEngine;
 import farm.bsg.data.Field;
 import farm.bsg.data.ObjectSchema;
 
@@ -103,7 +103,7 @@ public class PayrollEntry extends RawObject {
         sharedNormalize(person);
     }
 
-    public static List<PayrollEntry> getUnpaidEntries(ProductEngine engine, String id) {
+    public static List<PayrollEntry> getUnpaidEntries(QueryEngine engine, String id) {
         return engine.select_payrollentry().where_unpaid_eq(id).to_list().inline_order_lexographically_asc_by("reported").done();
     }
 

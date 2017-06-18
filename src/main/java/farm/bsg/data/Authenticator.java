@@ -9,7 +9,7 @@ import javax.crypto.spec.PBEKeySpec;
 
 import org.apache.commons.codec.binary.Hex;
 
-import farm.bsg.ProductEngine;
+import farm.bsg.QueryEngine;
 import farm.bsg.models.Person;
 
 /**
@@ -18,10 +18,10 @@ import farm.bsg.models.Person;
  * @author jeffrey
  */
 public class Authenticator {
-    private final ProductEngine               engine;
+    private final QueryEngine                 engine;
     private final HashMap<String, AuthResult> cookieCache;
 
-    public Authenticator(ProductEngine engine) {
+    public Authenticator(QueryEngine engine) {
         this.engine = engine;
         this.cookieCache = new HashMap<String, Authenticator.AuthResult>();
     }

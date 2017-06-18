@@ -3,7 +3,7 @@ package farm.bsg.pages;
 import java.util.List;
 import java.util.UUID;
 
-import farm.bsg.ProductEngine;
+import farm.bsg.QueryEngine;
 import farm.bsg.Security.Permission;
 import farm.bsg.html.Html;
 import farm.bsg.html.Table;
@@ -21,7 +21,7 @@ public class Subscriptions extends SessionPage {
         super(session, "/subscriptions");
     }
 
-    public static List<Subscription> getSubscriptions(ProductEngine engine) {
+    public static List<Subscription> getSubscriptions(QueryEngine engine) {
         return engine.select_subscription().to_list().done();
     }
 
@@ -48,7 +48,7 @@ public class Subscriptions extends SessionPage {
         }
     }
 
-    public static Result evaluate(ProductEngine engine, String text) {
+    public static Result evaluate(QueryEngine engine, String text) {
         String normalizedText = EnglishKeywordNormalizer.normalize(text);
         for (Subscription subscription : getSubscriptions(engine)) {
             String sub = EnglishKeywordNormalizer.normalize(subscription.get("subscribe_keyword"));
@@ -67,7 +67,7 @@ public class Subscriptions extends SessionPage {
         StringBuilder sb = new StringBuilder();
         sb.append("<h5>All Subscriptions</h5>");
         Table table = new Table("Name", "Actions");
-        List<Subscription> subs = Subscriptions.getSubscriptions(session.engine);
+        List<Subscription> subs = Subscriptions.getSubscriptions(query());
         for (Subscription sub : subs) {
             String actions = "<a class=\"btn btn-secondary\" href=\"/subscription-edit?id=" + sub.get("id") + "\">edit</a>";
             actions += "<a class=\"btn btn-secondary\" href=\"/subscription-view?id=" + sub.get("id") + "\">view</a>";
@@ -92,7 +92,7 @@ public class Subscriptions extends SessionPage {
         sb.append("<input type=\"submit\"></form>");
         if (message != null) {
             sb.append("<hr />");
-            Result result = Subscriptions.evaluate(session.engine, message);
+            Result result = Subscriptions.evaluate(query(), message);
 
             if (result == null) {
                 sb.append("<strong>The robot did not understand</strong>");
@@ -141,7 +141,7 @@ public class Subscriptions extends SessionPage {
 
         Subscriber subscriber = new Subscriber();
         subscriber.set("id", id + "/" + source + ";" + from);
-        session.engine.storage.put(subscriber.getStorageKey(), null);
+        query().storage.put(subscriber.getStorageKey(), null);
         redirect("/subscription-view?id=" + id);
         return null;
     }

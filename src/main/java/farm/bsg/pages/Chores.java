@@ -8,7 +8,6 @@ import org.joda.time.DateTime;
 import farm.bsg.Security.Permission;
 import farm.bsg.data.PutResult;
 import farm.bsg.data.RawObject;
-import farm.bsg.data.Value;
 import farm.bsg.data.types.TypeDayFilter;
 import farm.bsg.data.types.TypeMonthFilter;
 import farm.bsg.html.Block;
@@ -194,9 +193,9 @@ public class Chores extends SessionPage {
             PutResult put = query().projection_chore_edit_of(session).apply(chore);
             if (put.success()) {
                 if (chore.getAsInt("frequency") == 0) { // TOOD; this is a terrible UI
-                    session.engine.storage.put(chore.getStorageKey(), null);
+                    query().del(chore);
                 } else {
-                    put = engine.storage.put(chore.getStorageKey(), new Value(chore.toJson()));
+                    put = query().put(chore);
                 }
             }
             if (!put.success()) {
@@ -212,7 +211,7 @@ public class Chores extends SessionPage {
         Chore chore = query().chore_by_id(session.getParam("id"), true);
         chore.set("last_performed", RawObject.isoTimestamp());
         chore.set("last_performed_by", person().getId());
-        session.engine.storage.put(chore.getStorageKey(), new Value(chore.toJson()));
+        query().put(chore);
         redirect("/chores");
         return null;
     }

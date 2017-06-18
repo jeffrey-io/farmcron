@@ -25,7 +25,7 @@ public class People extends SessionPage {
 
         Table people = new Table("Name", "actions");
         sb.append("<h5>People</h5>");
-        for (Value s : session.engine.storage.scan("person/").values()) {
+        for (Value s : query().storage.scan("person/").values()) {
             Person person = new Person();
             person.injectValue(s);
 
@@ -110,9 +110,9 @@ public class People extends SessionPage {
     public Object commit() {
         Person person = pullPerson();
         if (session.hasNonNullQueryParam("_delete_")) {
-            session.engine.storage.put(person.getStorageKey(), null);
+            query().storage.put(person.getStorageKey(), null);
         } else {
-            session.engine.storage.put(person.getStorageKey(), new Value(person.toJson()));
+            query().storage.put(person.getStorageKey(), new Value(person.toJson()));
         }
         redirect("/people");
         return null;

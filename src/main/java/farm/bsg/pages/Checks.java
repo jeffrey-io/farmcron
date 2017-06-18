@@ -49,7 +49,7 @@ public class Checks extends SessionPage {
                 name = person.login();
             }
             double owed = 0.0;
-            for (PayrollEntry value : PayrollEntry.getUnpaidEntries(session.engine, unpaidEmployee)) {
+            for (PayrollEntry value : PayrollEntry.getUnpaidEntries(query(), unpaidEmployee)) {
                 owed += value.getAsDouble("owed");
             }
             HtmlPump action = null;
@@ -160,7 +160,7 @@ public class Checks extends SessionPage {
             return null;
         }
         double owed = 0.0;
-        List<PayrollEntry> entries = PayrollEntry.getUnpaidEntries(session.engine, employee.getId());
+        List<PayrollEntry> entries = PayrollEntry.getUnpaidEntries(query(), employee.getId());
         for (PayrollEntry payrollEntry : entries) {
             owed += payrollEntry.getAsDouble("owed");
         }
@@ -170,13 +170,13 @@ public class Checks extends SessionPage {
         if (checksum == expected) {
             // create the check, so it exists
             Check check = makeCheck(employee, checksum);
-            session.engine.put(check);
+            query().put(check);
 
             // associate the entries to the check
             for (PayrollEntry payrollEntry : entries) {
                 payrollEntry.set("check", check.getId());
                 payrollEntry.set("unpaid", "not_" + check.getId());
-                session.engine.put(payrollEntry);
+                query().put(payrollEntry);
             }
 
             // commit the check to being ready

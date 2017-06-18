@@ -247,7 +247,7 @@ public class Habits extends SessionPage {
                 habit.set("last_arg_given", arg);
             }
             habit.set("history", Jackson.toJsonString(history));
-            session.engine.put(habit);
+            query().put(habit);
             redirect("/habits");
             return null;
         }
