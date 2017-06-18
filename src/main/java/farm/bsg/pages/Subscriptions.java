@@ -14,11 +14,12 @@ import farm.bsg.ops.CounterCodeGen;
 import farm.bsg.pages.common.SessionPage;
 import farm.bsg.route.RoutingTable;
 import farm.bsg.route.SessionRequest;
+import farm.bsg.route.SimpleURI;
 import farm.bsg.route.text.EnglishKeywordNormalizer;
 
 public class Subscriptions extends SessionPage {
     public Subscriptions(SessionRequest session) {
-        super(session, "/subscriptions");
+        super(session, SUBSCRIPTIONS);
     }
 
     public static List<Subscription> getSubscriptions(QueryEngine engine) {
@@ -182,7 +183,7 @@ public class Subscriptions extends SessionPage {
     }
 
     public static void link(RoutingTable routing) {
-        routing.navbar("/subscriptions", "Subscriptions", Permission.SeeSubscripionsTab);
+        routing.navbar(SUBSCRIPTIONS, "Subscriptions", Permission.SeeSubscripionsTab);
 
         routing.text((engine, message) -> {
             Result result = Subscriptions.evaluate(engine, message.message);
@@ -211,20 +212,30 @@ public class Subscriptions extends SessionPage {
             return message.generateResponse(result.response);
         });
 
-        routing.get("/subscriptions", (session) -> new Subscriptions(session).list());
+        routing.get(SUBSCRIPTIONS, (session) -> new Subscriptions(session).list());
 
-        routing.post("/add-sms-subscriber", (session) -> new Subscriptions(session).add_sms_subscriber());
-        routing.get_or_post("/remove-subscriber", (session) -> new Subscriptions(session).remove());
+        routing.post(SUBSCRIPTIONS_ADD_SMS, (session) -> new Subscriptions(session).add_sms_subscriber());
+        routing.get_or_post(SUBSCRIPTIONS_REMOVE_SUB, (session) -> new Subscriptions(session).remove());
 
-        routing.get("/new-subscription", (session) -> {
+        routing.get(SUBSCRIPTIONS_NEW, (session) -> {
             session.redirect("/subscription-edit?id=" + UUID.randomUUID().toString());
             return null;
         });
-        routing.get_or_post("/subscription-edit", (session) -> new Subscriptions(session).edit());
-        routing.get_or_post("/subscription-test", (session) -> new Subscriptions(session).test());
-        routing.get("/subscription-view", (session) -> new Subscriptions(session).view());
-        routing.post("/commit-subscription-edit", (session) -> new Subscriptions(session).commit());
+        routing.get_or_post(SUBSCRIPTIONS_EDIT, (session) -> new Subscriptions(session).edit());
+        routing.get_or_post(SUBSCRIPTIONS_TEST, (session) -> new Subscriptions(session).test());
+        routing.get(SUBSCRIPTIONS_VIEW, (session) -> new Subscriptions(session).view());
+        routing.post(SUBSCRIPTIONS_COMMIT_EDIT, (session) -> new Subscriptions(session).commit());
     }
+
+    public static SimpleURI SUBSCRIPTIONS = new SimpleURI("/subscriptions");
+    public static SimpleURI SUBSCRIPTIONS_ADD_SMS = new SimpleURI("/add-sms-subscriber");
+    public static SimpleURI SUBSCRIPTIONS_REMOVE_SUB = new SimpleURI("/remove-subscriber");
+    public static SimpleURI SUBSCRIPTIONS_NEW = new SimpleURI("/new-subscription");
+    public static SimpleURI SUBSCRIPTIONS_EDIT = new SimpleURI("/subscription-edit");
+    public static SimpleURI SUBSCRIPTIONS_TEST = new SimpleURI("/subscription-test");
+    public static SimpleURI SUBSCRIPTIONS_VIEW = new SimpleURI("/subscription-view");
+    public static SimpleURI SUBSCRIPTIONS_COMMIT_EDIT = new SimpleURI("/commit-subscription-edit");
+
     
     public static void link(CounterCodeGen c) {
         c.section("Page: Subscriptions");

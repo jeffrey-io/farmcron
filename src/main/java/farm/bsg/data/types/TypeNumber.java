@@ -14,6 +14,11 @@ public class TypeNumber extends Type {
     public String type() {
         return "number";
     }
+    
+    public TypeNumber withDefault(double newDefaultValue) {
+        this.defaultValue = Double.toString(newDefaultValue);
+        return this;
+    }
 
     @Override
     public boolean validate(String value) {

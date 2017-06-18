@@ -24,7 +24,7 @@ import farm.bsg.route.SimpleURI;
 
 public class Checks extends SessionPage {
     public Checks(SessionRequest session) {
-        super(session, CHECKS_HOME.href());
+        super(session, CHECKS_HOME);
     }
 
     private HtmlPump fragmentOutstandingBalancesForAllEmployees() {
@@ -55,7 +55,7 @@ public class Checks extends SessionPage {
             }
             HtmlPump action = null;
             if (has(Permission.CheckMake)) {
-                action = Html.link("/audit-check?employee=" + unpaidEmployee, "Pay").btn_success();
+                action = Html.link(CHECKS_AUDIT.href("employee", unpaidEmployee), "Pay").btn_success();
             }
             table.row(person.login(), owed, action);
         }
@@ -70,7 +70,7 @@ public class Checks extends SessionPage {
         }
         Table table = Table.start("Date", "Payment", "Action");
         for (Check check : checks) {
-            Link action = Html.link("/check-view?id=" + check.getId(), "View").btn_success();
+            Link action = Html.link(CHECKS_VIEW.href("id", check.getId()), "View").btn_success();
             table.row(check.get("fiscal_day"), check.get("payment"), action);
         }
 
@@ -100,8 +100,7 @@ public class Checks extends SessionPage {
             owed += payrollEntry.getAsDouble("owed");
         }
         int checksum = ((int) Math.round(owed * 100) * 10009 + entries.size() * 7) % 109859;
-        String href = "/confirm-check?employee=" + person.getId() + "&checksum=" + checksum;
-        page.add(Html.link(href, "Confirm").btn_primary());
+        page.add(Html.link(CHECKS_CONFIRM.href("employee", person.getId(), "checksum", Integer.toString(checksum)), "Confirm").btn_primary());
         return finish_pump(page);
     }
 

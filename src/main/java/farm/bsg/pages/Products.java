@@ -13,18 +13,19 @@ import farm.bsg.ops.CounterCodeGen;
 import farm.bsg.pages.common.SessionPage;
 import farm.bsg.route.RoutingTable;
 import farm.bsg.route.SessionRequest;
+import farm.bsg.route.SimpleURI;
 
 public class Products extends SessionPage {
 
     public Products(SessionRequest session) {
-        super(session, "/products");
+        super(session, PRODUCTS);
     }
     
     public String list() {
         Table products = new Table("Name", "Category", "Description", "Price");
         for (Product p : engine.select_product().to_list().inline_order_lexographically_asc_by("category", "name").done()) {
             products.row( //
-                    Html.link("/product-edit?id=" + p.getId(), p.get("name")), //
+                    Html.link(PRODUCTS_EDIT.href("id", p.getId()), p.get("name")), //
                     p.get("category"), //
                     p.get("description"), //
                     p.get("price"));
@@ -47,7 +48,7 @@ public class Products extends SessionPage {
 
     public HtmlPump tabs(String current) {
         Link tab1 = Html.link("/products", "List All Products").nav_link().active_if_href_is(current);
-        Link tab2 = Html.link("/product-edit?id=" + UUID.randomUUID().toString(), "Create New Product").nav_link().active_if_href_is(current);
+        Link tab2 = Html.link(PRODUCTS_EDIT.href("id", UUID.randomUUID().toString()), "Create New Product").nav_link().active_if_href_is(current);
         return Html.nav().pills().with(tab1).with(tab2);
     }
     
@@ -92,13 +93,18 @@ public class Products extends SessionPage {
     }
     
     public static void link(RoutingTable routing) {
-        routing.navbar("/products", "Products", Permission.SeePeopleTab);
-        routing.get("/products", (session) -> new Products(session).list());
+        routing.navbar(PRODUCTS, "Products", Permission.SeePeopleTab);
+        routing.get(PRODUCTS, (session) -> new Products(session).list());
         
-        routing.get_or_post("/product-edit", (session) -> new Products(session).edit());
+        routing.get_or_post(PRODUCTS_EDIT, (session) -> new Products(session).edit());
         
-        routing.post("/commit-product", (session) -> new Products(session).commit());
+        routing.post(PRODUCTS_COMMIT, (session) -> new Products(session).commit());
     }
+    
+    public static SimpleURI PRODUCTS = new SimpleURI("/products");
+    public static SimpleURI PRODUCTS_EDIT = new SimpleURI("/product-edit");
+    public static SimpleURI PRODUCTS_COMMIT = new SimpleURI("/commit-product");
+    
 
     public static void link(CounterCodeGen c) {
         c.section("Page: Products");

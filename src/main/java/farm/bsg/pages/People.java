@@ -14,10 +14,11 @@ import farm.bsg.ops.CounterCodeGen;
 import farm.bsg.pages.common.SessionPage;
 import farm.bsg.route.RoutingTable;
 import farm.bsg.route.SessionRequest;
+import farm.bsg.route.SimpleURI;
 
 public class People extends SessionPage {
     public People(SessionRequest session) {
-        super(session, "/people");
+        super(session, PEOPLE);
     }
 
     public String list() {
@@ -119,14 +120,20 @@ public class People extends SessionPage {
     }
 
     public static void link(RoutingTable routing) {
-        routing.navbar("/people", "People", Permission.SeePeopleTab);
-        routing.get("/people", (session) -> new People(session).list());
-        routing.get("/person-create", (session) -> new People(session).create());
-        routing.get("/person-view", (session) -> new People(session).view());
+        routing.navbar(PEOPLE, "People", Permission.SeePeopleTab);
+        routing.get(PEOPLE, (session) -> new People(session).list());
+        routing.get(PERSON_CREATE, (session) -> new People(session).create());
+        routing.get(PERSON_VIEW, (session) -> new People(session).view());
 
-        routing.get_or_post("/person-edit", (session) -> new People(session).admin_edit());
-        routing.post("/commit-person-edit", (session) -> new People(session).commit());
+        routing.get_or_post(PERSON_EDIT, (session) -> new People(session).admin_edit());
+        routing.post(PERSON_EDIT_COMMIT, (session) -> new People(session).commit());
     }
+    
+    public static SimpleURI PEOPLE = new SimpleURI("/people");
+    public static SimpleURI PERSON_CREATE = new SimpleURI("/person-create");
+    public static SimpleURI PERSON_VIEW = new SimpleURI("/person-view");
+    public static SimpleURI PERSON_EDIT = new SimpleURI("/person-edit");
+    public static SimpleURI PERSON_EDIT_COMMIT = new SimpleURI("/commit-person-edit");
 
     public static void link(CounterCodeGen c) {
         c.section("Page: People");

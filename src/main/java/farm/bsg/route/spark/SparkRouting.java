@@ -11,6 +11,9 @@ import farm.bsg.ProductEngine;
 import farm.bsg.ops.Logs;
 import farm.bsg.route.AnonymousRequest;
 import farm.bsg.route.AnonymousRoute;
+import farm.bsg.route.ControlledURI;
+import farm.bsg.route.CustomerRequest;
+import farm.bsg.route.CustomerRoute;
 import farm.bsg.route.MultiTenantRouter;
 import farm.bsg.route.RoutingTable;
 import farm.bsg.route.SessionRequest;
@@ -70,8 +73,8 @@ public class SparkRouting extends RoutingTable {
     }
 
     @Override
-    public void post(String path, SessionRoute route) {
-        spark.Spark.post(path, (req, res) -> {
+    public void post(ControlledURI path, SessionRoute route) {
+        spark.Spark.post(path.toRoutingPattern(), (req, res) -> {
             try {
                 log(req);
                 ProductEngine engine = engineOf(req);
@@ -91,8 +94,8 @@ public class SparkRouting extends RoutingTable {
     }
 
     @Override
-    public void get(String path, SessionRoute route) {
-        spark.Spark.get(path, (req, res) -> {
+    public void get(ControlledURI path, SessionRoute route) {
+        spark.Spark.get(path.toRoutingPattern(), (req, res) -> {
             try {
                 log(req);
                 ProductEngine engine = engineOf(req);
@@ -113,8 +116,8 @@ public class SparkRouting extends RoutingTable {
     
 
     @Override
-    public void public_post(String path, AnonymousRoute route) {
-        spark.Spark.post(path, (req, res) -> {
+    public void public_post(ControlledURI path, AnonymousRoute route) {
+        spark.Spark.post(path.toRoutingPattern(), (req, res) -> {
             try {
                 log(req);
                 ProductEngine engine = engineOf(req);
@@ -129,8 +132,8 @@ public class SparkRouting extends RoutingTable {
     }
 
     @Override
-    public void public_get(String path, AnonymousRoute route) {
-        spark.Spark.get(path, (req, res) -> {
+    public void public_get(ControlledURI path, AnonymousRoute route) {
+        spark.Spark.get(path.toRoutingPattern(), (req, res) -> {
             try {
                 log(req);
                 ProductEngine engine = engineOf(req);
@@ -156,6 +159,10 @@ public class SparkRouting extends RoutingTable {
     private void log(AnonymousRequest session) {
         LOG.info("anonymous!");
     }
+
+    private void log(CustomerRequest session) {
+        LOG.info("customer!");
+    }
     
     @Override
     public void set_404(AnonymousRoute route) {
@@ -172,5 +179,40 @@ public class SparkRouting extends RoutingTable {
 
             }
         });
+    }
+    
+    @Override
+    public void customer_get(ControlledURI path, CustomerRoute route) {
+        spark.Spark.get(path.toRoutingPattern(), (req, res) -> {
+            try {
+                log(req);
+                ProductEngine engine = engineOf(req);
+                SparkBox sparked = new SparkBox(req, res, secure);
+                CustomerRequest customerRequest = new CustomerRequest(engine, sparked);
+                log(customerRequest);
+                return route.handle(customerRequest);
+            } catch (Exception err) {
+                return exceptionalize(err);
+
+            }
+        });
+    }
+    
+
+    @Override
+    public void customer_post(ControlledURI path, CustomerRoute route) {
+        spark.Spark.post(path.toRoutingPattern(), (req, res) -> {
+            try {
+                log(req);
+                ProductEngine engine = engineOf(req);
+                SparkBox sparked = new SparkBox(req, res, secure);
+                CustomerRequest customerRequest = new CustomerRequest(engine, sparked);
+                log(customerRequest);
+                return route.handle(customerRequest);
+            } catch (Exception err) {
+                return exceptionalize(err);
+
+            }
+        }); 
     }
 }

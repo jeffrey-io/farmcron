@@ -4,15 +4,16 @@ import farm.bsg.Security.Permission;
 import farm.bsg.html.HtmlPump;
 import farm.bsg.models.Person;
 import farm.bsg.route.SessionRequest;
+import farm.bsg.route.SimpleURI;
 
 public class SessionPage extends GenericPage {
     protected final SessionRequest session;
     protected String             currentTitle;
 
-    public SessionPage(SessionRequest session, String href) {
-        super(session.engine, href);
+    public SessionPage(SessionRequest session, SimpleURI uri) {
+        super(session.engine, uri);
         this.session = session;
-        this.currentTitle = engine.navbar.title(href);
+        this.currentTitle = engine.navbar.title(uri.toRoutingPattern());
     }
 
     public String formalize_html(String body) {
@@ -25,7 +26,6 @@ public class SessionPage extends GenericPage {
         pump.pump(html);
         return formalize_html(html.toString());
     }
-
 
     public Person person() {
         return session.getPerson();

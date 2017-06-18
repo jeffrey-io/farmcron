@@ -6,7 +6,7 @@ import java.util.Map;
 
 public abstract class ControlledURI {
 
-    public String href(String... args) {
+    public FinishedHref href(String... args) {
         if (args.length == 0) {
             return href(Collections.emptyMap());
         } else {
@@ -18,5 +18,7 @@ public abstract class ControlledURI {
         }
     }
     
-    protected abstract String href(Map<String, String> map);
+    public abstract FinishedHref href(Map<String, String> map);
+    
+    public abstract String toRoutingPattern();
 }

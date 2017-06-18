@@ -1,6 +1,7 @@
 package farm.bsg.html;
 
 import farm.bsg.data.contracts.SingleCharacterBitmaskProvider;
+import farm.bsg.route.FinishedHref;
 
 public class Html {
 
@@ -27,6 +28,14 @@ public class Html {
     public static BreadCrumbs breadcrumbs() {
         return new BreadCrumbs();
     }
+    
+    public static Link link(FinishedHref href, String label) {
+        return new Link(href.value, text(label));
+    }
+
+    public static Link link(FinishedHref href, HtmlPump label) {
+        return new Link(href.value, label);
+    }    
 
     public static Link link(String href, String label) {
         return new Link(href, text(label));
@@ -56,6 +65,9 @@ public class Html {
         return new Form(method, href);
     }
     
+    public static Form form(String method, FinishedHref href) {
+        return new Form(method, href.value);
+    }
     public static BitMaskInput bitmask(String name, SingleCharacterBitmaskProvider provider) {
         return new BitMaskInput(name, provider);
     }

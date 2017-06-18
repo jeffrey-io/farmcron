@@ -17,11 +17,12 @@ import farm.bsg.ops.CounterCodeGen;
 import farm.bsg.pages.common.SessionPage;
 import farm.bsg.route.RoutingTable;
 import farm.bsg.route.SessionRequest;
+import farm.bsg.route.SimpleURI;
 
 public class Payroll extends SessionPage {
 
     public Payroll(SessionRequest session) {
-        super(session, "/payroll");
+        super(session, PAYROLL);
     }
 
     public static HtmlPump payrollTable(List<PayrollEntry> entries, boolean sessionEdit, boolean summary) {
@@ -269,18 +270,25 @@ public class Payroll extends SessionPage {
     }
 
     public static void link(RoutingTable routing) {
-        routing.navbar("/payroll", "Payroll", Permission.SeePayrollTab);
-        routing.get_or_post("/payroll", (session) -> new Payroll(session).payroll());
+        routing.navbar(PAYROLL, "Payroll", Permission.SeePayrollTab);
+        routing.get_or_post(PAYROLL, (session) -> new Payroll(session).payroll());
 
-        routing.get_or_post("/payroll-edit", (session) -> new Payroll(session).full_edit());
-        routing.get_or_post("/cash-advance", (session) -> new Payroll(session).cash_advance());
+        routing.get_or_post(PAYROLL_EDIT, (session) -> new Payroll(session).full_edit());
+        routing.get_or_post(PAYROLL_CASH_ADVANCE, (session) -> new Payroll(session).cash_advance());
 
-        routing.get_or_post("/payroll-wizard", (session) -> new Payroll(session).wizard());
-        routing.get_or_post("/commit-payroll-edit", (session) -> new Payroll(session).commit());
+        routing.get_or_post(PAYROLL_WIZARD, (session) -> new Payroll(session).wizard());
+        routing.get_or_post(PAYROLL_COMMIT_EDIT, (session) -> new Payroll(session).commit());
 
-        routing.get_or_post("/payroll-summary", (session) -> new Payroll(session).summary());
+        routing.get_or_post(PAYROLL_SUMMARY, (session) -> new Payroll(session).summary());
 
     }
+
+    public static SimpleURI PAYROLL = new SimpleURI("/payroll");
+    public static SimpleURI PAYROLL_EDIT = new SimpleURI("/payroll-edit");
+    public static SimpleURI PAYROLL_CASH_ADVANCE = new SimpleURI("/cash-advance");
+    public static SimpleURI PAYROLL_WIZARD = new SimpleURI("/payroll-wizard");
+    public static SimpleURI PAYROLL_COMMIT_EDIT = new SimpleURI("/commit-payroll-edit");
+    public static SimpleURI PAYROLL_SUMMARY = new SimpleURI("/payroll-summary");
 
     public static void link(CounterCodeGen c) {
         c.section("Page: Payroll");

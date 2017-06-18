@@ -17,12 +17,13 @@ import farm.bsg.ops.Logs;
 import farm.bsg.pages.common.SessionPage;
 import farm.bsg.route.RoutingTable;
 import farm.bsg.route.SessionRequest;
+import farm.bsg.route.SimpleURI;
 
 public class You extends SessionPage {
     private static final Logger LOG = Logs.of(You.class);
 
     public You(SessionRequest session) {
-        super(session, "/you");
+        super(session, YOU);
     }
 
     public String show() {
@@ -185,7 +186,7 @@ public class You extends SessionPage {
     }
 
     public static void link(RoutingTable routing) {
-        routing.navbar("/you", "You", Permission.Public);
+        routing.navbar(YOU, "You", Permission.Public);
 
         routing.text((engine, text) -> {
             String message = text.message.toLowerCase().trim();
@@ -209,13 +210,19 @@ public class You extends SessionPage {
 
             return null;
         });
-        routing.get("/you", (session) -> new You(session).show());
-        routing.get_or_post("/edit-you", (session) -> new You(session).edit());
-        routing.get_or_post("/change-password", (session) -> new You(session).changepw());
+        routing.get(YOU, (session) -> new You(session).show());
+        routing.get_or_post(YOU_EDIT, (session) -> new You(session).edit());
+        routing.get_or_post(YOU_CHANGE_PW, (session) -> new You(session).changepw());
 
-        routing.get_or_post("/make-super-cookie", (session) -> new You(session).mutate_super_cookie(false));
-        routing.get_or_post("/kill-super-cookie", (session) -> new You(session).mutate_super_cookie(true));
+        routing.get_or_post(YOU_MAKE_SC, (session) -> new You(session).mutate_super_cookie(false));
+        routing.get_or_post(YOU_KILL_SC, (session) -> new You(session).mutate_super_cookie(true));
     }
+    
+    public static SimpleURI YOU = new SimpleURI("/you");
+    public static SimpleURI YOU_EDIT = new SimpleURI("/edit-you");
+    public static SimpleURI YOU_CHANGE_PW = new SimpleURI("/change-password");
+    public static SimpleURI YOU_MAKE_SC = new SimpleURI("/make-super-cookie");
+    public static SimpleURI YOU_KILL_SC = new SimpleURI("/kill-super-cookie");
 
     public static void link(CounterCodeGen c) {
         c.section("Page: You");

@@ -22,6 +22,9 @@ public class BsgCounters {
   // Section{PAGE: DASHBOARD}
   public final Counter dashboard_hits;
 
+  // Section{PAGE: TASK FACTORY}
+  public final Counter task_factory_monitor_run;
+
   // Section{DATA: HABIT}
   public final Counter habit_bad_history;
 
@@ -55,6 +58,9 @@ public class BsgCounters {
 
     src.setSection("Page: Dashboard");
     this.dashboard_hits = src.counter("dashboard_hits", "How many times a dashboard was viewed");
+
+    src.setSection("Page: Task Factory");
+    this.task_factory_monitor_run = src.counter("task_factory_monitor_run", "How many runs of the task factory have there been");
 
     src.setSection("Data: Habit");
     this.habit_bad_history = src.counter("habit_bad_history", "Contained poorly formated history");

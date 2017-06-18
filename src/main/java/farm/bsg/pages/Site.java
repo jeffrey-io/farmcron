@@ -7,10 +7,11 @@ import farm.bsg.ops.CounterCodeGen;
 import farm.bsg.pages.common.SessionPage;
 import farm.bsg.route.RoutingTable;
 import farm.bsg.route.SessionRequest;
+import farm.bsg.route.SimpleURI;
 
 public class Site extends SessionPage {
     public Site(SessionRequest session) {
-        super(session, "/site");
+        super(session, SITE);
     }
 
     public SiteProperties pullSite() {
@@ -37,10 +38,12 @@ public class Site extends SessionPage {
     }
 
     public static void link(RoutingTable routing) {
-        routing.navbar("/site", "Site", Permission.SeeSiteProperties);
-        routing.get_or_post("/site", (session) -> new Site(session).show());
+        routing.navbar(SITE, "Site", Permission.SeeSiteProperties);
+        routing.get_or_post(SITE, (session) -> new Site(session).show());
     }
-    
+
+    public static SimpleURI SITE = new SimpleURI("/site");
+
     public static void link(CounterCodeGen c) {
         c.section("Page: Site");
     }

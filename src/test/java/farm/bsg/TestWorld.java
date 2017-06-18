@@ -6,6 +6,7 @@ import java.util.Map.Entry;
 
 import com.amazonaws.util.json.Jackson;
 
+import farm.bsg.cron.JobManager;
 import farm.bsg.data.Value;
 import farm.bsg.data.contracts.KeyValueStoragePut;
 import farm.bsg.data.contracts.PersistenceLogger;
@@ -45,7 +46,8 @@ public class TestWorld {
     public final ProductEngine engine;
 
     private TestWorld(TestLogger logger) throws Exception {
-        this.engine = new ProductEngine(logger, "$BODY$");
+        JobManager jobManager = new JobManager();
+        this.engine = new ProductEngine(jobManager, logger, "$BODY$");
     }
 
     public static TestWorldBuilder start() {

@@ -10,7 +10,6 @@ import farm.bsg.models.Cart;
 import farm.bsg.models.CartItem;
 import farm.bsg.models.Check;
 import farm.bsg.models.Chore;
-import farm.bsg.models.Event;
 import farm.bsg.models.Habit;
 import farm.bsg.models.PayrollEntry;
 import farm.bsg.models.Person;
@@ -18,6 +17,8 @@ import farm.bsg.models.Product;
 import farm.bsg.models.SiteProperties;
 import farm.bsg.models.Subscriber;
 import farm.bsg.models.Subscription;
+import farm.bsg.models.Task;
+import farm.bsg.models.TaskFactory;
 import farm.bsg.models.WakeInputFile;
 
 import java.util.ArrayList;
@@ -65,6 +66,10 @@ public class QueryEngine {
   public final KeyIndex person_super_cookie;  // BY[super_cookie]
   public final KeyIndex person_notification_token;  // BY[notification_token]
 
+  // INDEX[Task]
+  public final KeyIndex task_owner;  // BY[owner]
+  public final KeyIndex task_state;  // BY[state]
+
   // INDEX[WakeInputFile]
   public final KeyIndex wakeinputfile_filename;  // BY[filename]
   public final StorageEngine storage;
@@ -89,6 +94,8 @@ public class QueryEngine {
     this.person_phone = indexing.add("person/", new KeyIndex("phone", false));
     this.person_super_cookie = indexing.add("person/", new KeyIndex("super_cookie", false));
     this.person_notification_token = indexing.add("person/", new KeyIndex("notification_token", false));
+    this.task_owner = indexing.add("task/", new KeyIndex("owner", false));
+    this.task_state = indexing.add("task/", new KeyIndex("state", false));
     this.wakeinputfile_filename = indexing.add("wake_input/", new KeyIndex("filename", true));
     this.indexing.add("wake_input/", new farm.bsg.models.WakeInputFile.DirtyWakeInputFile(this));
     this.storage = new StorageEngine(memory, indexing, persistence);
@@ -258,43 +265,6 @@ public class QueryEngine {
   public String make_key_chore(String id) {
     StringBuilder key = new StringBuilder();
     key.append("chore/");
-    key.append(id);
-    return key.toString();
-}
-
-  /**************************************************
-  Basic Operations (look up, type transfer, keys, immutable copies) (event/)
-  **************************************************/
-
-  public Event event_by_id(String id, boolean create) {
-    Value v = storage.get("event/" + id);
-    if (v == null && !create) {
-      return null;
-    }
-    Event result = event_of(v);
-    result.set("id", id);
-    return result;
-  }
-
-  private Event event_of(Value v) {
-    Event item = new Event();
-    if (v != null) {
-      item.injectValue(v);
-    }
-    return item;
-  }
-
-  private ArrayList<Event> events_of(ArrayList<Value> values) {
-    ArrayList<Event> list = new ArrayList<>(values.size());
-    for (Value v : values) {
-      list.add(event_of(v));
-    }
-    return list;
-  }
-
-  public String make_key_event(String id) {
-    StringBuilder key = new StringBuilder();
-    key.append("event/");
     key.append(id);
     return key.toString();
 }
@@ -551,6 +521,80 @@ public class QueryEngine {
 }
 
   /**************************************************
+  Basic Operations (look up, type transfer, keys, immutable copies) (task/)
+  **************************************************/
+
+  public Task task_by_id(String id, boolean create) {
+    Value v = storage.get("task/" + id);
+    if (v == null && !create) {
+      return null;
+    }
+    Task result = task_of(v);
+    result.set("id", id);
+    return result;
+  }
+
+  private Task task_of(Value v) {
+    Task item = new Task();
+    if (v != null) {
+      item.injectValue(v);
+    }
+    return item;
+  }
+
+  private ArrayList<Task> tasks_of(ArrayList<Value> values) {
+    ArrayList<Task> list = new ArrayList<>(values.size());
+    for (Value v : values) {
+      list.add(task_of(v));
+    }
+    return list;
+  }
+
+  public String make_key_task(String id) {
+    StringBuilder key = new StringBuilder();
+    key.append("task/");
+    key.append(id);
+    return key.toString();
+}
+
+  /**************************************************
+  Basic Operations (look up, type transfer, keys, immutable copies) (task_factory/)
+  **************************************************/
+
+  public TaskFactory taskfactory_by_id(String id, boolean create) {
+    Value v = storage.get("task_factory/" + id);
+    if (v == null && !create) {
+      return null;
+    }
+    TaskFactory result = taskfactory_of(v);
+    result.set("id", id);
+    return result;
+  }
+
+  private TaskFactory taskfactory_of(Value v) {
+    TaskFactory item = new TaskFactory();
+    if (v != null) {
+      item.injectValue(v);
+    }
+    return item;
+  }
+
+  private ArrayList<TaskFactory> taskfactorys_of(ArrayList<Value> values) {
+    ArrayList<TaskFactory> list = new ArrayList<>(values.size());
+    for (Value v : values) {
+      list.add(taskfactory_of(v));
+    }
+    return list;
+  }
+
+  public String make_key_taskfactory(String id) {
+    StringBuilder key = new StringBuilder();
+    key.append("task_factory/");
+    key.append(id);
+    return key.toString();
+}
+
+  /**************************************************
   Basic Operations (look up, type transfer, keys, immutable copies) (wake_input/)
   **************************************************/
 
@@ -632,10 +676,6 @@ public class QueryEngine {
   **************************************************/
 
   /**************************************************
-  Indexing (event/)
-  **************************************************/
-
-  /**************************************************
   Indexing (habits/)
   **************************************************/
 
@@ -685,6 +725,22 @@ public class QueryEngine {
 
   /**************************************************
   Indexing (subscription/)
+  **************************************************/
+
+  /**************************************************
+  Indexing (task/)
+  **************************************************/
+
+  public HashSet<String> get_task_owner_index_keys() {
+    return task_owner.getIndexKeys();
+  }
+
+  public HashSet<String> get_task_state_index_keys() {
+    return task_state.getIndexKeys();
+  }
+
+  /**************************************************
+  Indexing (task_factory/)
   **************************************************/
 
   /**************************************************
@@ -1301,129 +1357,6 @@ public class QueryEngine {
     }
 
     public ChoreSetQuery scope(String scope) {
-      this.scope += scope + "/";
-      return this;
-    }
-  }
-
-  /**************************************************
-  Query Engine (event/)
-  **************************************************/
-
-  public EventSetQuery select_event() {
-    return new EventSetQuery();
-  }
-
-  public class EventListHolder {
-    private final ArrayList<Event> list;
-
-    private EventListHolder(HashSet<String> keys, String scope) {
-      if (keys == null) {
-        this.list = events_of(fetch_all("event/" + scope));
-      } else {
-        this.list = events_of(fetch(keys));
-      }
-    }
-
-    private EventListHolder(ArrayList<Event> list) {
-      this.list = list;
-    }
-
-    public EventListHolder inline_filter(Predicate<Event> filter) {
-      Iterator<Event> it = list.iterator();
-      while (it.hasNext()) {
-        if (filter.test(it.next())) {
-          it.remove();
-        }
-      }
-      return this;
-    }
-
-    public EventListHolder limit(int count) {
-      Iterator<Event> it = list.iterator();
-      int at = 0;
-      while (it.hasNext()) {
-        it.next();
-        if (at >= count) {
-          it.remove();
-        }
-        at++;
-      }
-      return this;
-    }
-
-    public EventListHolder inline_apply(Consumer<Event> consumer) {
-      Iterator<Event> it = list.iterator();
-      while (it.hasNext()) {
-        consumer.accept(it.next());
-      }
-      return this;
-    }
-
-    public EventListHolder fork() {
-      return new EventListHolder(this.list);
-    }
-
-    public EventListHolder inline_order_lexographically_asc_by(String... keys) {
-      Collections.sort(this.list, new LexographicalOrder<Event>(keys, true, true));
-      return this;
-    }
-
-    public EventListHolder inline_order_lexographically_desc_by(String... keys) {
-      Collections.sort(this.list, new LexographicalOrder<Event>(keys, false, true));
-      return this;
-    }
-
-    public EventListHolder inline_order_lexographically_by(boolean asc, boolean caseSensitive, String... keys) {
-      Collections.sort(this.list, new LexographicalOrder<Event>(keys, asc, caseSensitive));
-      return this;
-    }
-
-    public EventListHolder inline_order_by(Comparator<Event> comparator) {
-      Collections.sort(this.list, comparator);
-      return this;
-    }
-
-    public int count() {
-      return this.list.size();
-    }
-    public Event first() {
-      if (this.list.size() == 0) {
-        return null;
-      }
-      return this.list.get(0);
-    }
-    public ArrayList<Event> done() {
-      return this.list;
-    }
-  }
-
-  public class EventSetQuery {
-    private String scope;
-    private HashSet<String> keys;
-
-    private EventSetQuery() {
-      this.scope = "";
-      this.keys = null;
-    }
-
-    public EventListHolder to_list() {
-      return new EventListHolder(this.keys, this.scope);
-    }
-
-    public ArrayList<Event> done() {
-      return new EventListHolder(this.keys, this.scope).done();
-    }
-
-    public int count() {
-      if (this.keys == null) {
-        return to_list().count();
-      } else {
-        return this.keys.size();
-      }
-    }
-
-    public EventSetQuery scope(String scope) {
       this.scope += scope + "/";
       return this;
     }
@@ -2393,6 +2326,286 @@ public class QueryEngine {
   }
 
   /**************************************************
+  Query Engine (task/)
+  **************************************************/
+
+  public TaskSetQuery select_task() {
+    return new TaskSetQuery();
+  }
+
+  public class TaskListHolder {
+    private final ArrayList<Task> list;
+
+    private TaskListHolder(HashSet<String> keys, String scope) {
+      if (keys == null) {
+        this.list = tasks_of(fetch_all("task/" + scope));
+      } else {
+        this.list = tasks_of(fetch(keys));
+      }
+    }
+
+    private TaskListHolder(ArrayList<Task> list) {
+      this.list = list;
+    }
+
+    public TaskListHolder inline_filter(Predicate<Task> filter) {
+      Iterator<Task> it = list.iterator();
+      while (it.hasNext()) {
+        if (filter.test(it.next())) {
+          it.remove();
+        }
+      }
+      return this;
+    }
+
+    public TaskListHolder limit(int count) {
+      Iterator<Task> it = list.iterator();
+      int at = 0;
+      while (it.hasNext()) {
+        it.next();
+        if (at >= count) {
+          it.remove();
+        }
+        at++;
+      }
+      return this;
+    }
+
+    public TaskListHolder inline_apply(Consumer<Task> consumer) {
+      Iterator<Task> it = list.iterator();
+      while (it.hasNext()) {
+        consumer.accept(it.next());
+      }
+      return this;
+    }
+
+    public TaskListHolder fork() {
+      return new TaskListHolder(this.list);
+    }
+
+    public TaskListHolder inline_order_lexographically_asc_by(String... keys) {
+      Collections.sort(this.list, new LexographicalOrder<Task>(keys, true, true));
+      return this;
+    }
+
+    public TaskListHolder inline_order_lexographically_desc_by(String... keys) {
+      Collections.sort(this.list, new LexographicalOrder<Task>(keys, false, true));
+      return this;
+    }
+
+    public TaskListHolder inline_order_lexographically_by(boolean asc, boolean caseSensitive, String... keys) {
+      Collections.sort(this.list, new LexographicalOrder<Task>(keys, asc, caseSensitive));
+      return this;
+    }
+
+    public TaskListHolder inline_order_by(Comparator<Task> comparator) {
+      Collections.sort(this.list, comparator);
+      return this;
+    }
+
+    public int count() {
+      return this.list.size();
+    }
+    public Task first() {
+      if (this.list.size() == 0) {
+        return null;
+      }
+      return this.list.get(0);
+    }
+    public ArrayList<Task> done() {
+      return this.list;
+    }
+  }
+
+  public class TaskSetQuery {
+    private String scope;
+    private HashSet<String> keys;
+
+    private TaskSetQuery() {
+      this.scope = "";
+      this.keys = null;
+    }
+
+    public TaskListHolder to_list() {
+      return new TaskListHolder(this.keys, this.scope);
+    }
+
+    public ArrayList<Task> done() {
+      return new TaskListHolder(this.keys, this.scope).done();
+    }
+
+    public int count() {
+      if (this.keys == null) {
+        return to_list().count();
+      } else {
+        return this.keys.size();
+      }
+    }
+
+    public TaskSetQuery scope(String scope) {
+      this.scope += scope + "/";
+      return this;
+    }
+
+    private HashSet<String> lookup_owner(String... values) {
+      HashSet<String> keys = new HashSet<>();
+      for(String value : values) {
+        keys.addAll(task_owner.getKeys(value));
+      }
+      return keys;
+    }
+
+    public TaskSetQuery where_owner_eq(String... values) {
+      if (this.keys == null) {
+        this.keys = lookup_owner(values);
+      } else {
+        this.keys = BinaryOperators.intersect(this.keys, lookup_owner(values));
+      }
+      return this;
+    }
+
+    private HashSet<String> lookup_state(String... values) {
+      HashSet<String> keys = new HashSet<>();
+      for(String value : values) {
+        keys.addAll(task_state.getKeys(value));
+      }
+      return keys;
+    }
+
+    public TaskSetQuery where_state_eq(String... values) {
+      if (this.keys == null) {
+        this.keys = lookup_state(values);
+      } else {
+        this.keys = BinaryOperators.intersect(this.keys, lookup_state(values));
+      }
+      return this;
+    }
+  }
+
+  /**************************************************
+  Query Engine (task_factory/)
+  **************************************************/
+
+  public TaskFactorySetQuery select_taskfactory() {
+    return new TaskFactorySetQuery();
+  }
+
+  public class TaskFactoryListHolder {
+    private final ArrayList<TaskFactory> list;
+
+    private TaskFactoryListHolder(HashSet<String> keys, String scope) {
+      if (keys == null) {
+        this.list = taskfactorys_of(fetch_all("task_factory/" + scope));
+      } else {
+        this.list = taskfactorys_of(fetch(keys));
+      }
+    }
+
+    private TaskFactoryListHolder(ArrayList<TaskFactory> list) {
+      this.list = list;
+    }
+
+    public TaskFactoryListHolder inline_filter(Predicate<TaskFactory> filter) {
+      Iterator<TaskFactory> it = list.iterator();
+      while (it.hasNext()) {
+        if (filter.test(it.next())) {
+          it.remove();
+        }
+      }
+      return this;
+    }
+
+    public TaskFactoryListHolder limit(int count) {
+      Iterator<TaskFactory> it = list.iterator();
+      int at = 0;
+      while (it.hasNext()) {
+        it.next();
+        if (at >= count) {
+          it.remove();
+        }
+        at++;
+      }
+      return this;
+    }
+
+    public TaskFactoryListHolder inline_apply(Consumer<TaskFactory> consumer) {
+      Iterator<TaskFactory> it = list.iterator();
+      while (it.hasNext()) {
+        consumer.accept(it.next());
+      }
+      return this;
+    }
+
+    public TaskFactoryListHolder fork() {
+      return new TaskFactoryListHolder(this.list);
+    }
+
+    public TaskFactoryListHolder inline_order_lexographically_asc_by(String... keys) {
+      Collections.sort(this.list, new LexographicalOrder<TaskFactory>(keys, true, true));
+      return this;
+    }
+
+    public TaskFactoryListHolder inline_order_lexographically_desc_by(String... keys) {
+      Collections.sort(this.list, new LexographicalOrder<TaskFactory>(keys, false, true));
+      return this;
+    }
+
+    public TaskFactoryListHolder inline_order_lexographically_by(boolean asc, boolean caseSensitive, String... keys) {
+      Collections.sort(this.list, new LexographicalOrder<TaskFactory>(keys, asc, caseSensitive));
+      return this;
+    }
+
+    public TaskFactoryListHolder inline_order_by(Comparator<TaskFactory> comparator) {
+      Collections.sort(this.list, comparator);
+      return this;
+    }
+
+    public int count() {
+      return this.list.size();
+    }
+    public TaskFactory first() {
+      if (this.list.size() == 0) {
+        return null;
+      }
+      return this.list.get(0);
+    }
+    public ArrayList<TaskFactory> done() {
+      return this.list;
+    }
+  }
+
+  public class TaskFactorySetQuery {
+    private String scope;
+    private HashSet<String> keys;
+
+    private TaskFactorySetQuery() {
+      this.scope = "";
+      this.keys = null;
+    }
+
+    public TaskFactoryListHolder to_list() {
+      return new TaskFactoryListHolder(this.keys, this.scope);
+    }
+
+    public ArrayList<TaskFactory> done() {
+      return new TaskFactoryListHolder(this.keys, this.scope).done();
+    }
+
+    public int count() {
+      if (this.keys == null) {
+        return to_list().count();
+      } else {
+        return this.keys.size();
+      }
+    }
+
+    public TaskFactorySetQuery scope(String scope) {
+      this.scope += scope + "/";
+      return this;
+    }
+  }
+
+  /**************************************************
   Query Engine (wake_input/)
   **************************************************/
 
@@ -2569,7 +2782,7 @@ public class QueryEngine {
       this.data.put("__token", farm.bsg.data.types.TypeString.project(pp, "__token"));
       this.data.put("cart", farm.bsg.data.types.TypeString.project(pp, "cart"));
       this.data.put("product", farm.bsg.data.types.TypeString.project(pp, "product"));
-      this.data.put("quantiy", farm.bsg.data.types.TypeNumber.project(pp, "quantiy"));
+      this.data.put("quantity", farm.bsg.data.types.TypeNumber.project(pp, "quantity"));
       this.data.put("customizations", farm.bsg.data.types.TypeString.project(pp, "customizations"));
     }
 
@@ -2672,31 +2885,6 @@ public class QueryEngine {
 
   public ChoreProjection_edit projection_chore_edit_of(ProjectionProvider pp) {
     return new ChoreProjection_edit(pp);
-  }
-
-
-  /**************************************************
-  Projects (event/)
-  **************************************************/
-
-  public class EventProjection_admin {
-    private final HashMap<String, String> data;
-    
-    public EventProjection_admin(ProjectionProvider pp) {
-      this.data = new HashMap<String, String>();
-      this.data.put("id", farm.bsg.data.types.TypeUUID.project(pp, "id"));
-      this.data.put("__token", farm.bsg.data.types.TypeString.project(pp, "__token"));
-      this.data.put("name", farm.bsg.data.types.TypeString.project(pp, "name"));
-      this.data.put("when", farm.bsg.data.types.TypeString.project(pp, "when"));
-    }
-
-    public PutResult apply(Event event) {
-      return event.validateAndApplyProjection(this.data);
-    }
-  }
-
-  public EventProjection_admin projection_event_admin_of(ProjectionProvider pp) {
-    return new EventProjection_admin(pp);
   }
 
 
@@ -2969,6 +3157,93 @@ public class QueryEngine {
 
 
   /**************************************************
+  Projects (task/)
+  **************************************************/
+
+  public class TaskProjection_admin {
+    private final HashMap<String, String> data;
+    
+    public TaskProjection_admin(ProjectionProvider pp) {
+      this.data = new HashMap<String, String>();
+      this.data.put("id", farm.bsg.data.types.TypeUUID.project(pp, "id"));
+      this.data.put("__token", farm.bsg.data.types.TypeString.project(pp, "__token"));
+      this.data.put("owner", farm.bsg.data.types.TypeString.project(pp, "owner"));
+      this.data.put("name", farm.bsg.data.types.TypeString.project(pp, "name"));
+      this.data.put("description", farm.bsg.data.types.TypeString.project(pp, "description"));
+      this.data.put("priority", farm.bsg.data.types.TypeNumber.project(pp, "priority"));
+      this.data.put("due", farm.bsg.data.types.TypeDateTime.project(pp, "due"));
+      this.data.put("created", farm.bsg.data.types.TypeDateTime.project(pp, "created"));
+      this.data.put("started", farm.bsg.data.types.TypeDateTime.project(pp, "started"));
+      this.data.put("closed", farm.bsg.data.types.TypeDateTime.project(pp, "closed"));
+      this.data.put("state", farm.bsg.data.types.TypeString.project(pp, "state"));
+    }
+
+    public PutResult apply(Task task) {
+      return task.validateAndApplyProjection(this.data);
+    }
+  }
+
+  public TaskProjection_admin projection_task_admin_of(ProjectionProvider pp) {
+    return new TaskProjection_admin(pp);
+  }
+
+
+  /**************************************************
+  Projects (task_factory/)
+  **************************************************/
+
+  public class TaskFactoryProjection_admin {
+    private final HashMap<String, String> data;
+    
+    public TaskFactoryProjection_admin(ProjectionProvider pp) {
+      this.data = new HashMap<String, String>();
+      this.data.put("id", farm.bsg.data.types.TypeUUID.project(pp, "id"));
+      this.data.put("__token", farm.bsg.data.types.TypeString.project(pp, "__token"));
+      this.data.put("name", farm.bsg.data.types.TypeString.project(pp, "name"));
+      this.data.put("description", farm.bsg.data.types.TypeString.project(pp, "description"));
+      this.data.put("current_task", farm.bsg.data.types.TypeString.project(pp, "current_task"));
+      this.data.put("priority", farm.bsg.data.types.TypeNumber.project(pp, "priority"));
+      this.data.put("frequency", farm.bsg.data.types.TypeNumber.project(pp, "frequency"));
+      this.data.put("slack", farm.bsg.data.types.TypeNumber.project(pp, "slack"));
+      this.data.put("month_filter", farm.bsg.data.types.TypeMonthFilter.project(pp, "month_filter"));
+      this.data.put("day_filter", farm.bsg.data.types.TypeDayFilter.project(pp, "day_filter"));
+    }
+
+    public PutResult apply(TaskFactory taskfactory) {
+      return taskfactory.validateAndApplyProjection(this.data);
+    }
+  }
+
+  public TaskFactoryProjection_admin projection_taskfactory_admin_of(ProjectionProvider pp) {
+    return new TaskFactoryProjection_admin(pp);
+  }
+
+
+  public class TaskFactoryProjection_edit {
+    private final HashMap<String, String> data;
+    
+    public TaskFactoryProjection_edit(ProjectionProvider pp) {
+      this.data = new HashMap<String, String>();
+      this.data.put("name", farm.bsg.data.types.TypeString.project(pp, "name"));
+      this.data.put("description", farm.bsg.data.types.TypeString.project(pp, "description"));
+      this.data.put("priority", farm.bsg.data.types.TypeNumber.project(pp, "priority"));
+      this.data.put("frequency", farm.bsg.data.types.TypeNumber.project(pp, "frequency"));
+      this.data.put("slack", farm.bsg.data.types.TypeNumber.project(pp, "slack"));
+      this.data.put("month_filter", farm.bsg.data.types.TypeMonthFilter.project(pp, "month_filter"));
+      this.data.put("day_filter", farm.bsg.data.types.TypeDayFilter.project(pp, "day_filter"));
+    }
+
+    public PutResult apply(TaskFactory taskfactory) {
+      return taskfactory.validateAndApplyProjection(this.data);
+    }
+  }
+
+  public TaskFactoryProjection_edit projection_taskfactory_edit_of(ProjectionProvider pp) {
+    return new TaskFactoryProjection_edit(pp);
+  }
+
+
+  /**************************************************
   Projects (wake_input/)
   **************************************************/
 
@@ -3041,18 +3316,6 @@ public class QueryEngine {
 
   public PutResult del(Chore chore) {
     return storage.put(chore.getStorageKey(), null, false);
-  }
-
-  /**************************************************
-  Writing Back to DB (event/)
-  **************************************************/
-
-  public PutResult put(Event event) {
-    return storage.put(event.getStorageKey(), new Value(event.toJson()), false);
-  }
-
-  public PutResult del(Event event) {
-    return storage.put(event.getStorageKey(), null, false);
   }
 
   /**************************************************
@@ -3137,6 +3400,30 @@ public class QueryEngine {
 
   public PutResult del(Subscription subscription) {
     return storage.put(subscription.getStorageKey(), null, false);
+  }
+
+  /**************************************************
+  Writing Back to DB (task/)
+  **************************************************/
+
+  public PutResult put(Task task) {
+    return storage.put(task.getStorageKey(), new Value(task.toJson()), false);
+  }
+
+  public PutResult del(Task task) {
+    return storage.put(task.getStorageKey(), null, false);
+  }
+
+  /**************************************************
+  Writing Back to DB (task_factory/)
+  **************************************************/
+
+  public PutResult put(TaskFactory taskfactory) {
+    return storage.put(taskfactory.getStorageKey(), new Value(taskfactory.toJson()), false);
+  }
+
+  public PutResult del(TaskFactory taskfactory) {
+    return storage.put(taskfactory.getStorageKey(), null, false);
   }
 
   /**************************************************

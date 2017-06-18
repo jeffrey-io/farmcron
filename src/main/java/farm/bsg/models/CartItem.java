@@ -10,7 +10,7 @@ public class CartItem extends RawObject {
     public static final ObjectSchema SCHEMA = ObjectSchema.persisted("cart-item/", //
             Field.STRING("cart").makeIndex(false), //
             Field.STRING("product").makeIndex(false), //
-            Field.NUMBER("quantiy"),
+            Field.NUMBER("quantity"),
             Field.STRING("customizations").makeIndex(false) //
             );
 

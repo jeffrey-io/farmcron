@@ -9,10 +9,11 @@ import farm.bsg.ops.CounterCodeGen;
 import farm.bsg.pages.common.SessionPage;
 import farm.bsg.route.RoutingTable;
 import farm.bsg.route.SessionRequest;
+import farm.bsg.route.SimpleURI;
 
 public class Dashboard extends SessionPage {
     public Dashboard(SessionRequest session) {
-        super(session, "/dashboard");
+        super(session, DASHBOARD);
     }
 
     public Object show() {
@@ -34,9 +35,11 @@ public class Dashboard extends SessionPage {
     }
 
     public static void link(RoutingTable routing) throws Exception {
-        routing.navbar("/dashboard", "Dashboard", Permission.Public);
-        routing.get_or_post("/dashboard", (session) -> new Dashboard(session).show());
+        routing.navbar(DASHBOARD, "Dashboard", Permission.Public);
+        routing.get_or_post(DASHBOARD, (session) -> new Dashboard(session).show());
     }
+    
+    public static SimpleURI DASHBOARD = new SimpleURI("/dashboard");
 
     public static void link(CounterCodeGen c) {
         c.section("Page: Dashboard");

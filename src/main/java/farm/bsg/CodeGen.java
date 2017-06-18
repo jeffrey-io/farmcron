@@ -8,7 +8,7 @@ import farm.bsg.models.Cart;
 import farm.bsg.models.CartItem;
 import farm.bsg.models.Check;
 import farm.bsg.models.Chore;
-import farm.bsg.models.Event;
+import farm.bsg.models.Customer;
 import farm.bsg.models.Habit;
 import farm.bsg.models.PayrollEntry;
 import farm.bsg.models.Person;
@@ -16,21 +16,26 @@ import farm.bsg.models.Product;
 import farm.bsg.models.SiteProperties;
 import farm.bsg.models.Subscriber;
 import farm.bsg.models.Subscription;
+import farm.bsg.models.Task;
+import farm.bsg.models.TaskFactory;
 import farm.bsg.models.WakeInputFile;
 import farm.bsg.ops.CounterCodeGen;
 import farm.bsg.pages.Checks;
 import farm.bsg.pages.Chores;
 import farm.bsg.pages.Dashboard;
-import farm.bsg.pages.Events;
 import farm.bsg.pages.Habits;
 import farm.bsg.pages.Payroll;
 import farm.bsg.pages.People;
 import farm.bsg.pages.Products;
 import farm.bsg.pages.PublicSite;
+import farm.bsg.pages.Shop;
 import farm.bsg.pages.SignIn;
 import farm.bsg.pages.Site;
 import farm.bsg.pages.Subscriptions;
+import farm.bsg.pages.TaskFactoryManagement;
+import farm.bsg.pages.Tasks;
 import farm.bsg.pages.You;
+import farm.bsg.pages.YourCart;
 
 public class CodeGen {
     private final String path;
@@ -46,7 +51,6 @@ public class CodeGen {
         codegen.addSample(new CartItem());
         codegen.addSample(new Check());
         codegen.addSample(new Chore());
-        codegen.addSample(new Event());
         codegen.addSample(new Habit());
         codegen.addSample(new PayrollEntry());
         codegen.addSample(new Person());
@@ -54,6 +58,8 @@ public class CodeGen {
         codegen.addSample(new SiteProperties());
         codegen.addSample(new Subscriber());
         codegen.addSample(new Subscription());
+        codegen.addSample(new Task());
+        codegen.addSample(new TaskFactory());
         codegen.addSample(new WakeInputFile());
         String java = codegen.java();
 
@@ -83,7 +89,7 @@ public class CodeGen {
         CartItem.link(c);
         Check.link(c);
         Chore.link(c);
-        Event.link(c);
+        Customer.link(c);
         Habit.link(c);
         PayrollEntry.link(c);
         Person.link(c);
@@ -91,6 +97,7 @@ public class CodeGen {
         SiteProperties.link(c);
         Subscriber.link(c);
         Subscription.link(c);
+        Task.link(c);
         WakeInputFile.link(c);
     }
 
@@ -98,16 +105,19 @@ public class CodeGen {
         Checks.link(c);
         Chores.link(c);
         Dashboard.link(c);
-        Events.link(c);
         Habits.link(c);
         Payroll.link(c);
         People.link(c);
         Products.link(c);
         PublicSite.link(c);
+        Shop.link(c);
         SignIn.link(c);
         Site.link(c);
         Subscriptions.link(c);
+        TaskFactoryManagement.link(c);
+        Tasks.link(c);
         You.link(c);
+        YourCart.link(c);
     }
 
     private void buildCounters() throws Exception {

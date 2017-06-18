@@ -5,11 +5,14 @@ import farm.bsg.data.contracts.ProjectionProvider;
 
 public class TypeString extends Type {
 
+    private String  defaultValue;
+
     private boolean emptyIsNull = false;
     private boolean alwaysTrim  = false;
 
     public TypeString(String name) {
         super(name);
+        this.defaultValue = null;
     }
 
     public TypeString emptyStringSameAsNull() {
@@ -47,9 +50,14 @@ public class TypeString extends Type {
         return true;
     }
 
+    public TypeString withDefault(String newDefaultValue) {
+        this.defaultValue = newDefaultValue;
+        return this;
+    }
+
     @Override
     public String defaultValue() {
-        return null;
+        return defaultValue;
     }
 
     public static String project(ProjectionProvider provider, String key) {

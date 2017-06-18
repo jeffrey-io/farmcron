@@ -15,6 +15,7 @@ import farm.bsg.pages.common.SessionPage;
 import farm.bsg.route.AnonymousRequest;
 import farm.bsg.route.RoutingTable;
 import farm.bsg.route.SessionRequest;
+import farm.bsg.route.SimpleURI;
 
 public class PublicSite {
 
@@ -22,7 +23,7 @@ public class PublicSite {
         private final AnonymousRequest request;
 
         public ActualPublicSite(AnonymousRequest request) {
-            super(request, "/*");
+            super(request, PUBLIC);
             this.request = request;
         }
 
@@ -33,7 +34,7 @@ public class PublicSite {
 
     public static class EditingPublicSite extends SessionPage {
         public EditingPublicSite(SessionRequest session) {
-            super(session, "/public");
+            super(session, PUBLIC);
         }
 
         public String list() {
@@ -162,19 +163,29 @@ public class PublicSite {
     }
 
     public static void link(RoutingTable routing) {
-        routing.navbar("/public", "Public Site", Permission.CheckMake);
+        routing.navbar(PUBLIC, "Public Site", Permission.CheckMake);
         routing.set_404((as) -> new ActualPublicSite(as).render());
-        routing.get("/public", (session) -> new EditingPublicSite(session).list());
-        routing.get("/public-upload", (session) -> new EditingPublicSite(session).upload());
-        routing.post("/upload-wake-file", (session) -> new EditingPublicSite(session).commit_upload());
+        routing.get(PUBLIC, (session) -> new EditingPublicSite(session).list());
+        routing.get(PUBLIC_UPLOAD, (session) -> new EditingPublicSite(session).upload());
+        routing.post(PUBLIC_UPLOAD_WAKE, (session) -> new EditingPublicSite(session).commit_upload());
 
         
-        routing.get("/create-wake-file", (session) -> new EditingPublicSite(session).create());
-        routing.post("/create-wake-file-commit", (session) -> new EditingPublicSite(session).create_wake_file());
-        routing.post("/update-wake-file-commit", (session) -> new EditingPublicSite(session).update_wake_file());
+        routing.get(PUBLIC_CREATE_WAKE_FILE, (session) -> new EditingPublicSite(session).create());
+        routing.post(PUBLIC_CREATE_WAKE_FILE_COMMIT, (session) -> new EditingPublicSite(session).create_wake_file());
+        routing.post(PUBLIC_UPDATE_WAKE_FILE_COMMIT, (session) -> new EditingPublicSite(session).update_wake_file());
         
-        routing.get("/public-wake-edit", (session) -> new EditingPublicSite(session).edit());
+        routing.get(PUBLIC_WAKE_EDIT, (session) -> new EditingPublicSite(session).edit());
     }
+    
+    public static SimpleURI PUBLIC = new SimpleURI("/public");
+    public static SimpleURI PUBLIC_UPLOAD = new SimpleURI("/public-upload");
+    public static SimpleURI PUBLIC_UPLOAD_WAKE = new SimpleURI("/upload-wake-file");
+    public static SimpleURI PUBLIC_CREATE_WAKE_FILE = new SimpleURI("/create-wake-file");
+    public static SimpleURI PUBLIC_CREATE_WAKE_FILE_COMMIT = new SimpleURI("/create-wake-file-commit");
+    public static SimpleURI PUBLIC_UPDATE_WAKE_FILE_COMMIT = new SimpleURI("/update-wake-file-commit");
+    public static SimpleURI PUBLIC_WAKE_EDIT = new SimpleURI("/public-wake-edit");
+    
+    
 
     public static void link(CounterCodeGen c) {
         c.section("Page: Public Site");

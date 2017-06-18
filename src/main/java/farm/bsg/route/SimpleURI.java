@@ -19,15 +19,20 @@ public class SimpleURI extends ControlledURI {
     }
 
     @Override
-    protected String href(Map<String, String> map) {
+    public FinishedHref href(Map<String, String> map) {
         if (map.size() > 0) {
             ArrayList<NameValuePair> pairs = new ArrayList<>();
             for (Entry<String, String> entry : map.entrySet()) {
                 pairs.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
             }
-            return this.uri + "?" + URLEncodedUtils.format(pairs, Charsets.UTF_8);
+            return new FinishedHref(this.uri + "?" + URLEncodedUtils.format(pairs, Charsets.UTF_8));
         } else {
-            return this.uri;
+            return new FinishedHref(this.uri);
         }
+    }
+    
+    @Override
+    public String toRoutingPattern() {
+        return uri;
     }
 }

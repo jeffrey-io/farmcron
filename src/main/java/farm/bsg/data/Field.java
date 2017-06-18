@@ -36,7 +36,7 @@ public class Field {
         return new TypeDateTime(name);
     }
 
-    public static Type NUMBER(String name) {
+    public static TypeNumber NUMBER(String name) {
         return new TypeNumber(name);
     }
     

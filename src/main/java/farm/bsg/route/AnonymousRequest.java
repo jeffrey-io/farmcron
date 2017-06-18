@@ -9,10 +9,8 @@ public class AnonymousRequest extends DelegateRequest  {
      * 
      * @param engine
      *            the engine powering the data
-     * @param req
-     *            the spark request
-     * @param res
-     *            the spark response
+     * @param delegate
+     *            the request and response wrapper
      */
     public AnonymousRequest(ProductEngine engine, RequestResponseWrapper delegate) {
         super(delegate);

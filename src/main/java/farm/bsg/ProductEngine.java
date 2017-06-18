@@ -1,8 +1,10 @@
 package farm.bsg;
 
+import farm.bsg.cron.JobManager;
 import farm.bsg.data.Authenticator;
 import farm.bsg.data.contracts.PersistenceLogger;
 import farm.bsg.html.shit.GenericTemplate;
+import farm.bsg.pages.TaskFactoryManagement;
 import farm.bsg.pages.common.NavBar;
 
 public class ProductEngine extends QueryEngine {
@@ -12,7 +14,7 @@ public class ProductEngine extends QueryEngine {
 
     public final AlexaCommands   alexa;
 
-    public ProductEngine(PersistenceLogger persistence, String pageTemplate) throws Exception {
+    public ProductEngine(JobManager manager, PersistenceLogger persistence, String pageTemplate) throws Exception {
         super(persistence);
 
         this.auth = new Authenticator(this);
@@ -20,5 +22,6 @@ public class ProductEngine extends QueryEngine {
         this.alexa = new AlexaCommands(this);
 
         this.template = new GenericTemplate(pageTemplate);
+        manager.add(new TaskFactoryManagement.TaskFactoryMonitor(this));
     }
 }

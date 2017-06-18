@@ -21,11 +21,12 @@ import farm.bsg.ops.CounterCodeGen;
 import farm.bsg.pages.common.SessionPage;
 import farm.bsg.route.RoutingTable;
 import farm.bsg.route.SessionRequest;
+import farm.bsg.route.SimpleURI;
 
 public class Habits extends SessionPage {
 
     public Habits(SessionRequest session) {
-        super(session, "/habits");
+        super(session, HABITS);
     }
 
     public HtmlPump habits_as_cards() {
@@ -254,17 +255,28 @@ public class Habits extends SessionPage {
     }
 
     public static void link(RoutingTable routing) {
-        routing.navbar("/habits", "Habits", Permission.SeeHabitsTab);
-        routing.get("/habits", (session) -> new Habits(session).list_available_as_cards());
-        routing.get("/habits-all", (session) -> new Habits(session).all());
-        routing.get("/habits-timeline", (session) -> new Habits(session).timeline());
-        routing.get("/habit-history", (session) -> new Habits(session).history());
-        routing.get_or_post("/habit-edit", (session) -> new Habits(session).edit_old());
-        routing.get_or_post("/new-habit", (session) -> new Habits(session).make_new());
-        routing.post("/commit-habit-edit", (session) -> new Habits(session).commit());
-        routing.get_or_post("/bulk-commit-habit-changes", (session) -> new Habits(session).bulk_commit());
-        routing.get_or_post("/habit-perform", (session) -> new Habits(session).ask_or_perform());
+        routing.navbar(HABITS, "Habits", Permission.SeeHabitsTab);
+        routing.get(HABITS, (session) -> new Habits(session).list_available_as_cards());
+        routing.get(HABITS_ALL, (session) -> new Habits(session).all());
+        routing.get(HABITS_TIMELINE, (session) -> new Habits(session).timeline());
+        routing.get(HABITS_HISTORY, (session) -> new Habits(session).history());
+        routing.get_or_post(HABITS_EDIT, (session) -> new Habits(session).edit_old());
+        routing.get_or_post(HABITS_NEW, (session) -> new Habits(session).make_new());
+        routing.post(HABITS_COMMIT_EDIT, (session) -> new Habits(session).commit());
+        routing.get_or_post(HABITS_BULK_COMMIT, (session) -> new Habits(session).bulk_commit());
+        routing.get_or_post(HABITS_PERFORM, (session) -> new Habits(session).ask_or_perform());
     }
+    
+    public static SimpleURI HABITS = new SimpleURI("/habits");
+    public static SimpleURI HABITS_ALL = new SimpleURI("/habits-all");
+    public static SimpleURI HABITS_TIMELINE = new SimpleURI("/habits-timeline");
+    public static SimpleURI HABITS_HISTORY = new SimpleURI("/habits-history");
+    public static SimpleURI HABITS_EDIT = new SimpleURI("/habit-edit");
+    public static SimpleURI HABITS_NEW = new SimpleURI("/new-habit");
+    public static SimpleURI HABITS_COMMIT_EDIT = new SimpleURI("/commit-habit-edit");
+    public static SimpleURI HABITS_BULK_COMMIT = new SimpleURI("/bulk-commit-habit-changes");
+    public static SimpleURI HABITS_PERFORM = new SimpleURI("/habit-perform");
+
 
     public static void link(CounterCodeGen c) {
         c.section("Page: Habits");

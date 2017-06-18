@@ -14,6 +14,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 
 import farm.bsg.amazon.AmazonS3StorageLogger;
+import farm.bsg.cron.JobManager;
 import farm.bsg.data.DiskStorageLogger;
 import farm.bsg.data.contracts.PersistenceLogger;
 import farm.bsg.ops.Logs;
@@ -29,25 +30,29 @@ public class Server {
     private static final Logger LOG = Logs.of(Server.class);
 
     public static MultiTenantRouter devRouter() throws Exception {
+        JobManager jobManager = new JobManager();
         File devStorage = new File("/farm");
         PersistenceLogger persistence = new DiskStorageLogger(devStorage);
-        ProductEngine engine = new ProductEngine(persistence, Server.getTextFile("generic.html"));
+        ProductEngine engine = new ProductEngine(jobManager, persistence, Server.getTextFile("generic.html"));
         ManualRouter router = new ManualRouter(false);
         router.setDefault(engine);
+        jobManager.start();
         return router;
     }
 
-    private static ProductEngine prodScope(AmazonS3 s3, String scope) throws Exception {
+    private static ProductEngine prodScope(JobManager jobManager, AmazonS3 s3, String scope) throws Exception {
         PersistenceLogger persistence = new AmazonS3StorageLogger(s3, "state.bsg.farm", "customers/" + scope + "/");
-        return new ProductEngine(persistence, Server.getTextFile("generic.html"));
+        return new ProductEngine(jobManager, persistence, Server.getTextFile("generic.html"));
     }
 
     public static MultiTenantRouter prodRouter() throws Exception {
+        JobManager jobManager = new JobManager();
         InstanceProfileCredentialsProvider provider = new InstanceProfileCredentialsProvider(true);
         AmazonS3 s3 = AmazonS3ClientBuilder.standard().withRegion(Regions.US_WEST_2).withCredentials(provider).build();
         ManualRouter router = new ManualRouter(true);
-        router.addDomain("bsg.farm", prodScope(s3, "jeffie"));
-        router.addDomain("demo.bsg.farm", prodScope(s3, "demo"));
+        router.addDomain("bsg.farm", prodScope(jobManager, s3, "jeffie"));
+        router.addDomain("demo.bsg.farm", prodScope(jobManager, s3, "demo"));
+        jobManager.start();
         return router;
     }
 

@@ -1,13 +1,13 @@
 package farm.bsg;
 
-import java.util.HashMap;
 import java.util.Map;
 
 import org.junit.Assert;
 
 import farm.bsg.data.Authenticator.AuthResult;
-import farm.bsg.route.AnonymousRoute;
 import farm.bsg.route.BinaryFile;
+import farm.bsg.route.MockRequestBuilder;
+import farm.bsg.route.MockRoutingTable;
 import farm.bsg.route.MultiTenantRouter;
 import farm.bsg.route.RequestResponseWrapper;
 import farm.bsg.route.RoutingTable;
@@ -18,12 +18,7 @@ public class PageBootstrap {
 
     public final TestWorld                        world;
     public final MultiTenantRouter                router;
-    private final HashMap<String, SessionRoute>   get;
-    private final HashMap<String, SessionRoute>   post;
-    private final HashMap<String, AnonymousRoute> public_get;
-    private final HashMap<String, AnonymousRoute> public_post;
-    private AnonymousRoute notFoundRoute;
-    private final RoutingTable                    routing;
+    private final MockRoutingTable routing;
 
     public PageBootstrap() throws Exception {
         this(TestWorld.start().withSampleData().done());
@@ -94,22 +89,12 @@ public class PageBootstrap {
         return route.handle(session);
     }
 
-    public Object get_object(String uri, Map<String, String> params) {
-        return execute(uri, get.get(uri), params);
-    }
-
-    public Object post_object(String uri, Map<String, String> params) {
-        return execute(uri, post.get(uri), params);
-    }
-
     public String GET(String uri, Map<String, String> params) {
-        String html = (String) execute(uri, get.get(uri), params);
-        return html;
+        return (String) routing.GET(new MockRequestBuilder(uri, world.engine).withParams(params).withAdmin());
     }
 
     public Object POST(String uri, Map<String, String> params) {
-        String html = (String) execute(uri, post.get(uri), params);
-        return html;
+        return routing.POST(new MockRequestBuilder(uri, world.engine).withParams(params).withAdmin());
     }
 
     public void assertRedirect(String uri) {
@@ -134,41 +119,8 @@ public class PageBootstrap {
                 return world.engine;
             }
         };
-        this.get = new HashMap<>();
-        this.post = new HashMap<>();
-        this.public_get = new HashMap<>();
-        this.public_post = new HashMap<>();
-        this.routing = new RoutingTable() {
-            @Override
-            public void setupTexting() {
-                // meh, for later
-            }
 
-            @Override
-            public void post(String path, SessionRoute route) {
-                post.put(path, route);
-            }
-
-            @Override
-            public void get(String path, SessionRoute route) {
-                get.put(path, route);
-            }
-
-            @Override
-            public void public_get(String path, AnonymousRoute route) {
-                public_get.put(path, route);
-            }
-
-            @Override
-            public void public_post(String path, AnonymousRoute route) {
-                public_post.put(path, route);
-            }
-
-            @Override
-            public void set_404(AnonymousRoute route) {
-                notFoundRoute = route;
-            }
-        };
+        this.routing = new MockRoutingTable();
         Linker.link(this.routing, this.router);
     }
 }

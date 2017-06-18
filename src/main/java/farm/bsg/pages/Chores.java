@@ -16,15 +16,18 @@ import farm.bsg.html.HtmlPump;
 import farm.bsg.html.Table;
 import farm.bsg.html.shit.ObjectModelForm;
 import farm.bsg.models.Chore;
+import farm.bsg.models.Task;
+import farm.bsg.models.TaskFactory;
 import farm.bsg.ops.CounterCodeGen;
 import farm.bsg.pages.common.SessionPage;
 import farm.bsg.route.RoutingTable;
 import farm.bsg.route.SessionRequest;
+import farm.bsg.route.SimpleURI;
 
 public class Chores extends SessionPage {
 
     public Chores(SessionRequest session) {
-        super(session, "/chores");
+        super(session, CHORES);
     }
 
     private HtmlPump actions(Chore chore, boolean canPerform) {
@@ -39,6 +42,7 @@ public class Chores extends SessionPage {
         if (has(Permission.PerformChore) && canPerform) {
             actions.add(Html.link("/chore-perform?id=" + chore.get("id"), "perform").btn_secondary());
         }
+        actions.add(Html.link("/chore-convert?id=" + chore.get("id"), "convert").btn_secondary());
         return actions;
     }
 
@@ -99,7 +103,7 @@ public class Chores extends SessionPage {
         int weeksLeft = -1;
         int year = now.getYear();
         while (year == now.getYear()) {
-            weeksLeft ++;
+            weeksLeft++;
             now = now.plusDays(7);
         }
         if (weeksLeft == 0) {
@@ -216,20 +220,54 @@ public class Chores extends SessionPage {
         return null;
     }
 
-    public static void link(RoutingTable routing) {
-        routing.navbar("/chores", "Chores", Permission.SeeChoresTab);
+    public String convert() {
+        Chore chore = query().chore_by_id(session.getParam("id"), false);
+        if (chore != null) {
+            System.out.println("Found chore!");
+            String lastPerformed = chore.get("last_performed");
+            String lastTaskId = null;
+            if (lastPerformed != null) {
+                Task fakeTask = new Task();
+                fakeTask.generateAndSetId();
+                fakeTask.set("state", "closed");
+                fakeTask.set("closed", chore.get("last_performed"));
+                lastTaskId = fakeTask.getId();
+                engine.put(fakeTask);
+            }
+            TaskFactory factory = new TaskFactory();
+            factory.generateAndSetId();
+            factory.copyFrom(chore, "name", "frequency", "slack", "month_filter", "day_filter");
+            factory.set("priority", "3");
+            factory.set("current_task", lastTaskId);
+            engine.put(factory);
+            engine.del(chore);
+        }
 
-        routing.get("/chores", (session) -> new Chores(session).list());
-        routing.get("/new-chore", (session) -> {
+        redirect("/chores");
+        return null;
+    }
+
+    public static void link(RoutingTable routing) {
+        routing.navbar(CHORES, "Chores", Permission.SeeChoresTab);
+
+        routing.get(CHORES, (session) -> new Chores(session).list());
+        routing.get(CHORES_NEW, (session) -> {
             session.redirect("/chore-edit?id=" + UUID.randomUUID().toString());
             return null;
         });
 
-        routing.get_or_post("/chore-edit", (session) -> new Chores(session).edit());
-
-        routing.get_or_post("/chore-view", (session) -> new Chores(session).view());
-        routing.get_or_post("/chore-perform", (session) -> new Chores(session).perform());
+        routing.get_or_post(CHORES_EDIT, (session) -> new Chores(session).edit());
+        routing.get_or_post(CHORES_VIEW, (session) -> new Chores(session).view());
+        routing.get_or_post(CHORES_PERFORM, (session) -> new Chores(session).perform());
+        routing.get_or_post(CHORES_CONVERT, (session) -> new Chores(session).convert());
     }
+
+    public static SimpleURI CHORES         = new SimpleURI("/chores");
+    public static SimpleURI CHORES_NEW     = new SimpleURI("/new-chore");
+    public static SimpleURI CHORES_EDIT    = new SimpleURI("/chore-edit");
+    public static SimpleURI CHORES_VIEW    = new SimpleURI("/chore-view");
+    public static SimpleURI CHORES_PERFORM = new SimpleURI("/chore-perform");
+    public static SimpleURI CHORES_CONVERT = new SimpleURI("/chore-convert");
 
     public static void link(CounterCodeGen c) {
         c.section("Page: Chores");
