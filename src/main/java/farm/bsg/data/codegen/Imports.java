@@ -24,6 +24,9 @@ public class Imports {
         imports.add("java.util.Iterator");
         imports.add("java.util.HashMap");
         imports.add("java.util.Comparator");
+        imports.add("java.util.concurrent.ExecutorService");
+        imports.add("java.util.concurrent.Executors");
+        imports.add("java.util.concurrent.ScheduledExecutorService");
 
         String prefix = "";
         for (String i : imports) {

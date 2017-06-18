@@ -27,6 +27,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -64,9 +68,13 @@ public class QueryEngine {
   // INDEX[WakeInputFile]
   public final KeyIndex wakeinputfile_filename;  // BY[filename]
   public final StorageEngine storage;
+  public final ExecutorService executor;
+  public final ScheduledExecutorService scheduler;
 
   public QueryEngine(PersistenceLogger persistence) throws Exception {
     InMemoryStorage memory = new InMemoryStorage();
+    this.executor = Executors.newFixedThreadPool(2);
+    this.scheduler = Executors.newSingleThreadScheduledExecutor();
     this.indexing = new MultiPrefixLogger();
     this.cart_user = indexing.add("cart/", new KeyIndex("user", false));
     this.cartitem_cart = indexing.add("cart-item/", new KeyIndex("cart", false));
@@ -82,7 +90,7 @@ public class QueryEngine {
     this.person_super_cookie = indexing.add("person/", new KeyIndex("super_cookie", false));
     this.person_notification_token = indexing.add("person/", new KeyIndex("notification_token", false));
     this.wakeinputfile_filename = indexing.add("wake_input/", new KeyIndex("filename", true));
-    this.indexing.add("wake_input/", new farm.bsg.models.WakeInputFile.DirtyWakeInputFile());
+    this.indexing.add("wake_input/", new farm.bsg.models.WakeInputFile.DirtyWakeInputFile(this));
     this.storage = new StorageEngine(memory, indexing, persistence);
   }
 

@@ -1,5 +1,8 @@
 package farm.bsg.models;
 
+import java.util.concurrent.TimeUnit;
+
+import farm.bsg.QueryEngine;
 import farm.bsg.data.AsyncTaskTarget;
 import farm.bsg.data.DirtyBitIndexer;
 import farm.bsg.data.Field;
@@ -29,11 +32,19 @@ public class WakeInputFile extends RawObject {
     }
     
     public static class DirtyWakeInputFile extends DirtyBitIndexer {
+        private QueryEngine engine;
+        
+        public DirtyWakeInputFile(QueryEngine engine) {
+            this.engine = engine;
+        }
+
         @Override
         public void onDirty(AsyncTaskTarget target) {
-            target.begin();
-            System.out.println("Prefix Dirty");
-            target.complete(true);
+            engine.scheduler.schedule(() -> {
+                AsyncTaskTarget.execute(engine.executor, target, () -> {
+                    System.out.println("Wake files being processed async!");
+                });
+            }, 500, TimeUnit.MILLISECONDS);
         }
     }
 }

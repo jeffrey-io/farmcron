@@ -2,7 +2,8 @@ package farm.bsg.data;
 
 import java.util.ArrayList;
 import java.util.Map.Entry;
-
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.TreeMap;
 import farm.bsg.data.codegen.Helpers;
 import farm.bsg.data.codegen.Imports;
@@ -49,12 +50,16 @@ public class SchemaCodeGenerator {
             IndexingEngine.writeFields(lines, entry.getKey(), entry.getValue());
         }
         lines.add("  public final StorageEngine storage;");
+        lines.add("  public final ExecutorService executor;");
+        lines.add("  public final ScheduledExecutorService scheduler;");
     }
 
     private void writeConstructor(ArrayList<String> lines) {
         lines.add("");
         lines.add("  public " + className + "(PersistenceLogger persistence) throws Exception {");
         lines.add("    InMemoryStorage memory = new InMemoryStorage();");
+        lines.add("    this.executor = Executors.newFixedThreadPool(2);");
+        lines.add("    this.scheduler = Executors.newSingleThreadScheduledExecutor();");
         lines.add("    this.indexing = new MultiPrefixLogger();");
         for (Entry<String, ObjectSchema> entry : schemas.entrySet()) {
             IndexingEngine.writeConstructor(lines, entry.getKey(), entry.getValue());

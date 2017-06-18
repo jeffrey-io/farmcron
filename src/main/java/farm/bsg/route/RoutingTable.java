@@ -30,6 +30,13 @@ public abstract class RoutingTable {
         });
     }
 
+    public void navbar(ControlledURI uri, String label, Permission permission) {
+        latentNavbar.add((navbar) -> {
+            navbar.add(uri.href(), label, permission);
+        });
+    }
+
+    
     public void flushNavbar(NavBar navbar) {
         for (Consumer<NavBar> item : latentNavbar) {
             item.accept(navbar);
@@ -51,6 +58,14 @@ public abstract class RoutingTable {
     }
 
     public abstract void setupTexting();
+
+    public void get(ControlledURI path, SessionRoute route) {
+        get(path.href(), route);
+    }
+
+    public void post(ControlledURI path, SessionRoute route) {
+        post(path.href(), route);
+    }
 
     public abstract void get(String path, SessionRoute route);
 

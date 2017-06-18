@@ -20,10 +20,11 @@ import farm.bsg.ops.CounterCodeGen;
 import farm.bsg.pages.common.SessionPage;
 import farm.bsg.route.RoutingTable;
 import farm.bsg.route.SessionRequest;
+import farm.bsg.route.SimpleURI;
 
 public class Checks extends SessionPage {
     public Checks(SessionRequest session) {
-        super(session, "/checks");
+        super(session, CHECKS_HOME.href());
     }
 
     private HtmlPump fragmentOutstandingBalancesForAllEmployees() {
@@ -194,12 +195,19 @@ public class Checks extends SessionPage {
     }
 
     public static void link(RoutingTable routing) {
-        routing.navbar("/checks", "Checks", Permission.SeeChecksTab);
-        routing.get("/checks", (session) -> new Checks(session).show());
-        routing.get("/audit-check", (session) -> new Checks(session).audit());
-        routing.get("/confirm-check", (session) -> new Checks(session).confirm());
-        routing.get("/check-view", (session) -> new Checks(session).visualize());
+        routing.navbar(CHECKS_HOME, "Checks", Permission.SeeChecksTab);
+        routing.get(CHECKS_HOME, (session) -> new Checks(session).show());
+        routing.get(CHECKS_AUDIT, (session) -> new Checks(session).audit());
+        routing.get(CHECKS_CONFIRM, (session) -> new Checks(session).confirm());
+        routing.get(CHECKS_VIEW, (session) -> new Checks(session).visualize());
     }
+    
+    public static final SimpleURI CHECKS_HOME = new SimpleURI("/admin/checks");
+    
+    // TODO: link this in
+    public static final SimpleURI CHECKS_AUDIT = new SimpleURI("/audit-check");
+    public static final SimpleURI CHECKS_CONFIRM = new SimpleURI("/confirm-check");
+    public static final SimpleURI CHECKS_VIEW = new SimpleURI("/check-view");
 
     public static void link(CounterCodeGen c) {
         c.section("Page: Checks");

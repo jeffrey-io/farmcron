@@ -18,7 +18,7 @@ public class IndexingEngine {
             }
         }
         for (String javaType : object.getDirtyBitIndicesJavaTypes()) {
-            lines.add("    this.indexing.add(\"" + object.getPrefix() + "\", new " + javaType + "());");
+            lines.add("    this.indexing.add(\"" + object.getPrefix() + "\", new " + javaType + "(this));");
         }
     }
 
