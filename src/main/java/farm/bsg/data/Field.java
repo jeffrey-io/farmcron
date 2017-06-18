@@ -1,6 +1,7 @@
 package farm.bsg.data;
 
 import farm.bsg.data.types.TypeBoolean;
+import farm.bsg.data.types.TypeBytesInBase64;
 import farm.bsg.data.types.TypeDateTime;
 import farm.bsg.data.types.TypeDayFilter;
 import farm.bsg.data.types.TypeMonthFilter;
@@ -17,6 +18,10 @@ public class Field {
 
     public static TypeString STRING(String name) {
         return new TypeString(name);
+    }
+
+    public static TypeBytesInBase64 BYTESB64(String name) {
+        return new TypeBytesInBase64(name);
     }
 
     public static Type BOOL(String name) {

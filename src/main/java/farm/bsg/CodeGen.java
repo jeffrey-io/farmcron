@@ -16,6 +16,7 @@ import farm.bsg.models.Product;
 import farm.bsg.models.SiteProperties;
 import farm.bsg.models.Subscriber;
 import farm.bsg.models.Subscription;
+import farm.bsg.models.WakeInputFile;
 import farm.bsg.ops.CounterCodeGen;
 import farm.bsg.pages.Checks;
 import farm.bsg.pages.Chores;
@@ -53,6 +54,7 @@ public class CodeGen {
         codegen.addSample(new SiteProperties());
         codegen.addSample(new Subscriber());
         codegen.addSample(new Subscription());
+        codegen.addSample(new WakeInputFile());
         String java = codegen.java();
 
         System.out.println(java);
@@ -89,6 +91,7 @@ public class CodeGen {
         SiteProperties.link(c);
         Subscriber.link(c);
         Subscription.link(c);
+        WakeInputFile.link(c);
     }
 
     private void Pages(CounterCodeGen c) {
