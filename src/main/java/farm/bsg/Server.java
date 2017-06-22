@@ -29,11 +29,16 @@ public class Server {
 
     private static final Logger LOG = Logs.of(Server.class);
 
+    private static String getGenericTemplate() throws Exception {
+        String html = Server.getTextFile("generic.html");
+        return html.replaceAll("\\$CACHE_BUSTER\\$", Long.toHexString(System.currentTimeMillis()));
+    }
+
     public static MultiTenantRouter devRouter() throws Exception {
         JobManager jobManager = new JobManager();
         File devStorage = new File("/farm");
         PersistenceLogger persistence = new DiskStorageLogger(devStorage);
-        ProductEngine engine = new ProductEngine(jobManager, persistence, Server.getTextFile("generic.html"));
+        ProductEngine engine = new ProductEngine(jobManager, persistence, getGenericTemplate());
         ManualRouter router = new ManualRouter(false);
         router.setDefault(engine);
         jobManager.start();
@@ -42,7 +47,7 @@ public class Server {
 
     private static ProductEngine prodScope(JobManager jobManager, AmazonS3 s3, String scope) throws Exception {
         PersistenceLogger persistence = new AmazonS3StorageLogger(s3, "state.bsg.farm", "customers/" + scope + "/");
-        return new ProductEngine(jobManager, persistence, Server.getTextFile("generic.html"));
+        return new ProductEngine(jobManager, persistence, getGenericTemplate());
     }
 
     public static MultiTenantRouter prodRouter() throws Exception {
@@ -78,7 +83,9 @@ public class Server {
 
         LOG.info("mapping style.css");
         expose("style.css");
-        
+        LOG.info("mapping code.js");
+        expose("code.js");
+
         LOG.info("mapping favicon.ico");
         favicon();
 

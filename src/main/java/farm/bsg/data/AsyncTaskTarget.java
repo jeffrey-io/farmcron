@@ -1,6 +1,7 @@
 package farm.bsg.data;
 
 import java.util.concurrent.ExecutorService;
+import java.util.function.BooleanSupplier;
 
 public interface AsyncTaskTarget {
 
@@ -8,15 +9,14 @@ public interface AsyncTaskTarget {
     
     void complete(boolean success);
     
-    public static void execute(ExecutorService executor, AsyncTaskTarget task, Runnable body) {
+    public static void execute(ExecutorService executor, AsyncTaskTarget task, BooleanSupplier body) {
         executor.execute(new Runnable() {
             @Override
             public void run() {
                 task.begin();
                 boolean success = false;
                 try {
-                    body.run();
-                    success = true;
+                    success = body.getAsBoolean();
                 } finally {
                     task.complete(success);
                 }

@@ -1,7 +1,6 @@
 package farm.bsg;
 
 import farm.bsg.pages.Checks;
-import farm.bsg.pages.Chores;
 import farm.bsg.pages.Dashboard;
 import farm.bsg.pages.Habits;
 import farm.bsg.pages.Payroll;
@@ -23,7 +22,6 @@ public class Linker {
 
     public static void link(RoutingTable routing, MultiTenantRouter router) throws Exception {
         Dashboard.link(routing);
-        Chores.link(routing);
         Habits.link(routing);
         Subscriptions.link(routing);
         Payroll.link(routing);

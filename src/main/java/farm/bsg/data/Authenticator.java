@@ -9,8 +9,10 @@ import javax.crypto.spec.PBEKeySpec;
 
 import org.apache.commons.codec.binary.Hex;
 
+import farm.bsg.BsgCounters;
 import farm.bsg.QueryEngine;
 import farm.bsg.models.Person;
+import farm.bsg.ops.CounterCodeGen;
 
 /**
  * Defines how authentication works
@@ -56,12 +58,19 @@ public class Authenticator {
     }
 
     private AuthResult allow(Person p) {
-        AuthResult result = AuthResult.ALLOWED(generateCookie(), p);
+        AuthResult result = AuthResult.ALLOWED(generateCookie(p.getId()), p);
+        cookieCache.put(result.cookie, result);
+        return result;
+    }
+
+    private AuthResult allow(Person p, String cookie) {
+        AuthResult result = AuthResult.ALLOWED(cookie, p);
         cookieCache.put(result.cookie, result);
         return result;
     }
 
     public AuthResult authenticateByUsernameAndPassword(String usernameRaw, String password) {
+        BsgCounters.I.auth_attempt_login.bump();
         String[] splitUsername = usernameRaw.toLowerCase().split(":");
         String username = splitUsername[0].trim();
         Person p = engine.select_person().where_login_eq(username).to_list().first();
@@ -77,11 +86,13 @@ public class Authenticator {
                 p.setPassword("default_password_42"); //
                 engine.put(p);
             } else {
+                BsgCounters.I.auth_attempt_login_failure.bump();
                 return AuthResult.DENIED();
             }
         }
 
         if (p == null) {
+            BsgCounters.I.auth_attempt_login_failure.bump();
             return AuthResult.DENIED();
         }
 
@@ -92,35 +103,53 @@ public class Authenticator {
                 if (splitUsername.length > 1) {
                     return impersonate(p, splitUsername[1]);
                 }
-                return allow(p);
+                String cookie = generateCookie(p.getId());
+                p.set("cookie", cookie);
+                engine.put(p);
+                BsgCounters.I.auth_attempt_login_success.bump();
+                return allow(p, cookie);
             }
         } catch (Exception err) {
 
         }
+        BsgCounters.I.auth_attempt_login_failure.bump();
         return AuthResult.DENIED();
     }
 
     public AuthResult authenticateByCookies(String cookie, String superCookie) {
+        BsgCounters.I.auth_attempt_cookie.bump();
         AuthResult result = cookieCache.get(cookie);
         if (result == null) {
+            if (cookie != null) {
+                Person p = engine.select_person().where_cookie_eq(cookie).to_list().first();
+                if (p != null) {
+                    BsgCounters.I.auth_cache_populate.bump();
+                    return allow(p, cookie);
+                }
+            }
             if (superCookie != null) {
                 Person p = engine.select_person().where_super_cookie_eq(superCookie).to_list().first();
                 if (p != null) {
-                    return allow(p);
+                    cookie = generateCookie(p.getId());
+                    p.set("cookie", cookie);
+                    engine.put(p);
+                    BsgCounters.I.auth_super_cookie_conversion.bump();
+                    return allow(p, cookie);
                 }
             }
             return AuthResult.DENIED();
         }
+        BsgCounters.I.auth_cache_hit.bump();
         // refresh the person object
         return result;
     }
 
-    public String generateCookie() {
-        String cookie = Hex.encodeHexString(new SecureRandom().generateSeed(16));
+    public String generateCookie(String userId) {
+        String cookie = Hex.encodeHexString(new SecureRandom().generateSeed(32));
         while (cookieCache.containsKey(cookie)) {
             cookie += Hex.encodeHexString(new SecureRandom().generateSeed(2));
         }
-        return cookie;
+        return userId + "_" + cookie;
     }
 
     public static String hash(final String password, final byte[] salt) {
@@ -133,5 +162,16 @@ public class Authenticator {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+    
+    public static void link(CounterCodeGen c) {
+        c.section("Auth");
+        c.counter("auth_attempt_login", "an auth was attempted");
+        c.counter("auth_attempt_login_success", "an auth attempt was successful");
+        c.counter("auth_attempt_login_failure", "an auth attempt failed");
+        c.counter("auth_attempt_cookie", "an auth was attempted");
+        c.counter("auth_cache_hit", "the cookie was found in the local cache");
+        c.counter("auth_cache_populate", "the cookie was found in the DB and went into local cache");
+        c.counter("auth_super_cookie_conversion", "a super cookie was converted into a new cookie");
     }
 }

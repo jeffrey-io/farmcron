@@ -8,18 +8,21 @@ import org.slf4j.Logger;
 import com.amazonaws.util.json.Jackson;
 
 import farm.bsg.ProductEngine;
+import farm.bsg.data.UriBlobCache.UriBlob;
 import farm.bsg.ops.Logs;
 import farm.bsg.route.AnonymousRequest;
 import farm.bsg.route.AnonymousRoute;
 import farm.bsg.route.ControlledURI;
 import farm.bsg.route.CustomerRequest;
 import farm.bsg.route.CustomerRoute;
+import farm.bsg.route.FinishedHref;
 import farm.bsg.route.MultiTenantRouter;
 import farm.bsg.route.RoutingTable;
 import farm.bsg.route.SessionRequest;
 import farm.bsg.route.SessionRoute;
 import farm.bsg.route.text.TextMessage;
 import spark.Request;
+import spark.Response;
 import spark.Route;
 
 public class SparkRouting extends RoutingTable {
@@ -81,7 +84,7 @@ public class SparkRouting extends RoutingTable {
                 SparkBox sparked = new SparkBox(req, res, secure);
                 SessionRequest sessionRequest = new SessionRequest(engine, sparked);
                 if (!sessionRequest.isAllowed()) {
-                    sparked.redirect("/");
+                    sparked.redirect(new FinishedHref("/"));
                     return null;
                 }
                 log(sessionRequest);
@@ -102,7 +105,7 @@ public class SparkRouting extends RoutingTable {
                 SparkBox sparked = new SparkBox(req, res, secure);
                 SessionRequest sessionRequest = new SessionRequest(engine, sparked);
                 if (!sessionRequest.isAllowed()) {
-                    sparked.redirect("/");
+                    sparked.redirect(new FinishedHref("/"));
                     return null;
                 }
                 log(sessionRequest);
@@ -113,7 +116,6 @@ public class SparkRouting extends RoutingTable {
             }
         });
     }
-    
 
     @Override
     public void public_post(ControlledURI path, AnonymousRoute route) {
@@ -124,7 +126,7 @@ public class SparkRouting extends RoutingTable {
                 SparkBox sparked = new SparkBox(req, res, secure);
                 AnonymousRequest anonymousRequest = new AnonymousRequest(engine, sparked);
                 log(anonymousRequest);
-                return route.handle(anonymousRequest);
+                return localHandle(route.handle(anonymousRequest), req, res);
             } catch (Exception err) {
                 return exceptionalize(err);
             }
@@ -140,18 +142,31 @@ public class SparkRouting extends RoutingTable {
                 SparkBox sparked = new SparkBox(req, res, secure);
                 AnonymousRequest anonymousRequest = new AnonymousRequest(engine, sparked);
                 log(anonymousRequest);
-                return route.handle(anonymousRequest);
+                return localHandle(route.handle(anonymousRequest), req, res);
             } catch (Exception err) {
                 return exceptionalize(err);
 
             }
         });
-    }    
+    }
+
+    private Object localHandle(Object result, Request req, Response resp) {
+        if (result == null) {
+            return "";
+        }
+        if (result instanceof UriBlob) {
+            UriBlob blob = (UriBlob) result;
+            resp.status(200);
+            resp.type(blob.contentType);
+            return blob.blob;
+        }
+        return result;
+    }
 
     private void log(Request req) {
         LOG.info("access host:{} uri:{} method:{}", req.headers("Host"), req.uri(), req.requestMethod());
     }
-    
+
     private void log(SessionRequest session) {
         LOG.info("session person:{}", session.getPerson().get("login"));
     }
@@ -163,7 +178,7 @@ public class SparkRouting extends RoutingTable {
     private void log(CustomerRequest session) {
         LOG.info("customer!");
     }
-    
+
     @Override
     public void set_404(AnonymousRoute route) {
         spark.Spark.notFound((req, res) -> {
@@ -173,14 +188,14 @@ public class SparkRouting extends RoutingTable {
                 SparkBox sparked = new SparkBox(req, res, secure);
                 AnonymousRequest anonymousRequest = new AnonymousRequest(engine, sparked);
                 log(anonymousRequest);
-                return route.handle(anonymousRequest);
+                return localHandle(route.handle(anonymousRequest), req, res);
             } catch (Exception err) {
                 return exceptionalize(err);
 
             }
         });
     }
-    
+
     @Override
     public void customer_get(ControlledURI path, CustomerRoute route) {
         spark.Spark.get(path.toRoutingPattern(), (req, res) -> {
@@ -197,7 +212,6 @@ public class SparkRouting extends RoutingTable {
             }
         });
     }
-    
 
     @Override
     public void customer_post(ControlledURI path, CustomerRoute route) {
@@ -213,6 +227,6 @@ public class SparkRouting extends RoutingTable {
                 return exceptionalize(err);
 
             }
-        }); 
+        });
     }
 }

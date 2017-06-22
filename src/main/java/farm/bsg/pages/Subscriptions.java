@@ -218,7 +218,7 @@ public class Subscriptions extends SessionPage {
         routing.get_or_post(SUBSCRIPTIONS_REMOVE_SUB, (session) -> new Subscriptions(session).remove());
 
         routing.get(SUBSCRIPTIONS_NEW, (session) -> {
-            session.redirect("/subscription-edit?id=" + UUID.randomUUID().toString());
+            session.redirect(SUBSCRIPTIONS_EDIT.href("id", UUID.randomUUID().toString()));
             return null;
         });
         routing.get_or_post(SUBSCRIPTIONS_EDIT, (session) -> new Subscriptions(session).edit());

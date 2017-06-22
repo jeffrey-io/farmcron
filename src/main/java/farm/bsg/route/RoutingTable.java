@@ -30,7 +30,6 @@ public abstract class RoutingTable {
         });
     }
 
-    
     public void flushNavbar(NavBar navbar) {
         for (Consumer<NavBar> item : latentNavbar) {
             item.accept(navbar);
@@ -61,11 +60,11 @@ public abstract class RoutingTable {
         get(path, route);
         post(path, route);
     }
-    
+
     public abstract void public_get(ControlledURI path, AnonymousRoute route);
 
     public abstract void public_post(ControlledURI path, AnonymousRoute route);
-   
+
     public void public_get_or_post(ControlledURI path, AnonymousRoute route) {
         public_get(path, route);
         public_post(path, route);
@@ -76,10 +75,18 @@ public abstract class RoutingTable {
     public abstract void customer_get(ControlledURI path, CustomerRoute route);
 
     public abstract void customer_post(ControlledURI path, CustomerRoute route);
-   
+
     public void customer_get_or_post(ControlledURI path, CustomerRoute route) {
         customer_get(path, route);
         customer_post(path, route);
+    }
+
+    public void js_api_get(SimpleURI path, String... args) {
+
+    }
+
+    public void js_api_post(SimpleURI path, String... args) {
+
     }
 
 }

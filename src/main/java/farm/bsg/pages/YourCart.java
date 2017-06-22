@@ -40,7 +40,7 @@ public class YourCart extends CustomerPage {
             item.set("customizations", request.getParam("customizations"));
         }
         engine.put(item);
-        request.redirect(CART.href().value);
+        request.redirect(CART.href());
         return null;
     }
     
@@ -56,7 +56,7 @@ public class YourCart extends CustomerPage {
                 engine.put(item);
             }
         }
-        request.redirect(CART.href().value);
+        request.redirect(CART.href());
         return null;
     }
     

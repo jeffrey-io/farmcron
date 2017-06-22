@@ -107,7 +107,7 @@ public class Habits extends SessionPage {
             engine.put(habit);
             k++;
         }
-        session.redirect("/habits-timeline");
+        session.redirect(HABITS_TIMELINE.href());
         return null;
     }
 

@@ -25,8 +25,24 @@ public class BsgCounters {
   // Section{PAGE: TASK FACTORY}
   public final Counter task_factory_monitor_run;
 
+  // Section{AUTH}
+  public final Counter auth_attempt_login;
+  public final Counter auth_attempt_login_success;
+  public final Counter auth_attempt_login_failure;
+  public final Counter auth_attempt_cookie;
+  public final Counter auth_cache_hit;
+  public final Counter auth_cache_populate;
+  public final Counter auth_super_cookie_conversion;
+
   // Section{DATA: HABIT}
   public final Counter habit_bad_history;
+
+  // Section{DATA: TASKS}
+  public final Counter task_transition;
+
+  // Section{DATA: WAKE INPUT FILE}
+  public final Counter compile_wake;
+  public final Counter wake_file_written_blob_cache;
 
   public final CounterSource source;
 
@@ -62,7 +78,23 @@ public class BsgCounters {
     src.setSection("Page: Task Factory");
     this.task_factory_monitor_run = src.counter("task_factory_monitor_run", "How many runs of the task factory have there been");
 
+    src.setSection("Auth");
+    this.auth_attempt_login = src.counter("auth_attempt_login", "an auth was attempted");
+    this.auth_attempt_login_success = src.counter("auth_attempt_login_success", "an auth attempt was successful");
+    this.auth_attempt_login_failure = src.counter("auth_attempt_login_failure", "an auth attempt failed");
+    this.auth_attempt_cookie = src.counter("auth_attempt_cookie", "an auth was attempted");
+    this.auth_cache_hit = src.counter("auth_cache_hit", "the cookie was found in the local cache");
+    this.auth_cache_populate = src.counter("auth_cache_populate", "the cookie was found in the DB and went into local cache");
+    this.auth_super_cookie_conversion = src.counter("auth_super_cookie_conversion", "a super cookie was converted into a new cookie");
+
     src.setSection("Data: Habit");
     this.habit_bad_history = src.counter("habit_bad_history", "Contained poorly formated history");
+
+    src.setSection("Data: Tasks");
+    this.task_transition = src.counter("task_transition", "a task was transitioned to a new state");
+
+    src.setSection("Data: Wake Input File");
+    this.compile_wake = src.counter("compile_wake", "wake files are being compiled");
+    this.wake_file_written_blob_cache = src.counter("wake_file_written_blob_cache", "a file was generated and put in the blob cache");
   }
 }

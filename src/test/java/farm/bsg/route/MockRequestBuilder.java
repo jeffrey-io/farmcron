@@ -57,7 +57,7 @@ public class MockRequestBuilder {
             }
 
             @Override
-            public void redirect(String uri) {
+            public void redirect(FinishedHref href) {
                 // redirectedUri = uri;
             }
 

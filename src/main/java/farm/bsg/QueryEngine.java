@@ -9,7 +9,6 @@ import farm.bsg.data.contracts.*;
 import farm.bsg.models.Cart;
 import farm.bsg.models.CartItem;
 import farm.bsg.models.Check;
-import farm.bsg.models.Chore;
 import farm.bsg.models.Habit;
 import farm.bsg.models.PayrollEntry;
 import farm.bsg.models.Person;
@@ -63,6 +62,7 @@ public class QueryEngine {
   // INDEX[Person]
   public final KeyIndex person_login;  // BY[login]
   public final KeyIndex person_phone;  // BY[phone]
+  public final KeyIndex person_cookie;  // BY[cookie]
   public final KeyIndex person_super_cookie;  // BY[super_cookie]
   public final KeyIndex person_notification_token;  // BY[notification_token]
 
@@ -75,11 +75,13 @@ public class QueryEngine {
   public final StorageEngine storage;
   public final ExecutorService executor;
   public final ScheduledExecutorService scheduler;
+  public final UriBlobCache publicBlobCache;
 
   public QueryEngine(PersistenceLogger persistence) throws Exception {
     InMemoryStorage memory = new InMemoryStorage();
     this.executor = Executors.newFixedThreadPool(2);
     this.scheduler = Executors.newSingleThreadScheduledExecutor();
+    this.publicBlobCache = new UriBlobCache();
     this.indexing = new MultiPrefixLogger();
     this.cart_user = indexing.add("cart/", new KeyIndex("user", false));
     this.cartitem_cart = indexing.add("cart-item/", new KeyIndex("cart", false));
@@ -92,12 +94,14 @@ public class QueryEngine {
     this.payrollentry_unpaid = indexing.add("payroll/", new KeyIndex("unpaid", false));
     this.person_login = indexing.add("person/", new KeyIndex("login", true));
     this.person_phone = indexing.add("person/", new KeyIndex("phone", false));
+    this.person_cookie = indexing.add("person/", new KeyIndex("cookie", false));
     this.person_super_cookie = indexing.add("person/", new KeyIndex("super_cookie", false));
     this.person_notification_token = indexing.add("person/", new KeyIndex("notification_token", false));
+    this.indexing.add("product/", new farm.bsg.models.PublicSiteBuilder(this));
     this.task_owner = indexing.add("task/", new KeyIndex("owner", false));
     this.task_state = indexing.add("task/", new KeyIndex("state", false));
     this.wakeinputfile_filename = indexing.add("wake_input/", new KeyIndex("filename", true));
-    this.indexing.add("wake_input/", new farm.bsg.models.WakeInputFile.DirtyWakeInputFile(this));
+    this.indexing.add("wake_input/", new farm.bsg.models.PublicSiteBuilder(this));
     this.storage = new StorageEngine(memory, indexing, persistence);
   }
 
@@ -228,43 +232,6 @@ public class QueryEngine {
   public String make_key_check(String id) {
     StringBuilder key = new StringBuilder();
     key.append("checks/");
-    key.append(id);
-    return key.toString();
-}
-
-  /**************************************************
-  Basic Operations (look up, type transfer, keys, immutable copies) (chore/)
-  **************************************************/
-
-  public Chore chore_by_id(String id, boolean create) {
-    Value v = storage.get("chore/" + id);
-    if (v == null && !create) {
-      return null;
-    }
-    Chore result = chore_of(v);
-    result.set("id", id);
-    return result;
-  }
-
-  private Chore chore_of(Value v) {
-    Chore item = new Chore();
-    if (v != null) {
-      item.injectValue(v);
-    }
-    return item;
-  }
-
-  private ArrayList<Chore> chores_of(ArrayList<Value> values) {
-    ArrayList<Chore> list = new ArrayList<>(values.size());
-    for (Value v : values) {
-      list.add(chore_of(v));
-    }
-    return list;
-  }
-
-  public String make_key_chore(String id) {
-    StringBuilder key = new StringBuilder();
-    key.append("chore/");
     key.append(id);
     return key.toString();
 }
@@ -672,10 +639,6 @@ public class QueryEngine {
   }
 
   /**************************************************
-  Indexing (chore/)
-  **************************************************/
-
-  /**************************************************
   Indexing (habits/)
   **************************************************/
 
@@ -701,6 +664,10 @@ public class QueryEngine {
 
   public HashSet<String> get_person_phone_index_keys() {
     return person_phone.getIndexKeys();
+  }
+
+  public HashSet<String> get_person_cookie_index_keys() {
+    return person_cookie.getIndexKeys();
   }
 
   public HashSet<String> get_person_super_cookie_index_keys() {
@@ -1240,129 +1207,6 @@ public class QueryEngine {
   }
 
   /**************************************************
-  Query Engine (chore/)
-  **************************************************/
-
-  public ChoreSetQuery select_chore() {
-    return new ChoreSetQuery();
-  }
-
-  public class ChoreListHolder {
-    private final ArrayList<Chore> list;
-
-    private ChoreListHolder(HashSet<String> keys, String scope) {
-      if (keys == null) {
-        this.list = chores_of(fetch_all("chore/" + scope));
-      } else {
-        this.list = chores_of(fetch(keys));
-      }
-    }
-
-    private ChoreListHolder(ArrayList<Chore> list) {
-      this.list = list;
-    }
-
-    public ChoreListHolder inline_filter(Predicate<Chore> filter) {
-      Iterator<Chore> it = list.iterator();
-      while (it.hasNext()) {
-        if (filter.test(it.next())) {
-          it.remove();
-        }
-      }
-      return this;
-    }
-
-    public ChoreListHolder limit(int count) {
-      Iterator<Chore> it = list.iterator();
-      int at = 0;
-      while (it.hasNext()) {
-        it.next();
-        if (at >= count) {
-          it.remove();
-        }
-        at++;
-      }
-      return this;
-    }
-
-    public ChoreListHolder inline_apply(Consumer<Chore> consumer) {
-      Iterator<Chore> it = list.iterator();
-      while (it.hasNext()) {
-        consumer.accept(it.next());
-      }
-      return this;
-    }
-
-    public ChoreListHolder fork() {
-      return new ChoreListHolder(this.list);
-    }
-
-    public ChoreListHolder inline_order_lexographically_asc_by(String... keys) {
-      Collections.sort(this.list, new LexographicalOrder<Chore>(keys, true, true));
-      return this;
-    }
-
-    public ChoreListHolder inline_order_lexographically_desc_by(String... keys) {
-      Collections.sort(this.list, new LexographicalOrder<Chore>(keys, false, true));
-      return this;
-    }
-
-    public ChoreListHolder inline_order_lexographically_by(boolean asc, boolean caseSensitive, String... keys) {
-      Collections.sort(this.list, new LexographicalOrder<Chore>(keys, asc, caseSensitive));
-      return this;
-    }
-
-    public ChoreListHolder inline_order_by(Comparator<Chore> comparator) {
-      Collections.sort(this.list, comparator);
-      return this;
-    }
-
-    public int count() {
-      return this.list.size();
-    }
-    public Chore first() {
-      if (this.list.size() == 0) {
-        return null;
-      }
-      return this.list.get(0);
-    }
-    public ArrayList<Chore> done() {
-      return this.list;
-    }
-  }
-
-  public class ChoreSetQuery {
-    private String scope;
-    private HashSet<String> keys;
-
-    private ChoreSetQuery() {
-      this.scope = "";
-      this.keys = null;
-    }
-
-    public ChoreListHolder to_list() {
-      return new ChoreListHolder(this.keys, this.scope);
-    }
-
-    public ArrayList<Chore> done() {
-      return new ChoreListHolder(this.keys, this.scope).done();
-    }
-
-    public int count() {
-      if (this.keys == null) {
-        return to_list().count();
-      } else {
-        return this.keys.size();
-      }
-    }
-
-    public ChoreSetQuery scope(String scope) {
-      this.scope += scope + "/";
-      return this;
-    }
-  }
-
-  /**************************************************
   Query Engine (habits/)
   **************************************************/
 
@@ -1794,6 +1638,23 @@ public class QueryEngine {
         this.keys = lookup_phone(values);
       } else {
         this.keys = BinaryOperators.intersect(this.keys, lookup_phone(values));
+      }
+      return this;
+    }
+
+    private HashSet<String> lookup_cookie(String... values) {
+      HashSet<String> keys = new HashSet<>();
+      for(String value : values) {
+        keys.addAll(person_cookie.getKeys(value));
+      }
+      return keys;
+    }
+
+    public PersonSetQuery where_cookie_eq(String... values) {
+      if (this.keys == null) {
+        this.keys = lookup_cookie(values);
+      } else {
+        this.keys = BinaryOperators.intersect(this.keys, lookup_cookie(values));
       }
       return this;
     }
@@ -2827,68 +2688,6 @@ public class QueryEngine {
 
 
   /**************************************************
-  Projects (chore/)
-  **************************************************/
-
-  public class ChoreProjection_admin {
-    private final HashMap<String, String> data;
-    
-    public ChoreProjection_admin(ProjectionProvider pp) {
-      this.data = new HashMap<String, String>();
-      this.data.put("id", farm.bsg.data.types.TypeUUID.project(pp, "id"));
-      this.data.put("__token", farm.bsg.data.types.TypeString.project(pp, "__token"));
-      this.data.put("name", farm.bsg.data.types.TypeString.project(pp, "name"));
-      this.data.put("last_performed", farm.bsg.data.types.TypeString.project(pp, "last_performed"));
-      this.data.put("last_performed_by", farm.bsg.data.types.TypeString.project(pp, "last_performed_by"));
-      this.data.put("frequency", farm.bsg.data.types.TypeString.project(pp, "frequency"));
-      this.data.put("slack", farm.bsg.data.types.TypeString.project(pp, "slack"));
-      this.data.put("month_filter", farm.bsg.data.types.TypeMonthFilter.project(pp, "month_filter"));
-      this.data.put("day_filter", farm.bsg.data.types.TypeDayFilter.project(pp, "day_filter"));
-      this.data.put("time_to_perform_hours", farm.bsg.data.types.TypeString.project(pp, "time_to_perform_hours"));
-      this.data.put("equipment_skills_required", farm.bsg.data.types.TypeString.project(pp, "equipment_skills_required"));
-      this.data.put("weather_requirements", farm.bsg.data.types.TypeString.project(pp, "weather_requirements"));
-      this.data.put("hour_filter", farm.bsg.data.types.TypeString.project(pp, "hour_filter"));
-      this.data.put("manual", farm.bsg.data.types.TypeString.project(pp, "manual"));
-    }
-
-    public PutResult apply(Chore chore) {
-      return chore.validateAndApplyProjection(this.data);
-    }
-  }
-
-  public ChoreProjection_admin projection_chore_admin_of(ProjectionProvider pp) {
-    return new ChoreProjection_admin(pp);
-  }
-
-
-  public class ChoreProjection_edit {
-    private final HashMap<String, String> data;
-    
-    public ChoreProjection_edit(ProjectionProvider pp) {
-      this.data = new HashMap<String, String>();
-      this.data.put("name", farm.bsg.data.types.TypeString.project(pp, "name"));
-      this.data.put("frequency", farm.bsg.data.types.TypeString.project(pp, "frequency"));
-      this.data.put("slack", farm.bsg.data.types.TypeString.project(pp, "slack"));
-      this.data.put("month_filter", farm.bsg.data.types.TypeMonthFilter.project(pp, "month_filter"));
-      this.data.put("day_filter", farm.bsg.data.types.TypeDayFilter.project(pp, "day_filter"));
-      this.data.put("time_to_perform_hours", farm.bsg.data.types.TypeString.project(pp, "time_to_perform_hours"));
-      this.data.put("equipment_skills_required", farm.bsg.data.types.TypeString.project(pp, "equipment_skills_required"));
-      this.data.put("weather_requirements", farm.bsg.data.types.TypeString.project(pp, "weather_requirements"));
-      this.data.put("hour_filter", farm.bsg.data.types.TypeString.project(pp, "hour_filter"));
-      this.data.put("manual", farm.bsg.data.types.TypeString.project(pp, "manual"));
-    }
-
-    public PutResult apply(Chore chore) {
-      return chore.validateAndApplyProjection(this.data);
-    }
-  }
-
-  public ChoreProjection_edit projection_chore_edit_of(ProjectionProvider pp) {
-    return new ChoreProjection_edit(pp);
-  }
-
-
-  /**************************************************
   Projects (habits/)
   **************************************************/
 
@@ -3017,6 +2816,7 @@ public class QueryEngine {
       this.data.put("email", farm.bsg.data.types.TypeString.project(pp, "email"));
       this.data.put("salt", farm.bsg.data.types.TypeString.project(pp, "salt"));
       this.data.put("hash", farm.bsg.data.types.TypeString.project(pp, "hash"));
+      this.data.put("cookie", farm.bsg.data.types.TypeString.project(pp, "cookie"));
       this.data.put("super_cookie", farm.bsg.data.types.TypeString.project(pp, "super_cookie"));
       this.data.put("notification_token", farm.bsg.data.types.TypeString.project(pp, "notification_token"));
       this.data.put("notification_uri", farm.bsg.data.types.TypeString.project(pp, "notification_uri"));
@@ -3060,6 +2860,9 @@ public class QueryEngine {
       this.data.put("category", farm.bsg.data.types.TypeString.project(pp, "category"));
       this.data.put("customizations", farm.bsg.data.types.TypeString.project(pp, "customizations"));
       this.data.put("price", farm.bsg.data.types.TypeNumber.project(pp, "price"));
+      this.data.put("image", farm.bsg.data.types.TypeBytesInBase64.project(pp, "image"));
+      this.data.put("image_content_type", farm.bsg.data.types.TypeString.project(pp, "image_content_type"));
+      this.data.put("image_hash", farm.bsg.data.types.TypeString.project(pp, "image_hash"));
     }
 
     public PutResult apply(Product product) {
@@ -3171,7 +2974,7 @@ public class QueryEngine {
       this.data.put("name", farm.bsg.data.types.TypeString.project(pp, "name"));
       this.data.put("description", farm.bsg.data.types.TypeString.project(pp, "description"));
       this.data.put("priority", farm.bsg.data.types.TypeNumber.project(pp, "priority"));
-      this.data.put("due", farm.bsg.data.types.TypeDateTime.project(pp, "due"));
+      this.data.put("due_date", farm.bsg.data.types.TypeDateTime.project(pp, "due_date"));
       this.data.put("created", farm.bsg.data.types.TypeDateTime.project(pp, "created"));
       this.data.put("started", farm.bsg.data.types.TypeDateTime.project(pp, "started"));
       this.data.put("closed", farm.bsg.data.types.TypeDateTime.project(pp, "closed"));
@@ -3304,18 +3107,6 @@ public class QueryEngine {
 
   public PutResult del(Check check) {
     return storage.put(check.getStorageKey(), null, false);
-  }
-
-  /**************************************************
-  Writing Back to DB (chore/)
-  **************************************************/
-
-  public PutResult put(Chore chore) {
-    return storage.put(chore.getStorageKey(), new Value(chore.toJson()), false);
-  }
-
-  public PutResult del(Chore chore) {
-    return storage.put(chore.getStorageKey(), null, false);
   }
 
   /**************************************************

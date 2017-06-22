@@ -30,6 +30,7 @@ public class Person extends RawObject {
             Field.STRING("salt"), // used
             Field.STRING("hash"), // used
 
+            Field.STRING("cookie").makeIndex(false), // generated once
             Field.STRING("super_cookie").makeIndex(false), // generated once
             Field.STRING("notification_token").makeIndex(false), // token to map SMS, Facebook to user habits
             Field.STRING("notification_uri"),
@@ -65,6 +66,13 @@ public class Person extends RawObject {
 
     public boolean has(Permission permission) {
         return this.permissions.contains(permission);
+    }
+
+    public void mustHave(Permission permission) {
+        if (this.permissions.contains(permission)) {
+            return;
+        }
+        throw new RuntimeException("permission allowed");
     }
 
     public String login() {

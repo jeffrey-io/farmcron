@@ -1,10 +1,5 @@
 package farm.bsg.models;
 
-import java.util.concurrent.TimeUnit;
-
-import farm.bsg.QueryEngine;
-import farm.bsg.data.AsyncTaskTarget;
-import farm.bsg.data.DirtyBitIndexer;
 import farm.bsg.data.Field;
 import farm.bsg.data.ObjectSchema;
 import farm.bsg.data.RawObject;
@@ -17,7 +12,7 @@ public class WakeInputFile extends RawObject {
             Field.STRING("content_type"), // -
             Field.STRING("description"), // -
             Field.BYTESB64("contents") // -
-    ).dirty("farm.bsg.models.WakeInputFile.DirtyWakeInputFile");
+    ).dirty("farm.bsg.models.PublicSiteBuilder");
 
     public WakeInputFile() {
         super(SCHEMA);
@@ -29,22 +24,18 @@ public class WakeInputFile extends RawObject {
 
     public static void link(CounterCodeGen c) {
         c.section("Data: Wake Input File");
+        c.counter("compile_wake", "wake files are being compiled");
+        c.counter("wake_file_written_blob_cache", "a file was generated and put in the blob cache");
     }
     
-    public static class DirtyWakeInputFile extends DirtyBitIndexer {
-        private QueryEngine engine;
-        
-        public DirtyWakeInputFile(QueryEngine engine) {
-            this.engine = engine;
+    public boolean isImage() {
+        String contentType = get("content_type");
+        if ("image/jpeg".equals(contentType)) {
+            return true;
         }
-
-        @Override
-        public void onDirty(AsyncTaskTarget target) {
-            engine.scheduler.schedule(() -> {
-                AsyncTaskTarget.execute(engine.executor, target, () -> {
-                    System.out.println("Wake files being processed async!");
-                });
-            }, 500, TimeUnit.MILLISECONDS);
+        if ("image/png".equals(contentType)) {
+            return true;
         }
+        return false;
     }
 }

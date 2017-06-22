@@ -3,10 +3,13 @@ package farm.bsg.pages;
 import java.util.List;
 import java.util.UUID;
 
+import org.joda.time.DateTime;
+
 import farm.bsg.BsgCounters;
 import farm.bsg.ProductEngine;
 import farm.bsg.Security.Permission;
 import farm.bsg.cron.HourlyJob;
+import farm.bsg.data.RawObject;
 import farm.bsg.data.types.TypeDayFilter;
 import farm.bsg.data.types.TypeMonthFilter;
 import farm.bsg.html.Block;
@@ -30,10 +33,31 @@ public class TaskFactoryManagement extends SessionPage {
     public HtmlPump tabs(SimpleURI current) {
         Link tabList = Html.link(TASKS_FACTORY.href(), "Factories").nav_link().active_if_href_is(current.href());
         Link tabCreate = Html.link(TASKS_FACTORY_CREATE.href(), "Create").nav_link().active_if_href_is(current.href());
-        return Html.nav().pills().with(tabList).with(tabCreate);
+        return Html.nav().pills().with(tabList).with_if(person().has(Permission.EditTaskFactory), tabCreate);
+    }
+
+    public static HtmlPump getProgress(TaskFactory factory, Task task, long now) {
+        if (task != null) {
+            String state = task.get("state");
+            if ("closed".equals(state)) {
+                int daysAfter = factory.getAsInt("frequency");
+                for (int k = 0; k <= daysAfter; k++) {
+                    long futureNow = new DateTime(now).plusDays(k).getMillis();
+                    if (factory.ready(futureNow) && Task.isClosedAndReadyForTransition(task, futureNow, daysAfter)) {
+                        return Html.block().add("ready in " + k + " days:" + RawObject.isoTimestamp(futureNow));
+                    }
+                }
+                return Html.block().add(">" + daysAfter + " days");
+            } else {
+                return Html.block().add("blocked");
+            }
+        } else {
+            return Html.block().add("about to create");
+        }
     }
 
     public String list() {
+        person().mustHave(Permission.SeeTaskFactoryTab);
         Block block = Html.block();
         block.add(tabs(TASKS_FACTORY));
 
@@ -45,12 +69,8 @@ public class TaskFactoryManagement extends SessionPage {
             if (currentTaskId != null) {
                 currentTask = query().task_by_id(currentTaskId, false);
             }
-            Block actions = Html.block().add(Html.link(TASKS_FACTORY_EDIT.href("id", factory.getId()), "{update}").btn_primary());
-            String progress = "?";
-            if (currentTask != null) {
-                String state = currentTask.get("state"); 
-                progress = state + " --> " + currentTask.get(state);
-            }
+            Block actions = Html.block().add_if(person().has(Permission.EditTaskFactory), Html.link(TASKS_FACTORY_EDIT.href("id", factory.getId()), "{update}").btn_primary());
+            HtmlPump progress = getProgress(factory, currentTask, System.currentTimeMillis());
             table.row(factory.get("name"), progress, actions);
         }
         block.add(table);
@@ -58,10 +78,12 @@ public class TaskFactoryManagement extends SessionPage {
     }
 
     public String create() {
+        person().mustHave(Permission.EditTaskFactory);
         return createUpdateForm("Create Factory", UUID.randomUUID().toString(), "create", TASKS_FACTORY_CREATE);
     }
 
     public String update() {
+        person().mustHave(Permission.EditTaskFactory);
         return createUpdateForm("Update Factory", session.getParam("id"), "update", TASKS_FACTORY_EDIT);
     }
 
@@ -118,8 +140,9 @@ public class TaskFactoryManagement extends SessionPage {
     }
 
     public String commit() {
+        person().mustHave(Permission.EditTaskFactory);
         TaskFactory factory = query().taskfactory_by_id(session.getParam("id"), true);
-        if (engine.projection_taskfactory_edit_of(session).apply(factory).success()){
+        if (engine.projection_taskfactory_edit_of(session).apply(factory).success()) {
             if (factory.get("name") == null) {
                 query().del(factory);
             } else {
@@ -131,14 +154,14 @@ public class TaskFactoryManagement extends SessionPage {
     }
 
     public static void link(RoutingTable routing) {
-        routing.navbar(TASKS_FACTORY, "Task Factory", Permission.SeeChoresTab);
+        routing.navbar(TASKS_FACTORY, "Task Factory", Permission.SeeTaskFactoryTab);
 
         routing.get(TASKS_FACTORY, (sr) -> new TaskFactoryManagement(sr).list());
         routing.get(TASKS_FACTORY_CREATE, (sr) -> new TaskFactoryManagement(sr).create());
         routing.get(TASKS_FACTORY_EDIT, (sr) -> new TaskFactoryManagement(sr).update());
         routing.post(TASKS_FACTORY_COMMIT, (sr) -> new TaskFactoryManagement(sr).commit());
     }
-    
+
     public static void advance(ProductEngine engine, long now) {
         List<TaskFactory> factories = engine.select_taskfactory().to_list().done();
         for (TaskFactory factory : factories) {
@@ -147,16 +170,21 @@ public class TaskFactoryManagement extends SessionPage {
             if (currentTaskId != null) {
                 currentTask = engine.task_by_id(currentTaskId, false);
             }
-            if (factory.ready(currentTask, now)) {
-                /*
-                System.out.println("Creating task!");
-                Task task = new Task();
-                task.generateAndSetId();
-                task.copyFrom(factory, "name", "description");
-                task.setState("created");
-                factory.set("current_task", task.getId());
-                engine.put(factory);
-                */
+            int daysAfter = factory.getAsInt("frequency");
+            if (factory.ready(now)) {
+                if (Task.isClosedAndReadyForTransition(currentTask, now, daysAfter)) {
+                    Task task = new Task();
+                    task.generateAndSetId();
+                    task.copyFrom(factory, "name", "description", "priority");
+                    task.setState("created");
+                    int daysDue = factory.getAsInt("slack");
+                    if (daysDue > 0) {
+                        task.setDue(now, daysDue);
+                    }
+                    factory.set("current_task", task.getId());
+                    engine.put(factory);
+                    engine.put(task);
+                }
             }
         }
     }
@@ -170,9 +198,9 @@ public class TaskFactoryManagement extends SessionPage {
         }
 
         @Override
-        public void run() {
+        public void run(long now) {
             BsgCounters.I.task_factory_monitor_run.bump();
-            advance(engine, System.currentTimeMillis());
+            advance(engine, now);
         }
     }
 

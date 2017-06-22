@@ -3,6 +3,7 @@ package farm.bsg.pages.common;
 import farm.bsg.Security.Permission;
 import farm.bsg.html.HtmlPump;
 import farm.bsg.models.Person;
+import farm.bsg.route.FinishedHref;
 import farm.bsg.route.SessionRequest;
 import farm.bsg.route.SimpleURI;
 
@@ -31,8 +32,12 @@ public class SessionPage extends GenericPage {
         return session.getPerson();
     }
 
+    public void redirect(FinishedHref href) {
+        session.redirect(href);
+    }
+
     public void redirect(String uri) {
-        session.redirect(uri);
+        session.redirect(new FinishedHref(uri));
     }
 
     public boolean has(Permission permission) {

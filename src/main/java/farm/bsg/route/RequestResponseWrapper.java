@@ -51,5 +51,5 @@ public interface RequestResponseWrapper {
      * 
      * @param uri the uri to redirect the request to
      */
-    public void redirect(String uri);
+    public void redirect(FinishedHref href);
 }

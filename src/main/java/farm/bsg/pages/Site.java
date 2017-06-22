@@ -21,10 +21,11 @@ public class Site extends SessionPage {
     }
 
     public String show() {
+        person().mustHave(Permission.WebMaster);
         SiteProperties properties = pullSite();
         StringBuilder sb = new StringBuilder();
         if (session.hasNonNullQueryParam("commit")) {
-            if (has(Permission.EditSiteProperties)) {
+            if (has(Permission.WebMaster)) {
                 query().put(properties);
             } else {
                 sb.append("Unable to save");
@@ -38,7 +39,7 @@ public class Site extends SessionPage {
     }
 
     public static void link(RoutingTable routing) {
-        routing.navbar(SITE, "Site", Permission.SeeSiteProperties);
+        routing.navbar(SITE, "Site", Permission.WebMaster);
         routing.get_or_post(SITE, (session) -> new Site(session).show());
     }
 

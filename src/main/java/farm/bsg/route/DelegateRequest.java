@@ -36,8 +36,8 @@ public class DelegateRequest implements RequestResponseWrapper, ProjectionProvid
     }
 
     @Override
-    public void redirect(String uri) {
-        delegate.redirect(uri);
+    public void redirect(FinishedHref href) {
+        delegate.redirect(href);
     }
 
     @Override

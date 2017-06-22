@@ -22,6 +22,7 @@ public class People extends SessionPage {
     }
 
     public String list() {
+        person().mustHave(Permission.PeopleManagement);
         StringBuilder sb = new StringBuilder();
 
         Table people = new Table("Name", "actions");
@@ -50,6 +51,7 @@ public class People extends SessionPage {
     }
 
     public String create() {
+        person().mustHave(Permission.PeopleManagement);
         String username = session.getParam("username");
         StringBuilder sb = new StringBuilder();
         sb.append("<h1>Create New Person</h1>");
@@ -69,6 +71,7 @@ public class People extends SessionPage {
     }
 
     public String view() {
+        person().mustHave(Permission.PeopleManagement);
         Person person = pullPerson();
         StringBuilder sb = new StringBuilder();
         sb.append("<h5>Viewing: " + person.get("name") + "</h5>");
@@ -87,6 +90,7 @@ public class People extends SessionPage {
     }
 
     public String admin_edit() {
+        person().mustHave(Permission.PeopleManagement);
         Person person = pullPerson();
 
         String new_password_1 = session.getParam("new_password_1");
@@ -109,6 +113,7 @@ public class People extends SessionPage {
     }
 
     public Object commit() {
+        person().mustHave(Permission.PeopleManagement);
         Person person = pullPerson();
         if (session.hasNonNullQueryParam("_delete_")) {
             query().storage.put(person.getStorageKey(), null);
@@ -120,7 +125,7 @@ public class People extends SessionPage {
     }
 
     public static void link(RoutingTable routing) {
-        routing.navbar(PEOPLE, "People", Permission.SeePeopleTab);
+        routing.navbar(PEOPLE, "People", Permission.PeopleManagement);
         routing.get(PEOPLE, (session) -> new People(session).list());
         routing.get(PERSON_CREATE, (session) -> new People(session).create());
         routing.get(PERSON_VIEW, (session) -> new People(session).view());

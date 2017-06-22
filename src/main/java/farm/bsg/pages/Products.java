@@ -2,6 +2,8 @@ package farm.bsg.pages;
 
 import java.util.UUID;
 
+import org.apache.commons.codec.binary.Base64;
+
 import farm.bsg.Security.Permission;
 import farm.bsg.html.Block;
 import farm.bsg.html.Html;
@@ -11,6 +13,7 @@ import farm.bsg.html.Table;
 import farm.bsg.models.Product;
 import farm.bsg.ops.CounterCodeGen;
 import farm.bsg.pages.common.SessionPage;
+import farm.bsg.route.BinaryFile;
 import farm.bsg.route.RoutingTable;
 import farm.bsg.route.SessionRequest;
 import farm.bsg.route.SimpleURI;
@@ -54,6 +57,14 @@ public class Products extends SessionPage {
     
     public String commit() {
         Product product = pullProduct();
+        BinaryFile file = session.getFile("file_image");
+        if (file.contentType != null && (file.contentType.equals("image/png") || file.contentType.equals("image/jpeg"))) {
+            if (file.bytes != null && file.bytes.length > 0) {
+                product.set("image", new String(Base64.encodeBase64(file.bytes)));
+                product.set("image_content_type", file.contentType);
+                product.set("image_hash", "HASHOFIMAGE");
+            }
+        }
         engine.put(product);
         redirect("/products");
         return null;
@@ -83,17 +94,25 @@ public class Products extends SessionPage {
                 .wrap(Html.input("price").id_from_name().pull(product).text()));
 
         formInner.add(Html.wrapped().form_group() //
+                .wrap(Html.label("file_image", "Image")) //
+                .wrap(Html.input("file_image").id_from_name().file()));
+        
+        formInner.add(product.get("image_hash"));
+        formInner.add(product.get("image_content_type"));
+        formInner.add(product.get("image"));
+        
+        formInner.add(Html.wrapped().form_group() //
                 .wrap(Html.input("submit").id_from_name().value("Save").submit()));
 
         Block page = Html.block();
         page.add(tabs("/product-edit"));
         page.add(Html.wrapped().h4().wrap("Edit"));
-        page.add(Html.form("post", "/commit-product").inner(formInner));
+        page.add(Html.form("post", "/commit-product").multipart().inner(formInner));
         return finish_pump(page);
     }
     
     public static void link(RoutingTable routing) {
-        routing.navbar(PRODUCTS, "Products", Permission.SeePeopleTab);
+        routing.navbar(PRODUCTS, "Products", Permission.SeeProductsTab);
         routing.get(PRODUCTS, (session) -> new Products(session).list());
         
         routing.get_or_post(PRODUCTS_EDIT, (session) -> new Products(session).edit());

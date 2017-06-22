@@ -1,6 +1,5 @@
 package farm.bsg.pages;
 
-import farm.bsg.AlexaCommands;
 import farm.bsg.BsgCounters;
 import farm.bsg.Security.Permission;
 import farm.bsg.html.Block;
@@ -19,10 +18,6 @@ public class Dashboard extends SessionPage {
     public Object show() {
         BsgCounters.I.dashboard_hits.bump();
         Block page = Html.block();
-        if (has(Permission.SeeChoresTab)) {
-            page.add(Html.wrapped().h5().wrap("Chore Briefing"));
-            page.add(Html.wrapped().p().wrap(AlexaCommands.TOP_CHORES(engine)));
-        }
         if (has(Permission.SeeHabitsTab)) {
             page.add(Html.wrapped().h5().wrap("Habit Briefing"));
             page.add(new Habits(session).habits_as_cards());

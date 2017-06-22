@@ -170,8 +170,8 @@ public class You extends SessionPage {
 
     private String makeSuperCookie(Person person) {
         try {
-            String cookie1 = session.engine.auth.generateCookie();
-            String cookie2 = session.engine.auth.generateCookie();
+            String cookie1 = session.engine.auth.generateCookie(person.getId());
+            String cookie2 = session.engine.auth.generateCookie(person.getId());
             MessageDigest digest = MessageDigest.getInstance("SHA-512");
             digest.update(cookie1.getBytes());
             digest.update(person.get("salt").getBytes());

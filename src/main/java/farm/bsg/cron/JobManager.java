@@ -1,7 +1,13 @@
 package farm.bsg.cron;
 
 import java.util.ArrayList;
+import java.util.concurrent.CountDownLatch;
 
+/**
+ * This is where all time gets managed and jobs are executed asynchronously
+ * 
+ * @author jeffrey
+ */
 public class JobManager {
     private final ArrayList<HourlyJob> hourlyJobs;
     private boolean alive;
@@ -12,31 +18,43 @@ public class JobManager {
         this.alive = false;
     }
 
+    /**
+     * add an hourly job to execute... hourly
+     * @param job
+     */
     public synchronized void add(HourlyJob job) {
         this.hourlyJobs.add(job);
     }
 
     private synchronized boolean runHourly() {
         for (HourlyJob job : hourlyJobs) {
-            job.run();
+            job.run(System.currentTimeMillis());
         }
         return alive;
     }
-    
+
+    /**
+     * stop the job manager thread
+     */
     public synchronized void stop() {
         alive = true;
         lastThread.interrupt();
         lastThread = null;
     }
 
+    /**
+     * start the job manager thread
+     */
     public synchronized void start() {
         if (alive) {
             throw new IllegalStateException("job manager is already started");
         }
         alive = true;
+        CountDownLatch started = new CountDownLatch(1);
         lastThread = new Thread(new Runnable() {
             @Override
             public void run() {
+                started.countDown();
                 while (runHourly()) {
                     try {
                         Thread.sleep(60 * 60 * 1000);
@@ -47,6 +65,11 @@ public class JobManager {
         });
         lastThread.setDaemon(true);
         lastThread.start();
+        try {
+            started.await();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
         
     }
 

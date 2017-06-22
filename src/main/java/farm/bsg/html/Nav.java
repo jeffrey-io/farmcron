@@ -11,9 +11,16 @@ public class Nav extends HtmlPump {
         this.pumps = new ArrayList<>();
         this.extended_class = null;
     }
-    
+
     public Nav with(HtmlPump pump) {
         this.pumps.add(pump);
+        return this;
+    }
+
+    public Nav with_if(boolean condition, HtmlPump pump) {
+        if (condition) {
+            this.pumps.add(pump);
+        }
         return this;
     }
 
@@ -33,7 +40,7 @@ public class Nav extends HtmlPump {
         if (extended_class != null) {
             html.append(" ").append(extended_class);
         }
-        
+
         html.append("\">");
         for (HtmlPump pump : pumps) {
             html.append("<li class=\"nav-item\">");

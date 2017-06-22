@@ -3,11 +3,11 @@ package farm.bsg;
 import java.io.File;
 import java.nio.file.Files;
 
+import farm.bsg.data.Authenticator;
 import farm.bsg.data.SchemaCodeGenerator;
 import farm.bsg.models.Cart;
 import farm.bsg.models.CartItem;
 import farm.bsg.models.Check;
-import farm.bsg.models.Chore;
 import farm.bsg.models.Customer;
 import farm.bsg.models.Habit;
 import farm.bsg.models.PayrollEntry;
@@ -21,7 +21,6 @@ import farm.bsg.models.TaskFactory;
 import farm.bsg.models.WakeInputFile;
 import farm.bsg.ops.CounterCodeGen;
 import farm.bsg.pages.Checks;
-import farm.bsg.pages.Chores;
 import farm.bsg.pages.Dashboard;
 import farm.bsg.pages.Habits;
 import farm.bsg.pages.Payroll;
@@ -50,7 +49,6 @@ public class CodeGen {
         codegen.addSample(new Cart());
         codegen.addSample(new CartItem());
         codegen.addSample(new Check());
-        codegen.addSample(new Chore());
         codegen.addSample(new Habit());
         codegen.addSample(new PayrollEntry());
         codegen.addSample(new Person());
@@ -85,10 +83,10 @@ public class CodeGen {
     }
 
     private void Data(CounterCodeGen c) {
+        Authenticator.link(c);
         Cart.link(c);
         CartItem.link(c);
         Check.link(c);
-        Chore.link(c);
         Customer.link(c);
         Habit.link(c);
         PayrollEntry.link(c);
@@ -103,7 +101,6 @@ public class CodeGen {
 
     private void Pages(CounterCodeGen c) {
         Checks.link(c);
-        Chores.link(c);
         Dashboard.link(c);
         Habits.link(c);
         Payroll.link(c);

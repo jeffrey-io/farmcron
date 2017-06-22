@@ -45,7 +45,7 @@ public abstract class DirtyBitIndexer implements KeyValuePairLogger, AsyncTaskTa
         state = State.TASK_IN_PROGRESS;
     }
 
-    public synchronized boolean completeUnderLock(boolean success) {
+    private synchronized boolean completeUnderLock(boolean success) {
         switch (state) {
             case TASK_IN_PROGRESS_NEEDS_DIRTY:
                 state = State.TASK_IN_PROGRESS;

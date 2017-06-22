@@ -198,6 +198,10 @@ public abstract class RawObject {
         return iso().format(new Date());
     }
 
+    public static String isoTimestamp(long now) {
+        return iso().format(new Date(now));
+    }
+
     public DateTime getTimestamp(String field) {
         String value = get(field);
         if (value == null) {

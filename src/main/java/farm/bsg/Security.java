@@ -73,15 +73,16 @@ public class Security {
         SeeOutstandingChecksForEveryone("see_all_checks", Roles.GOD, Roles.OWNER), //
         CheckMake("check_make", Roles.GOD, Roles.OWNER), //
         
-        // CHORE RELATED ACTIONS
-        SeeChoresTab("see_chores_tab", Roles.GOD, Roles.OWNER, Roles.ALL_CHORES), //
-        ViewChore("view_chore", Roles.GOD, Roles.OWNER, Roles.ALL_CHORES), //
-        EditChore("edit_chore", Roles.GOD, Roles.OWNER, Roles.ALL_CHORES), //
-        PerformChore("perform_chore", Roles.GOD, Roles.OWNER, Roles.ALL_CHORES), //
-
+        // TASK RELATED PERMISSIONS
+        SeeTaskFactoryTab("see_task_factories_tab", Roles.GOD, Roles.OWNER, Roles.MANAGER),
+        EditTaskFactory("edit_task_factories", Roles.GOD, Roles.OWNER, Roles.MANAGER),
+        SeeTasksTab("see_tasks_tab", Roles.GOD, Roles.OWNER, Roles.MANAGER),
+        EditTasks("edit_tasks", Roles.GOD, Roles.OWNER, Roles.MANAGER),
+        StartTask("start_task", Roles.GOD, Roles.OWNER, Roles.MANAGER, Roles.PAID_EMPLOYEE),
+        CloseTask("close_task", Roles.GOD, Roles.OWNER, Roles.MANAGER, Roles.PAID_EMPLOYEE),
+        
+        
         // CHECK RELATED ACTIONS
-        SeeEventsTab("see_events_tab", Roles.GOD, Roles.OWNER, Roles.ALL_EVENTS), //
-
         SeeSubscripionsTab("see_subscriptions_tab", Roles.GOD, Roles.OWNER), //
 
         SeeHabitsTab("see_habits_tab", Roles.GOD, Roles.OWNER), //
@@ -90,17 +91,14 @@ public class Security {
         // 
         SeePayrollTab("see_payroll_tab", Roles.GOD, Roles.OWNER, Roles.PAID_EMPLOYEE),
 
-        
-        SeePeopleTab("see_people_tab", Roles.GOD, Roles.OWNER, Roles.MANAGER), //
-        CreatePeople("create_people", Roles.GOD, Roles.OWNER), //
-
-        
         SeeProductsTab("see_products_tab", Roles.GOD, Roles.OWNER, Roles.MANAGER), //
         CreateProduct("create_product", Roles.GOD, Roles.OWNER, Roles.MANAGER), //
+        
+        // For managing peoples
+        PeopleManagement("people_manager", Roles.GOD, Roles.OWNER, Roles.MANAGER), //
 
-
-        SeeSiteProperties("see_site_properties", Roles.GOD, Roles.OWNER), //
-        EditSiteProperties("edit_site_properties", Roles.GOD, Roles.OWNER), //
+        // For managing the site properties and the public site
+        WebMaster("webmaster", Roles.GOD, Roles.OWNER), //
 
         ;
 

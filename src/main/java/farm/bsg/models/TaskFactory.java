@@ -1,8 +1,14 @@
 package farm.bsg.models;
 
+import java.util.Set;
+
+import org.joda.time.DateTime;
+
 import farm.bsg.data.Field;
 import farm.bsg.data.ObjectSchema;
 import farm.bsg.data.RawObject;
+import farm.bsg.data.types.TypeDayFilter;
+import farm.bsg.data.types.TypeMonthFilter;
 
 public class TaskFactory extends RawObject {
     public static final ObjectSchema SCHEMA = ObjectSchema.persisted("task_factory/", //
@@ -22,15 +28,17 @@ public class TaskFactory extends RawObject {
         super(SCHEMA);
     }
     
-    public boolean ready(Task task, long now) {
-        if (Task.isClosedAndReadyForTransition(task, now)) {
-
-            // check to see if today is good.
-        }
-        return false;
-    }
-
     @Override
     protected void invalidateCache() {
+    }
+    
+    public boolean ready(long now) {
+        DateTime consideration = new DateTime(now);
+        Set<Integer> monthsAvailale = TypeMonthFilter.ordinalsOf(get("month_filter"));
+        if (monthsAvailale.contains(consideration.getMonthOfYear())) {
+            Set<Integer> daysAvailable = TypeDayFilter.ordinalsOf(get("day_filter"));
+            return daysAvailable.contains(consideration.getDayOfWeek());
+        }
+        return false;
     }
 }

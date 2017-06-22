@@ -1,7 +1,5 @@
 package farm.bsg;
 
-import java.util.List;
-
 import com.amazon.speech.speechlet.IntentRequest;
 import com.amazon.speech.speechlet.LaunchRequest;
 import com.amazon.speech.speechlet.Session;
@@ -15,8 +13,6 @@ import com.amazon.speech.speechlet.authentication.SpeechletRequestSignatureVerif
 import com.amazon.speech.speechlet.servlet.ServletSpeechletRequestHandler;
 import com.amazon.speech.ui.PlainTextOutputSpeech;
 import com.amazon.speech.ui.SsmlOutputSpeech;
-
-import farm.bsg.models.Chore;
 
 public class AlexaCommands implements Speechlet {
 
@@ -61,7 +57,7 @@ public class AlexaCommands implements Speechlet {
         SpeechletResponse response = new SpeechletResponse();
         if ("chores".equalsIgnoreCase(request.getIntent().getName())) {
             PlainTextOutputSpeech output = new PlainTextOutputSpeech();
-            output.setText(TOP_CHORES(engine));
+            output.setText("this needs to be linked to tasks");
             response.setOutputSpeech(output);
         }
         if ("habits".equalsIgnoreCase(request.getIntent().getName())) {
@@ -93,37 +89,6 @@ public class AlexaCommands implements Speechlet {
             response.setOutputSpeech(output);
         }
         return response;
-    }
-
-    public static String TOP_CHORES(ProductEngine engine) {
-        StringBuilder sb = new StringBuilder();
-        List<Chore> chores = engine.select_chore().to_list().inline_filter((chore) -> !chore.ready()).inline_order_by(new Chore.Ranking()).done();
-        if (chores.size() == 0) {
-            return "You have no chores to do in the near future. You are awesome, loved, and I worship you.";
-        }
-        int at = 0;
-        int limit = Math.min(3, chores.size());
-
-        if (chores.size() == 1) {
-            sb.append("You have one thing to do today, which is " + chores.get(0).get("name"));
-            return sb.toString();
-        }
-        sb.append("Your have " + limit + " chores to do which are ");
-        for (Chore chore : chores) {
-            if (at >= limit) {
-                break;
-            }
-            at++;
-            if (at > 1) {
-                sb.append(", ");
-                if (at == limit) {
-                    sb.append("and ");
-                }
-            }
-            sb.append(chore.get("name"));
-        }
-
-        return sb.toString();
     }
 
     @Override

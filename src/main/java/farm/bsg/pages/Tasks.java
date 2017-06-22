@@ -25,31 +25,38 @@ public class Tasks extends SessionPage {
     public HtmlPump tabs(SimpleURI current) {
         Link tabList = Html.link(TASKS.href(), "Tasks").nav_link().active_if_href_is(current.href());
         Link tabCreate = Html.link(TASKS_CREATE.href(), "Create").nav_link().active_if_href_is(current.href());
-        return Html.nav().pills().with(tabList).with(tabCreate);
+        return Html.nav().pills().with(tabList).with_if(person().has(Permission.EditTasks), tabCreate);
     }
 
     public String list() {
+        person().mustHave(Permission.SeeTasksTab);
         Block block = Html.block();
         block.add(tabs(TASKS));
 
-        Table table = new Table("Name", "State", "Actions");
+        boolean ableToStart = person().has(Permission.StartTask);
+        boolean ableToClose = person().has(Permission.CloseTask);
+
+        Table table = new Table("Name", "State", "Due", "Actions");
         List<Task> tasks = query().select_task().where_state_eq("created", "started").to_list().done();
         for (Task task : tasks) {
             Block actions = Html.block() //
                     .add(Html.link(TASKS_UPDATE.href("id", task.getId()), "{update}").btn_primary()) //
-                    .add_if(task.canStart(), Html.link(TASKS_TRANSITION.href("id", task.getId(), "state", "started"), "{start}").btn_primary())//
-                    .add_if(task.canClose(), Html.link(TASKS_TRANSITION.href("id", task.getId(), "state", "closed"), "{close}").btn_primary());
-            table.row(task.get("name"), task.get("state"), actions);
+                    .add_if(ableToStart && task.canStart(), Html.link(TASKS_TRANSITION.href("id", task.getId(), "state", "started"), "{start}").btn_primary())//
+                    .add_if(ableToClose && task.canClose(), Html.link(TASKS_TRANSITION.href("id", task.getId(), "state", "closed"), "{close}").btn_primary());
+            table.row(task.get("name"), task.get("state"), task.get("due_date"), actions);
         }
+        
         block.add(table);
         return finish_pump(block);
     }
 
     public String create() {
+        person().mustHave(Permission.EditTasks);
         return createUpdateForm("Create Task", UUID.randomUUID().toString(), "create", TASKS_CREATE);
     }
 
     public String update() {
+        person().mustHave(Permission.EditTasks);
         return createUpdateForm("Update Task", session.getParam("id"), "update", TASKS_UPDATE);
     }
 
@@ -77,6 +84,7 @@ public class Tasks extends SessionPage {
     }
 
     public String commit() {
+        person().mustHave(Permission.EditTasks);
         Task task = query().task_by_id(session.getParam("id"), true);
         if (task.get("state") == null) {
             task.setState("created");
@@ -95,6 +103,13 @@ public class Tasks extends SessionPage {
         Task task = query().task_by_id(session.getParam("id"), false);
         if (task != null) {
             String newState = session.getParam("state");
+            if ("started".equals(newState)) {
+                person().mustHave(Permission.StartTask);
+            }
+            if ("closed".equals(newState)) {
+                person().mustHave(Permission.CloseTask);
+            }
+
             if (newState != null) {
                 task.setState(newState);
                 query().put(task);
@@ -105,7 +120,7 @@ public class Tasks extends SessionPage {
     }
 
     public static void link(RoutingTable routing) {
-        routing.navbar(TASKS, "Tasks", Permission.SeeChoresTab);
+        routing.navbar(TASKS, "Tasks", Permission.SeeTasksTab);
         routing.get(TASKS, (sr) -> new Tasks(sr).list());
         routing.get(TASKS_CREATE, (sr) -> new Tasks(sr).create());
         routing.get(TASKS_UPDATE, (sr) -> new Tasks(sr).update());

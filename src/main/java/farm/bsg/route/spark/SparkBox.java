@@ -10,6 +10,7 @@ import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
 
 import farm.bsg.route.BinaryFile;
+import farm.bsg.route.FinishedHref;
 import farm.bsg.route.RequestResponseWrapper;
 import spark.Request;
 import spark.Response;
@@ -98,7 +99,7 @@ public class SparkBox implements RequestResponseWrapper {
     }
 
     @Override
-    public void redirect(String uri) {
+    public void redirect(FinishedHref href) {
         StringBuilder sb = new StringBuilder();
         if (secure) {
             sb.append("https://");
@@ -106,7 +107,7 @@ public class SparkBox implements RequestResponseWrapper {
             sb.append("http://");
         }
         sb.append(request.headers("Host"));
-        sb.append(uri);
+        sb.append(href.value);
         response.redirect(sb.toString());
     }
 
