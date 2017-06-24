@@ -83,6 +83,7 @@ public class CodeGen {
     }
 
     private void Data(CounterCodeGen c) {
+        AlexaCommands.link(c);
         Authenticator.link(c);
         Cart.link(c);
         CartItem.link(c);

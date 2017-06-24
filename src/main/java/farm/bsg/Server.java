@@ -123,8 +123,9 @@ public class Server {
         get("/alexa", alexaRoute);
 
         LOG.info("building routing table");
-        RoutingTable routing = new SparkRouting(router, secure);
+        RoutingTable routing = new SparkRouting(router, BsgCounters.I.source, secure);
         Linker.link(routing, router);
+        BsgCounters.I.source.lockDown();
         LOG.info("routing table built");
 
         LOG.info("installing shutdown hook");

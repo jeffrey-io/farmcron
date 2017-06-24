@@ -2889,8 +2889,9 @@ public class QueryEngine {
       this.data.put("domain", farm.bsg.data.types.TypeString.project(pp, "domain"));
       this.data.put("product_name", farm.bsg.data.types.TypeString.project(pp, "product_name"));
       this.data.put("fb_page_token", farm.bsg.data.types.TypeString.project(pp, "fb_page_token"));
+      this.data.put("product_imaging_thumbprint_size", farm.bsg.data.types.TypeNumber.project(pp, "product_imaging_thumbprint_size"));
+      this.data.put("product_imaging_normal_size", farm.bsg.data.types.TypeNumber.project(pp, "product_imaging_normal_size"));
       this.data.put("description", farm.bsg.data.types.TypeString.project(pp, "description"));
-      this.data.put("equipment", farm.bsg.data.types.TypeString.project(pp, "equipment"));
     }
 
     public PutResult apply(SiteProperties siteproperties) {

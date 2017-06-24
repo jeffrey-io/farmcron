@@ -1,11 +1,25 @@
 package farm.bsg.pages;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
+
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.commons.lang.StringEscapeUtils;
 
+import com.amazonaws.util.json.Jackson;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Charsets;
 
 import farm.bsg.Security.Permission;
+import farm.bsg.data.UriBlobCache.UriBlob;
 import farm.bsg.html.Block;
 import farm.bsg.html.Html;
 import farm.bsg.html.Table;
@@ -50,8 +64,12 @@ public class PublicSite {
 
             Block page = Html.block();
             page.add(Html.wrapped().h4().wrap("All Files"));
-            page.add(Html.link("/public-upload", "Upload").btn_primary());
-            page.add(Html.link("/create-wake-file", "Create").btn_primary());
+            page.add(Html.link(PUBLIC_UPLOAD.href(), "Upload").btn_primary());
+            page.add(Html.link(PUBLIC_CREATE_WAKE_FILE.href(), "Create").btn_primary());
+            page.add(Html.link(PUBLIC_DOWNLOAD_JSON_GZ.href(), "Download Site").btn_primary());
+            page.add(Html.link(PUBLIC_UPLOAD_JSON_GZ.href(), "Upload Site").btn_primary());
+            
+            
             page.add(files);
             return finish_pump(page);
         }
@@ -73,7 +91,7 @@ public class PublicSite {
 
             Block page = Html.block();
             page.add(Html.wrapped().h4().wrap("Upload"));
-            page.add(Html.form("post", "/upload-wake-file").multipart().inner(formInner));
+            page.add(Html.form("post", PUBLIC_UPLOAD_WAKE.href()).multipart().inner(formInner));
             return finish_pump(page);
         }
 
@@ -99,7 +117,7 @@ public class PublicSite {
 
             Block page = Html.block();
             page.add(Html.wrapped().h4().wrap("Upload"));
-            page.add(Html.form("post", "/create-wake-file-commit").inner(formInner));
+            page.add(Html.form("post", PUBLIC_CREATE_WAKE_FILE_COMMIT.href()).inner(formInner));
             return finish_pump(page);
         }
 
@@ -148,7 +166,7 @@ public class PublicSite {
 
             Block page = Html.block();
             page.add(Html.wrapped().h4().wrap("Upload"));
-            page.add(Html.form("post", "/update-wake-file-commit").multipart().withId("editor_form").inner(formInner));
+            page.add(Html.form("post", PUBLIC_UPDATE_WAKE_FILE_COMMIT.href()).multipart().withId("editor_form").inner(formInner));
 
             return finish_pump(page);
         }
@@ -212,6 +230,100 @@ public class PublicSite {
             }
             return "NOPE";
         }
+
+        public String upload_json_gz() {
+            person().mustHave(Permission.WebMaster);
+            Block formInner = Html.block();
+
+            formInner.add(Html.wrapped().form_group() //
+                    .wrap(Html.label("file_gz", "Upload Gzip")) //
+                    .wrap(Html.input("file_gz").id_from_name().file()));
+
+            formInner.add(Html.wrapped().form_group() //
+                    .wrap(Html.input("submit").id_from_name().value("Save").submit()));
+
+            Block page = Html.block();
+            page.add(Html.wrapped().h4().wrap("Upload"));
+            page.add(Html.form("post", PUBLIC_COMMIT_UPLOAD_JSON_GZ.href()).multipart().inner(formInner));
+            return finish_pump(page);
+        }
+        
+        private void handle(HashMap<String, String> map, StringBuilder output) {
+            String id = map.get("id");
+            if (id != null) {
+                map.remove("id"); // we merge by filename, so we remove this;
+            }
+            String filename = map.get("filename");
+            if (filename == null) {
+                output.append("no filename!");
+                return;
+            }
+            if (id == null) {
+                return;
+            }
+            WakeInputFile byFilename = query().select_wakeinputfile().where_filename_eq(filename).to_list().first();
+            if (byFilename != null) {
+                output.append("update file:" + filename);
+                byFilename.importValuesFromMap(map);
+                engine.put(byFilename);
+                return;
+            }
+            WakeInputFile newFile = new WakeInputFile();
+            newFile.generateAndSetId();
+            newFile.importValuesFromMap(map);
+            engine.put(newFile);
+            output.append("new file:" + filename);
+            
+        }
+
+        public String commit_upload_json_gz() {
+            StringBuilder page = new StringBuilder();
+            try {
+                BinaryFile file = session.getFile("file_gz");
+                if (file != null) {
+                    GZIPInputStream input = new GZIPInputStream(new ByteArrayInputStream(file.bytes));
+                    JsonNode node = Jackson.getObjectMapper().reader(JsonNode.class).readTree(input);
+                    for (int k = 0; k < node.size(); k++) {
+                        JsonNode map = node.get(k);
+                        Iterator<Entry<String, JsonNode>> fields = map.fields();
+                        HashMap<String, String> dictionary = new HashMap<>();
+                        while (fields.hasNext()) {
+                            Entry<String, JsonNode> element = fields.next();
+                            dictionary.put(element.getKey(), element.getValue().textValue());
+                        }
+                        handle(dictionary, page);
+                        page.append("<br/>");
+                    }
+                } else {
+                    page.append("no file uploaded");
+                }
+            } catch (IOException err) {
+                page.append("error:" + err.getMessage());
+            }
+            return page.toString();
+        }
+
+        public Object download_json_gz() {
+            person().mustHave(Permission.WebMaster);
+            try {
+                ArrayList<Map<String, String>> backup = new ArrayList<>();
+                for (WakeInputFile input : query().select_wakeinputfile().done()) {
+                    backup.add(input.asMap());
+                }
+                ByteArrayOutputStream memory = new ByteArrayOutputStream();
+                GZIPOutputStream gzip = new GZIPOutputStream(memory);
+                try {
+                    gzip.write(Jackson.toJsonString(backup).getBytes(Charsets.UTF_8));
+                    gzip.flush();
+                    gzip.finish();
+                } finally {
+                    gzip.close();
+                }
+                return new UriBlob("application/x-gzip", memory.toByteArray());
+            } catch (IOException ioe) {
+                return "failed!";
+            }
+        }
     }
 
     public static void link(RoutingTable routing) {
@@ -226,6 +338,9 @@ public class PublicSite {
         routing.post(PUBLIC_UPDATE_WAKE_FILE_COMMIT, (session) -> new EditingPublicSite(session).update_wake_file());
 
         routing.get(PUBLIC_WAKE_EDIT, (session) -> new EditingPublicSite(session).edit());
+        routing.get(PUBLIC_DOWNLOAD_JSON_GZ, (session) -> new EditingPublicSite(session).download_json_gz());
+        routing.get(PUBLIC_UPLOAD_JSON_GZ, (session) -> new EditingPublicSite(session).upload_json_gz());
+        routing.post(PUBLIC_COMMIT_UPLOAD_JSON_GZ, (session) -> new EditingPublicSite(session).commit_upload_json_gz());
     }
 
     public static SimpleURI PUBLIC                         = new SimpleURI("/public");
@@ -235,6 +350,9 @@ public class PublicSite {
     public static SimpleURI PUBLIC_CREATE_WAKE_FILE_COMMIT = new SimpleURI("/create-wake-file-commit");
     public static SimpleURI PUBLIC_UPDATE_WAKE_FILE_COMMIT = new SimpleURI("/update-wake-file-commit");
     public static SimpleURI PUBLIC_WAKE_EDIT               = new SimpleURI("/public-wake-edit");
+    public static SimpleURI PUBLIC_DOWNLOAD_JSON_GZ        = new SimpleURI("/public;download.json.gz");
+    public static SimpleURI PUBLIC_UPLOAD_JSON_GZ          = new SimpleURI("/public;upload;json;gz");
+    public static SimpleURI PUBLIC_COMMIT_UPLOAD_JSON_GZ   = new SimpleURI("/public;commit;upload.json.gz");
 
     public static void link(CounterCodeGen c) {
         c.section("Page: Public Site");

@@ -127,7 +127,7 @@ public class Habits extends SessionPage {
         Block innerForm = Html.block() //
                 .add(tabs("/habits-timeline")).add(table) //
                 .add(Html.input("submit").submit().value("Bulk Edit Times"));
-        return finish_pump(Html.form("post", "/bulk-commit-habit-changes").inner(innerForm));
+        return finish_pump(Html.form("post", HABITS_BULK_COMMIT.href()).inner(innerForm));
     }
 
     public Habit pullHabit() {
@@ -190,7 +190,7 @@ public class Habits extends SessionPage {
         Block page = Html.block();
         page.add(tabs(current));
         page.add(Html.wrapped().h4().wrap(title));
-        page.add(Html.form("post", "/commit-habit-edit").inner(formInner));
+        page.add(Html.form("post", HABITS_COMMIT_EDIT.href()).inner(formInner));
         return finish_pump(page);
     }
 
@@ -206,7 +206,7 @@ public class Habits extends SessionPage {
         Block page = Html.block();
         page.add(tabs("/habits"));
         page.add(Html.wrapped().h4().wrap("Provide Arg:" + habit.get("name")));
-        page.add(Html.form("post", "/habit-perform").inner(formInner));
+        page.add(Html.form("post", HABITS_PERFORM.href()).inner(formInner));
         return finish_pump(page);
     }
 

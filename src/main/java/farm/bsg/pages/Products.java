@@ -107,7 +107,7 @@ public class Products extends SessionPage {
         Block page = Html.block();
         page.add(tabs("/product-edit"));
         page.add(Html.wrapped().h4().wrap("Edit"));
-        page.add(Html.form("post", "/commit-product").multipart().inner(formInner));
+        page.add(Html.form("post", PRODUCTS_COMMIT.href()).multipart().inner(formInner));
         return finish_pump(page);
     }
     

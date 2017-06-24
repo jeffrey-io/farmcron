@@ -69,7 +69,14 @@ public class SparkBox implements RequestResponseWrapper {
     
     @Override
     public BinaryFile getFile(String key) {
-        return files.get(key);
+        BinaryFile file = files.get(key);
+        if (file == null) {
+            return null;
+        }
+        if (file.bytes == null) {
+            return null;
+        }
+        return file;
     }
 
     @Override

@@ -41,6 +41,10 @@ public abstract class RawObject {
     public void generateAndSetId() {
         set("id", UUID.randomUUID().toString());
     }
+    
+    public Map<String, String> asMap() {
+        return Collections.unmodifiableMap(data);
+    }
 
     public synchronized String getId() {
         return data.get("id");
@@ -231,6 +235,12 @@ public abstract class RawObject {
             if (param != null) {
                 set(ty.name(), param);
             }
+        }
+    }
+    
+    public void importValuesFromMap(Map<String, String> map) {
+        for (Entry<String, String> entry : map.entrySet()) {
+            set(entry.getKey(), entry.getValue());
         }
     }
 

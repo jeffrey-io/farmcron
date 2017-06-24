@@ -25,6 +25,11 @@ public class BsgCounters {
   // Section{PAGE: TASK FACTORY}
   public final Counter task_factory_monitor_run;
 
+  // Section{ALEXA}
+  public final Counter alexa_auth_attempt;
+  public final Counter alexa_auth_success;
+  public final Counter alexa_auth_failure;
+
   // Section{AUTH}
   public final Counter auth_attempt_login;
   public final Counter auth_attempt_login_success;
@@ -51,7 +56,6 @@ public class BsgCounters {
   private static BsgCounters BUILD() {
     CounterSource source = new CounterSource();
     BsgCounters counters = new BsgCounters(source);
-    source.lockDown();
     return counters;
   }
 
@@ -77,6 +81,11 @@ public class BsgCounters {
 
     src.setSection("Page: Task Factory");
     this.task_factory_monitor_run = src.counter("task_factory_monitor_run", "How many runs of the task factory have there been");
+
+    src.setSection("Alexa");
+    this.alexa_auth_attempt = src.counter("alexa_auth_attempt", "an alexa auth request was made");
+    this.alexa_auth_success = src.counter("alexa_auth_success", "an alexa auth passed");
+    this.alexa_auth_failure = src.counter("alexa_auth_failure", "an alexa auth failed");
 
     src.setSection("Auth");
     this.auth_attempt_login = src.counter("auth_attempt_login", "an auth was attempted");

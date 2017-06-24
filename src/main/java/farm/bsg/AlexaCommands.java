@@ -14,6 +14,8 @@ import com.amazon.speech.speechlet.servlet.ServletSpeechletRequestHandler;
 import com.amazon.speech.ui.PlainTextOutputSpeech;
 import com.amazon.speech.ui.SsmlOutputSpeech;
 
+import farm.bsg.ops.CounterCodeGen;
+
 public class AlexaCommands implements Speechlet {
 
     private final ProductEngine                            engine;
@@ -27,10 +29,13 @@ public class AlexaCommands implements Speechlet {
     }
 
     public boolean auth(byte[] serializedSpeechletRequest, String signature, String chain) {
+        BsgCounters.I.alexa_auth_attempt.bump();
         try {
             SpeechletRequestSignatureVerifier.checkRequestSignature(serializedSpeechletRequest, signature, chain);
+            BsgCounters.I.alexa_auth_success.bump();
             return true;
         } catch (Exception err) {
+            BsgCounters.I.alexa_auth_failure.bump();
             return false;
         }
     }
@@ -93,5 +98,12 @@ public class AlexaCommands implements Speechlet {
 
     @Override
     public void onSessionEnded(SessionEndedRequest request, Session session) throws SpeechletException {
+    }
+
+    public static void link(CounterCodeGen c) {
+        c.section("Alexa");
+        c.counter("alexa_auth_attempt", "an alexa auth request was made");
+        c.counter("alexa_auth_success", "an alexa auth passed");
+        c.counter("alexa_auth_failure", "an alexa auth failed");
     }
 }

@@ -4,18 +4,22 @@ import java.util.ArrayList;
 import java.util.HashSet;
 
 public class CounterCodeGen {
+    
+    private static enum LazyType {
+        Event, EventAlarm, Histogram
+    }
 
     private class LazyCounter {
         public final String  section;
+        public final LazyType type;
         public final String  name;
         public final String  description;
-        public final boolean alarm;
 
-        public LazyCounter(String section, String name, String description, boolean alarm) {
+        public LazyCounter(String section, LazyType type, String name, String description) {
             this.section = section;
+            this.type = type;
             this.name = name.trim().toLowerCase().replaceAll(" ", "_");
             this.description = description;
-            this.alarm = alarm;
         }
     }
 
@@ -37,7 +41,16 @@ public class CounterCodeGen {
             throw new RuntimeException(name + " is not unique");
         }
         unique.add(name);
-        lazy.add(new LazyCounter(nextSection, name, description, false));
+        lazy.add(new LazyCounter(nextSection, LazyType.Event, name, description));
+        nextSection = null;
+    }
+
+    public void histogram(String name, String description) {
+        if (unique.contains(name)) {
+            throw new RuntimeException(name + " is not unique");
+        }
+        unique.add(name);
+        lazy.add(new LazyCounter(nextSection, LazyType.Histogram, name, description));
         nextSection = null;
     }
 
@@ -46,7 +59,7 @@ public class CounterCodeGen {
             throw new RuntimeException(name + " is not unique");
         }
         unique.add(name);
-        lazy.add(new LazyCounter(nextSection, name, description, true));
+        lazy.add(new LazyCounter(nextSection, LazyType.EventAlarm, name, description));
         nextSection = null;
     }
 
@@ -74,7 +87,6 @@ public class CounterCodeGen {
         sb.append("  private static " + className + " BUILD() {\n");
         sb.append("    CounterSource source = new CounterSource();\n");
         sb.append("    " + className + " counters = new " + className + "(source);\n");
-        sb.append("    source.lockDown();\n");
         sb.append("    return counters;\n");
         sb.append("  }\n");
         sb.append("\n");
@@ -85,10 +97,16 @@ public class CounterCodeGen {
                 sb.append("\n");
                 sb.append("    src.setSection(\"" + counter.section + "\");\n");
             }
-            if (counter.alarm) {
-                sb.append("    this." + counter.name + " = src.alarm(\"" + counter.name + "\", \"" + counter.description + "\");\n");
-            } else {
-                sb.append("    this." + counter.name + " = src.counter(\"" + counter.name + "\", \"" + counter.description + "\");\n");
+            switch (counter.type) {
+                case Event:
+                    sb.append("    this." + counter.name + " = src.counter(\"" + counter.name + "\", \"" + counter.description + "\");\n");
+                    break;
+                case EventAlarm:
+                    sb.append("    this." + counter.name + " = src.alarm(\"" + counter.name + "\", \"" + counter.description + "\");\n");
+                    break;
+                case Histogram:
+                    sb.append("    this." + counter.name + " = src.histogram(\"" + counter.name + "\", \"" + counter.description + "\");\n");
+                    break;
             }
         }
 
