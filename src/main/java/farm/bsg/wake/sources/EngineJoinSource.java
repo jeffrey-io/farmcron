@@ -84,7 +84,8 @@ public class EngineJoinSource extends Source {
             pMap.put("id", product.getId());
             pMap.put("name", product.get("name"));
             pMap.put("description", product.get("description"));
-            pMap.put("price", product.get("price"));
+            pMap.put("price", "$" + product.get("price"));
+            pMap.put("old_price", "$" + product.get("old_price"));
             
             HashMap<String, String> image = new HashMap<>();
             String contentType = product.get("image_content_type");

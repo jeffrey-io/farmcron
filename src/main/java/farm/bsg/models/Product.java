@@ -13,6 +13,7 @@ public class Product extends RawObject {
             Field.STRING("category"), // -
             Field.STRING("customizations"), // -
             Field.NUMBER("price"), //
+            Field.NUMBER("old_price"), //
             Field.BYTESB64("image"), // -
             Field.STRING("image_content_type"), // -
             Field.STRING("image_hash") // -

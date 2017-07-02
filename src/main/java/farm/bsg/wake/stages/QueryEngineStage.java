@@ -12,6 +12,7 @@ import farm.bsg.QueryEngine;
 import farm.bsg.models.WakeInputFile;
 import farm.bsg.wake.sources.BangedSource;
 import farm.bsg.wake.sources.EngineJoinSource;
+import farm.bsg.wake.sources.InjectBuildId;
 import farm.bsg.wake.sources.MarkdownFilteredSource;
 import farm.bsg.wake.sources.Source;
 import farm.bsg.wake.sources.TableOfContentsSource;
@@ -40,7 +41,7 @@ public class QueryEngineStage extends Stage {
             if (isTemplate) {
                 return source;
             }
-            return new TableOfContentsSource(source);
+            return source;
         } catch (final Exception err) {
             System.err.println("Skipping:" + name);
             err.printStackTrace();
@@ -48,12 +49,12 @@ public class QueryEngineStage extends Stage {
         }
     }
 
-    public QueryEngineStage(QueryEngine engine) throws IOException {
+    public QueryEngineStage(QueryEngine engine, String buildId) throws IOException {
         final ArrayList<Source> _sources = new ArrayList<>();
         for (WakeInputFile input : engine.select_wakeinputfile().done()) {
             Source src = loadIfPossible(input, engine);
             if (src != null) {
-                _sources.add(src);
+                _sources.add(new InjectBuildId(src, buildId));
             }
         }
         this.sources = Collections.unmodifiableCollection(_sources);

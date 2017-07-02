@@ -45,7 +45,8 @@ public class DiskLoaderStage extends Stage {
         return source;
       }
 
-      return new TableOfContentsSource(source);
+      return source;
+      //return new TableOfContentsSource(source);
     } catch (final Exception err) {
       System.err.println("Skipping:" + inputFile);
       err.printStackTrace();

@@ -8,6 +8,7 @@ import farm.bsg.ops.CounterCodeGen;
 public class Subscription extends RawObject {
     public static final ObjectSchema SCHEMA = ObjectSchema.persisted("subscription/", //
             Field.STRING("name"), // USED
+            Field.STRING("description"), //
 
             Field.STRING("subscribe_keyword"), //
             Field.STRING("subscribe_message"), //

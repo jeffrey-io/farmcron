@@ -27,7 +27,7 @@ public class YourCart extends CustomerPage {
     public YourCart(CustomerRequest request) {
         super(request, CART);
     }
-
+    
     public String add() {
         String productId = request.getParam("pid");
         String cartId = request.getCartId();

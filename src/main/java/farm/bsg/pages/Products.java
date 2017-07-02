@@ -94,6 +94,10 @@ public class Products extends SessionPage {
                 .wrap(Html.input("price").id_from_name().pull(product).text()));
 
         formInner.add(Html.wrapped().form_group() //
+                .wrap(Html.label("old_price", "Old Price")) //
+                .wrap(Html.input("old_price").id_from_name().pull(product).text()));
+
+        formInner.add(Html.wrapped().form_group() //
                 .wrap(Html.label("file_image", "Image")) //
                 .wrap(Html.input("file_image").id_from_name().file()));
         

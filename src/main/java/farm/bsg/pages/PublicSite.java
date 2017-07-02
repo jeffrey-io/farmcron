@@ -197,7 +197,6 @@ public class PublicSite {
         public String update_wake_file() {
             person().mustHave(Permission.WebMaster);
             WakeInputFile file = query().wakeinputfile_by_id(session.getParam("id"), false);
-            System.out.println(session.getParam("delete"));;
             if ("true".equals(session.getParam("delete"))) {
                 engine.del(file);
                 redirect("/public");

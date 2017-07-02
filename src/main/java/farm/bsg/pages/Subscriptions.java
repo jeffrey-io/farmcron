@@ -5,11 +5,15 @@ import java.util.UUID;
 
 import farm.bsg.QueryEngine;
 import farm.bsg.Security.Permission;
+import farm.bsg.data.types.TypeDayFilter;
+import farm.bsg.data.types.TypeMonthFilter;
+import farm.bsg.html.Block;
 import farm.bsg.html.Html;
 import farm.bsg.html.Table;
 import farm.bsg.html.shit.ObjectModelForm;
 import farm.bsg.models.Subscriber;
 import farm.bsg.models.Subscription;
+import farm.bsg.models.TaskFactory;
 import farm.bsg.ops.CounterCodeGen;
 import farm.bsg.pages.common.SessionPage;
 import farm.bsg.route.RoutingTable;
@@ -164,16 +168,60 @@ public class Subscriptions extends SessionPage {
         return null;
     }
 
-    public String edit() {
-        Subscription sub = pullSubscription();
-        StringBuilder sb = new StringBuilder();
-        sb.append("<h1>event edit</h1>");
-        sb.append("<form method=\"post\" action=\"/commit-subscription-edit\">");
-        sb.append(ObjectModelForm.htmlOf(sub));
-        sb.append("<hr /><input type=\"submit\">");
-        sb.append("</form>");
-        return formalize_html(sb.toString());
+    public String add_email_subscriber() {
+        String id = session.getParam("id");
+        String email = session.getParam("email");
+        if (email != null && id != null) {
+            Subscriber subscriber = new Subscriber();
+            subscriber.set("id", id + "/EMAIL;" + email);
+            subscriber.set("from", email);
+            subscriber.set("source", "EMAIL");
+            subscriber.set("destination", "");
+            subscriber.set("subscription", id);
+            subscriber.set("debug", "{}");
+            query().put(subscriber);
+        }
+        redirect("/subscription-view?id=" + id);
+        return null;
     }
+
+    private String edit() {
+        Subscription sub = pullSubscription();
+        Block formInner = Html.block();
+        formInner.add(Html.input("id").pull(sub));
+
+        formInner.add(Html.wrapped().form_group() //
+                .wrap(Html.label("name", "Name")) //
+                .wrap(Html.input("name").id_from_name().pull(sub).text()).wrap(Html.wrapped().small().muted_form_text().wrap("The name of the subscription.")));
+
+        formInner.add(Html.wrapped().form_group() //
+                .wrap(Html.label("description", "Description")) //
+                .wrap(Html.input("description").id_from_name().pull(sub).textarea(4, 50)).wrap(Html.wrapped().small().muted_form_text().wrap("The description of the subscription.")));
+
+        formInner.add(Html.wrapped().form_group() //
+                .wrap(Html.label("subscribe_keyword", "Subscribe Keyword")) //
+                .wrap(Html.input("subscribe_keyword").id_from_name().pull(sub).text()).wrap(Html.wrapped().small().muted_form_text().wrap(".")));
+
+        formInner.add(Html.wrapped().form_group() //
+                .wrap(Html.label("subscribe_message", "Subscribe Message")) //
+                .wrap(Html.input("subscribe_message").id_from_name().pull(sub).textarea(4, 50)).wrap(Html.wrapped().small().muted_form_text().wrap("The message sent on a subscribe.")));
+        
+        formInner.add(Html.wrapped().form_group() //
+                .wrap(Html.label("unsubscribe_keyword", "Unsubscribe Keyword")) //
+                .wrap(Html.input("unsubscribe_keyword").id_from_name().pull(sub).text()).wrap(Html.wrapped().small().muted_form_text().wrap(".")));
+
+        formInner.add(Html.wrapped().form_group() //
+                .wrap(Html.label("unsubscribe_message", "Unsubscribe Message")) //
+                .wrap(Html.input("unsubscribe_message").id_from_name().pull(sub).textarea(4, 50)).wrap(Html.wrapped().small().muted_form_text().wrap("The message sent on an unsubscribe.")));
+
+        formInner.add(Html.wrapped().form_group() //
+                .wrap(Html.input("submit").id_from_name().value("Save").submit()));
+
+        Block page = Html.block();
+        page.add(Html.wrapped().h4().wrap("Editing of Subscription"));
+        page.add(Html.form("post", SUBSCRIPTIONS_COMMIT_EDIT.href()).inner(formInner));
+        return finish_pump(page);
+    }    
 
     public String commit() {
         Subscription sub = pullSubscription();
@@ -215,6 +263,8 @@ public class Subscriptions extends SessionPage {
         routing.get(SUBSCRIPTIONS, (session) -> new Subscriptions(session).list());
 
         routing.post(SUBSCRIPTIONS_ADD_SMS, (session) -> new Subscriptions(session).add_sms_subscriber());
+        routing.post(SUBSCRIPTIONS_ADD_EMAIL, (session) -> new Subscriptions(session).add_email_subscriber());
+        
         routing.get_or_post(SUBSCRIPTIONS_REMOVE_SUB, (session) -> new Subscriptions(session).remove());
 
         routing.get(SUBSCRIPTIONS_NEW, (session) -> {
@@ -228,7 +278,9 @@ public class Subscriptions extends SessionPage {
     }
 
     public static SimpleURI SUBSCRIPTIONS = new SimpleURI("/subscriptions");
+
     public static SimpleURI SUBSCRIPTIONS_ADD_SMS = new SimpleURI("/add-sms-subscriber");
+    public static SimpleURI SUBSCRIPTIONS_ADD_EMAIL = new SimpleURI("/add-email-subscriber");
     public static SimpleURI SUBSCRIPTIONS_REMOVE_SUB = new SimpleURI("/remove-subscriber");
     public static SimpleURI SUBSCRIPTIONS_NEW = new SimpleURI("/new-subscription");
     public static SimpleURI SUBSCRIPTIONS_EDIT = new SimpleURI("/subscription-edit");
