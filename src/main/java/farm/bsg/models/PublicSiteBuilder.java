@@ -14,7 +14,7 @@ import farm.bsg.wake.stages.Stage;
 
 public class PublicSiteBuilder extends DirtyBitIndexer {
     private QueryEngine engine;
-    
+
     public PublicSiteBuilder(QueryEngine engine) {
         this.engine = engine;
     }
@@ -25,13 +25,17 @@ public class PublicSiteBuilder extends DirtyBitIndexer {
             for (final Source source : stage.sources()) {
                 final String url = source.get("url");
                 final String body = source.get("body");
-                engine.publicBlobCache.write("/" + url, new UriBlobCache.UriBlob("text/html" /* todo */, body.getBytes()));
+                String contentType = "text/html"; // TODO: fix this
+                engine.publicBlobCache.write("/" + url, new UriBlobCache.UriBlob(contentType, body.getBytes()));
+                if ("index.html".equals(url)) {
+                    engine.publicBlobCache.write("/", new UriBlobCache.UriBlob(contentType, body.getBytes()));
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
-    
+
     @Override
     public void onDirty(AsyncTaskTarget target) {
         engine.scheduler.schedule(() -> {
@@ -40,6 +44,6 @@ public class PublicSiteBuilder extends DirtyBitIndexer {
                 run();
                 return true;
             });
-        }, 500, TimeUnit.MILLISECONDS);
+        } , 1000, TimeUnit.MILLISECONDS);
     }
 }

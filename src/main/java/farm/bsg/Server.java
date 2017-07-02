@@ -92,12 +92,6 @@ public class Server {
         LOG.info("mapping manifest.json");
         get("/manifest.json", new Manifest());
 
-        LOG.info("mapping / to -> /sign-in");
-        get("/", (req, res) -> {
-            res.redirect("/sign-in");
-            return null;
-        });
-
         LOG.info("setting up /status");
         Status status = new Status(BsgCounters.I.source);
         get("/status", status);

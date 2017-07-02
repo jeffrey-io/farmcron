@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import com.amazonaws.util.json.Jackson;
 
 public class Histogram {
-    private ArrayList<Integer> samples;
+    private ArrayList<Long> samples;
     public final String      section;
     public final String      name;
     public final String      description;
@@ -17,7 +17,7 @@ public class Histogram {
         this.description = description;
     }    
     
-    public synchronized void add(int sample) {
+    public synchronized void add(long sample) {
         samples.add(sample);
     }
     

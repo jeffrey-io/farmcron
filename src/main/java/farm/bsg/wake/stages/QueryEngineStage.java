@@ -26,11 +26,7 @@ public class QueryEngineStage extends Stage {
         if (!(name.endsWith(".html") || name.endsWith(".markdown"))) {
             return null;
         }
-
-        // TODO: check mime type
-
         String content = new String(Base64.decodeBase64(input.get("contents").getBytes()));
-
         try {
             Source source = new TagsFilteredSource(new EngineJoinSource(new BangedSource(name, new StringReader(content)), engine));
             if (name.endsWith(".markdown")) {

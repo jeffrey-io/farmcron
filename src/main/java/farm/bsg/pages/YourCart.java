@@ -40,19 +40,25 @@ public class YourCart extends CustomerPage {
             engine.put(cart);
         }
 
-        CartItem item = new CartItem();
-        item.generateAndSetId();
-        item.set("cart", cartId);
-        item.set("product", productId);
-        item.set("quantity", quantity);
-        if (request.hasNonNullQueryParam("customizations")) {
-            item.set("customizations", request.getParam("customizations"));
+        CartItem found = engine.select_cartitem().where_cart_eq(request.getCartId()).where_product_eq(productId).to_list().first();
+        if (found != null) {
+            found.set("quantity", found.getAsInt("quantity") + quantity);
+            engine.put(found);
+        } else {
+            CartItem item = new CartItem();
+            item.generateAndSetId();
+            item.set("cart", cartId);
+            item.set("product", productId);
+            item.set("quantity", quantity);
+            if (request.hasNonNullQueryParam("customizations")) {
+                item.set("customizations", request.getParam("customizations"));
+            }
+            engine.put(item);
         }
-        engine.put(item);
         request.redirect(CART.href("back", request.getParam("$$referer")));
         return null;
     }
-
+    
     public String update() {
         String itemId = request.getParam("item");
         int quantity = ParameterHelper.getIntParamWithDefault(request, "quantity", 1);

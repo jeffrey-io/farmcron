@@ -96,8 +96,9 @@ public class SparkRouting extends RoutingTable {
                 return localHandle(route.handle(sessionRequest), req, res);
             } catch (Exception err) {
                 return exceptionalize(err);
+            } finally {
+                local.complete(true);
             }
-
         });
     }
     
@@ -119,7 +120,8 @@ public class SparkRouting extends RoutingTable {
                 return localHandle(route.handle(sessionRequest), req, res);
             } catch (Exception err) {
                 return exceptionalize(err);
-
+            } finally {
+                local.complete(true);
             }
         });
     }
@@ -138,6 +140,8 @@ public class SparkRouting extends RoutingTable {
                 return localHandle(route.handle(anonymousRequest), req, res);
             } catch (Exception err) {
                 return exceptionalize(err);
+            } finally {
+                local.complete(true);
             }
         });
     }
@@ -156,7 +160,8 @@ public class SparkRouting extends RoutingTable {
                 return localHandle(route.handle(anonymousRequest), req, res);
             } catch (Exception err) {
                 return exceptionalize(err);
-
+            } finally {
+                local.complete(true);
             }
         });
     }
@@ -204,7 +209,8 @@ public class SparkRouting extends RoutingTable {
                 return localHandle(route.handle(anonymousRequest), req, res);
             } catch (Exception err) {
                 return exceptionalize(err);
-
+            } finally {
+                local.complete(true);
             }
         });
     }
@@ -223,7 +229,8 @@ public class SparkRouting extends RoutingTable {
                 return localHandle(route.handle(customerRequest), req, res);
             } catch (Exception err) {
                 return exceptionalize(err);
-
+            } finally {
+                local.complete(true);
             }
         });
     }
@@ -242,7 +249,8 @@ public class SparkRouting extends RoutingTable {
                 return localHandle(route.handle(customerRequest), req, res);
             } catch (Exception err) {
                 return exceptionalize(err);
-
+            } finally {
+                local.complete(true);
             }
         });
     }

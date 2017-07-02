@@ -72,8 +72,7 @@ public class PublicSite {
             page.add(Html.link(PUBLIC_CREATE_WAKE_FILE.href(), "Create").btn_primary());
             page.add(Html.link(PUBLIC_DOWNLOAD_JSON_GZ.href(), "Download Site").btn_primary());
             page.add(Html.link(PUBLIC_UPLOAD_JSON_GZ.href(), "Upload Site").btn_primary());
-            
-            
+
             page.add(files);
             return finish_pump(page);
         }
@@ -166,6 +165,10 @@ public class PublicSite {
             }
 
             formInner.add(Html.wrapped().form_group() //
+                    .wrap(Html.label("delete", "Delete?")) //
+                    .wrap(Html.input("delete").id_from_name().checkbox()));
+
+            formInner.add(Html.wrapped().form_group() //
                     .wrap(Html.input("submit").id_from_name().value("Save").submit()));
 
             Block page = Html.block();
@@ -194,6 +197,12 @@ public class PublicSite {
         public String update_wake_file() {
             person().mustHave(Permission.WebMaster);
             WakeInputFile file = query().wakeinputfile_by_id(session.getParam("id"), false);
+            System.out.println(session.getParam("delete"));;
+            if ("true".equals(session.getParam("delete"))) {
+                engine.del(file);
+                redirect("/public");
+                return null;
+            }
             file.importValuesFromReqeust(session, "");
             String cText = session.getParam("contents_text");
             if (cText != null) {
@@ -251,7 +260,7 @@ public class PublicSite {
             page.add(Html.form("post", PUBLIC_COMMIT_UPLOAD_JSON_GZ.href()).multipart().inner(formInner));
             return finish_pump(page);
         }
-        
+
         private void handle(HashMap<String, String> map, StringBuilder output) {
             String id = map.get("id");
             if (id != null) {
@@ -277,7 +286,7 @@ public class PublicSite {
             newFile.importValuesFromMap(map);
             engine.put(newFile);
             output.append("new file:" + filename);
-            
+
         }
 
         public String commit_upload_json_gz() {
@@ -354,6 +363,7 @@ public class PublicSite {
     public static SimpleURI PUBLIC_CREATE_WAKE_FILE_COMMIT = new SimpleURI("/create-wake-file-commit");
     public static SimpleURI PUBLIC_UPDATE_WAKE_FILE_COMMIT = new SimpleURI("/update-wake-file-commit");
     public static SimpleURI PUBLIC_WAKE_EDIT               = new SimpleURI("/public-wake-edit");
+
     public static SimpleURI PUBLIC_DOWNLOAD_JSON_GZ        = new SimpleURI("/public;download.json.gz");
     public static SimpleURI PUBLIC_UPLOAD_JSON_GZ          = new SimpleURI("/public;upload;json;gz");
     public static SimpleURI PUBLIC_COMMIT_UPLOAD_JSON_GZ   = new SimpleURI("/public;commit;upload.json.gz");
