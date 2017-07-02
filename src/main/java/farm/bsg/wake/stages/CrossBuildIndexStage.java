@@ -50,6 +50,7 @@ public class CrossBuildIndexStage extends Stage {
     }
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public Collection<Source> sources() {
     final ArrayList<Source> sources = new ArrayList<>();

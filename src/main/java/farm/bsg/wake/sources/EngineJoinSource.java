@@ -10,6 +10,7 @@ import java.util.regex.Pattern;
 import farm.bsg.QueryEngine;
 import farm.bsg.models.Product;
 import farm.bsg.models.WakeInputFile;
+import farm.bsg.pages.YourCart;
 
 public class EngineJoinSource extends Source {
 
@@ -75,20 +76,32 @@ public class EngineJoinSource extends Source {
         base.walkComplex(injectComplex);
 
         ArrayList<String> categories = new ArrayList<>();
-        HashMap<String, ArrayList<HashMap<String, String>>> productsByCategory = new HashMap<>();
+        HashMap<String, ArrayList<HashMap<String, Object>>> productsByCategory = new HashMap<>();
 
-        ArrayList<HashMap<String, String>> products = new ArrayList<>();
+        ArrayList<HashMap<String, Object>> products = new ArrayList<>();
         for (Product product : engine.select_product().done()) {
-            HashMap<String, String> pMap = new HashMap<>();
+            HashMap<String, Object> pMap = new HashMap<>();
             pMap.put("id", product.getId());
             pMap.put("name", product.get("name"));
+            pMap.put("description", product.get("description"));
             pMap.put("price", product.get("price"));
+            
+            HashMap<String, String> image = new HashMap<>();
+            String contentType = product.get("image_content_type");
+            image.put("type", contentType);
+            if (contentType != null) {
+              image.put("data", product.get("image"));
+              
+              pMap.put("image", image);
+            }
+            pMap.put("add_url", YourCart.CART_ADD.href("pid", product.getId()).value);
+                        
             String category = product.get("category");
             if (category != null) {
                 category = category.toLowerCase().trim();
                 if (category.length() > 0) {
                     category = "product_" + category;
-                    ArrayList<HashMap<String, String>> listByCategory = productsByCategory.get(category);
+                    ArrayList<HashMap<String, Object>> listByCategory = productsByCategory.get(category);
                     if (listByCategory == null) {
                         categories.add(category);
                         listByCategory = new ArrayList<>();
@@ -100,7 +113,7 @@ public class EngineJoinSource extends Source {
             products.add(pMap);
         }
         injectComplex.accept("products", products);
-        for (Entry<String, ArrayList<HashMap<String, String>>> entry : productsByCategory.entrySet()) {
+        for (Entry<String, ArrayList<HashMap<String, Object>>> entry : productsByCategory.entrySet()) {
             injectComplex.accept(entry.getKey(), entry.getValue());
         }
 

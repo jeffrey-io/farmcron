@@ -52,7 +52,7 @@ public class Habits extends SessionPage {
         for (Habit habit : habits) {
             HtmlPump tag = Html.tag().danger().content("Warning");
             HtmlPump text = Html.wrapped().card_text().wrap(habit.get("name")).wrap_if(habit.cache(person()).warn, tag);
-            Link perform = Html.link("/habit-perform?id=" + habit.getId(), "Perform").btn_success();
+            Link perform = Html.link(HABITS_PERFORM.href("id", habit.getId()), "Perform").btn_success();
             block.add(Html.wrapped().card().wrap(text).wrap(perform));
         }
         return block;
@@ -66,10 +66,10 @@ public class Habits extends SessionPage {
     }
 
     public HtmlPump tabs(String current) {
-        Link tab1 = Html.link("/habits", "Unlocked Habits").nav_link().active_if_href_is(current);
-        Link tab2 = Html.link("/habits-all", "All Habits A-Z").nav_link().active_if_href_is(current);
-        Link tab3 = Html.link("/habits-timeline", "Edit Timeline").nav_link().active_if_href_is(current);
-        Link tab4 = Html.link("/new-habit", "Add New Habit").nav_link().active_if_href_is(current);
+        Link tab1 = Html.link(HABITS.href(), "Unlocked Habits").nav_link().active_if_href_is(current);
+        Link tab2 = Html.link(HABITS_ALL.href(), "All Habits A-Z").nav_link().active_if_href_is(current);
+        Link tab3 = Html.link(HABITS_TIMELINE.href(), "Edit Timeline").nav_link().active_if_href_is(current);
+        Link tab4 = Html.link(HABITS_NEW.href(), "Add New Habit").nav_link().active_if_href_is(current);
         return Html.nav().pills().with(tab1).with(tab2).with(tab3).with(tab4);
     }
 
@@ -80,9 +80,9 @@ public class Habits extends SessionPage {
         List<Habit> habits = query().select_habit().scope(person().getId()).to_list().inline_order_lexographically_by(true, false, "name").done();
         for (Habit habit : habits) {
             Block actions = Html.block() //
-                    .add(Html.link("/habit-edit?id=" + habit.get("id"), "Edit").btn_info()) //
+                    .add(Html.link(HABITS_EDIT.href("id", habit.get("id")), "Edit").btn_info()) //
                     .add(" ") //
-                    .add(Html.link("/habit-history?id=" + habit.get("id"), "History").btn_info()) //
+                    .add(Html.link(HABITS_HISTORY.href("id", habit.get("id")), "History").btn_info()) //
                     ;
             Block name = Html.block().add(habit.get("name"));
             table.row(//

@@ -44,7 +44,11 @@ public class PublicSite {
         }
 
         Object render() {
-            return request.engine.publicBlobCache.get(request.getURI());
+            String uri = request.getURI();
+            if (uri.startsWith("/*")) {
+                return null;
+            }
+            return request.engine.publicBlobCache.get(uri);
         }
     }
 
@@ -57,7 +61,7 @@ public class PublicSite {
             person().mustHave(Permission.WebMaster);
             Table files = new Table("File name", "Description");
             for (WakeInputFile p : engine.select_wakeinputfile().to_list().inline_order_lexographically_asc_by("filename").done()) {
-                files.row(Html.link("/public-wake-edit?id=" + p.getId(), p.get("filename")), //
+                files.row(Html.link(PUBLIC_WAKE_EDIT.href("id", p.getId()), p.get("filename")), //
                         p.get("description") //
                 );
             }
@@ -282,7 +286,7 @@ public class PublicSite {
                 BinaryFile file = session.getFile("file_gz");
                 if (file != null) {
                     GZIPInputStream input = new GZIPInputStream(new ByteArrayInputStream(file.bytes));
-                    JsonNode node = Jackson.getObjectMapper().reader(JsonNode.class).readTree(input);
+                    JsonNode node = Jackson.getObjectMapper().readTree(input);
                     for (int k = 0; k < node.size(); k++) {
                         JsonNode map = node.get(k);
                         Iterator<Entry<String, JsonNode>> fields = map.fields();

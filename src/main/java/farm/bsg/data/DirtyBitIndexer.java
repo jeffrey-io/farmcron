@@ -2,6 +2,13 @@ package farm.bsg.data;
 
 import farm.bsg.data.contracts.KeyValuePairLogger;
 
+/**
+ * a dirty bit indexer allows for asynchonous invalidating of caches or things that can be computed. It allows you to say "Ok, everything under this prefix changed, so we need to compute something.";
+ * 
+ * It is asynchronous in the sense that if multiple things changes, then the implementor can shift the compute temporarily and wait until things are settled down and minimize compute.
+ *
+ * @author jeffrey
+ */
 public abstract class DirtyBitIndexer implements KeyValuePairLogger, AsyncTaskTarget {
 
     public static enum State {

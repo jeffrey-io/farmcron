@@ -33,7 +33,7 @@ public class CustomerRequest extends DelegateRequest {
         while (engine.cart_by_id(gCartId, false) != null) {
             gCartId = UUID.randomUUID().toString();
         }
-        setCookie("ccid", cartId);
+        setCookie("ccid", gCartId);
         this.cartId = gCartId;
         return gCartId;
     }

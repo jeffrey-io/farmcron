@@ -57,4 +57,14 @@ public class PutResult {
     public boolean success() {
         return successful;
     }
+    
+    @Override
+    public String toString() {
+        if (successful) {
+            return "success";
+        }
+        StringBuilder failure = new StringBuilder();
+        failure.append("failed;");
+        return failure.toString();
+    }
 }

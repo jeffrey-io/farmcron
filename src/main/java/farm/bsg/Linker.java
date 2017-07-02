@@ -7,7 +7,6 @@ import farm.bsg.pages.Payroll;
 import farm.bsg.pages.People;
 import farm.bsg.pages.Products;
 import farm.bsg.pages.PublicSite;
-import farm.bsg.pages.Shop;
 import farm.bsg.pages.SignIn;
 import farm.bsg.pages.Site;
 import farm.bsg.pages.Subscriptions;
@@ -29,7 +28,6 @@ public class Linker {
         People.link(routing);
         Products.link(routing);
         PublicSite.link(routing);;
-        Shop.link(routing);
         SignIn.link(routing, router);
         Site.link(routing);
         TaskFactoryManagement.link(routing);

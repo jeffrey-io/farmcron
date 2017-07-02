@@ -50,7 +50,7 @@ public class Products extends SessionPage {
     }
 
     public HtmlPump tabs(String current) {
-        Link tab1 = Html.link("/products", "List All Products").nav_link().active_if_href_is(current);
+        Link tab1 = Html.link(PRODUCTS.href(), "List All Products").nav_link().active_if_href_is(current);
         Link tab2 = Html.link(PRODUCTS_EDIT.href("id", UUID.randomUUID().toString()), "Create New Product").nav_link().active_if_href_is(current);
         return Html.nav().pills().with(tab1).with(tab2);
     }
@@ -97,9 +97,11 @@ public class Products extends SessionPage {
                 .wrap(Html.label("file_image", "Image")) //
                 .wrap(Html.input("file_image").id_from_name().file()));
         
-        formInner.add(product.get("image_hash"));
-        formInner.add(product.get("image_content_type"));
-        formInner.add(product.get("image"));
+        String imageContentType = product.get("image_content_type");
+        String imageContent = product.get("image");
+        if (imageContentType != null) {
+          formInner.add(Html.img().content(imageContentType, imageContent).width(400));
+        }
         
         formInner.add(Html.wrapped().form_group() //
                 .wrap(Html.input("submit").id_from_name().value("Save").submit()));

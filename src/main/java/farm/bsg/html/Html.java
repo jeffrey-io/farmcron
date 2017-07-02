@@ -37,12 +37,22 @@ public class Html {
         return new Link(href.value, label);
     }
 
+    public static Link link_direct(String href, String label) {
+        return new Link(href, text(label));
+    }
+
+    @Deprecated
     public static Link link(String href, String label) {
         return new Link(href, text(label));
     }
 
+    @Deprecated
     public static Link link(String href, HtmlPump label) {
         return new Link(href, label);
+    }
+    
+    public static Img img() {
+        return new Img();
     }
 
     public static Block block() {

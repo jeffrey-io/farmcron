@@ -89,6 +89,9 @@ public class SparkBox implements RequestResponseWrapper {
         if (body.containsKey(key)) {
             return body.get(key)[0];
         }
+        if ("$$referer".equals(key)) {
+            return request.headers("Referer");
+        }
         return request.queryParams(key);
     }
 
@@ -102,7 +105,7 @@ public class SparkBox implements RequestResponseWrapper {
 
     @Override
     public void setCookie(String key, String value) {
-        response.cookie(key, value);
+        response.cookie(key, value, 60 * 60 * 24 * 7);
     }
 
     @Override
