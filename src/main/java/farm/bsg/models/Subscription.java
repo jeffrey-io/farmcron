@@ -17,7 +17,7 @@ public class Subscription extends RawObject {
             Field.STRING("unsubscribe_keyword"), //
             Field.STRING("unsubscribe_message"), //
             
-            Field.STRING("event") //
+            Field.STRING("event").makeIndex(false) //
     );
             
     public Subscription() {

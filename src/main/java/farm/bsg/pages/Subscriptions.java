@@ -212,6 +212,10 @@ public class Subscriptions extends SessionPage {
                 .wrap(Html.input("unsubscribe_message").id_from_name().pull(sub).textarea(4, 50)).wrap(Html.wrapped().small().muted_form_text().wrap("The message sent on an unsubscribe.")));
 
         formInner.add(Html.wrapped().form_group() //
+                .wrap(Html.label("event", "Event")) //
+                .wrap(Html.input("event").id_from_name().pull(sub).select("", "tc", "d")).wrap(Html.wrapped().small().muted_form_text().wrap("The message sent on an unsubscribe.")));
+
+        formInner.add(Html.wrapped().form_group() //
                 .wrap(Html.input("submit").id_from_name().value("Save").submit()));
 
         Block page = Html.block();

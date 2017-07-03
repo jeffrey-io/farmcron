@@ -66,6 +66,12 @@ public class QueryEngine {
   public final KeyIndex person_super_cookie;  // BY[super_cookie]
   public final KeyIndex person_notification_token;  // BY[notification_token]
 
+  // INDEX[Subscriber]
+  public final KeyIndex subscriber_subscription;  // BY[subscription]
+
+  // INDEX[Subscription]
+  public final KeyIndex subscription_event;  // BY[event]
+
   // INDEX[Task]
   public final KeyIndex task_owner;  // BY[owner]
   public final KeyIndex task_state;  // BY[state]
@@ -98,6 +104,8 @@ public class QueryEngine {
     this.person_super_cookie = indexing.add("person/", new KeyIndex("super_cookie", false));
     this.person_notification_token = indexing.add("person/", new KeyIndex("notification_token", false));
     this.indexing.add("product/", new farm.bsg.models.PublicSiteBuilder(this));
+    this.subscriber_subscription = indexing.add("subscriber/", new KeyIndex("subscription", false));
+    this.subscription_event = indexing.add("subscription/", new KeyIndex("event", false));
     this.task_owner = indexing.add("task/", new KeyIndex("owner", false));
     this.task_state = indexing.add("task/", new KeyIndex("state", false));
     this.wakeinputfile_filename = indexing.add("wake_input/", new KeyIndex("filename", true));
@@ -690,9 +698,17 @@ public class QueryEngine {
   Indexing (subscriber/)
   **************************************************/
 
+  public HashSet<String> get_subscriber_subscription_index_keys() {
+    return subscriber_subscription.getIndexKeys();
+  }
+
   /**************************************************
   Indexing (subscription/)
   **************************************************/
+
+  public HashSet<String> get_subscription_event_index_keys() {
+    return subscription_event.getIndexKeys();
+  }
 
   /**************************************************
   Indexing (task/)
@@ -2061,6 +2077,23 @@ public class QueryEngine {
       this.scope += scope + "/";
       return this;
     }
+
+    private HashSet<String> lookup_subscription(String... values) {
+      HashSet<String> keys = new HashSet<>();
+      for(String value : values) {
+        keys.addAll(subscriber_subscription.getKeys(value));
+      }
+      return keys;
+    }
+
+    public SubscriberSetQuery where_subscription_eq(String... values) {
+      if (this.keys == null) {
+        this.keys = lookup_subscription(values);
+      } else {
+        this.keys = BinaryOperators.intersect(this.keys, lookup_subscription(values));
+      }
+      return this;
+    }
   }
 
   /**************************************************
@@ -2182,6 +2215,23 @@ public class QueryEngine {
 
     public SubscriptionSetQuery scope(String scope) {
       this.scope += scope + "/";
+      return this;
+    }
+
+    private HashSet<String> lookup_event(String... values) {
+      HashSet<String> keys = new HashSet<>();
+      for(String value : values) {
+        keys.addAll(subscription_event.getKeys(value));
+      }
+      return keys;
+    }
+
+    public SubscriptionSetQuery where_event_eq(String... values) {
+      if (this.keys == null) {
+        this.keys = lookup_event(values);
+      } else {
+        this.keys = BinaryOperators.intersect(this.keys, lookup_event(values));
+      }
       return this;
     }
   }
@@ -2890,6 +2940,10 @@ public class QueryEngine {
       this.data.put("domain", farm.bsg.data.types.TypeString.project(pp, "domain"));
       this.data.put("product_name", farm.bsg.data.types.TypeString.project(pp, "product_name"));
       this.data.put("fb_page_token", farm.bsg.data.types.TypeString.project(pp, "fb_page_token"));
+      this.data.put("twilio_phone_number", farm.bsg.data.types.TypeString.project(pp, "twilio_phone_number"));
+      this.data.put("twilio_username", farm.bsg.data.types.TypeString.project(pp, "twilio_username"));
+      this.data.put("twilio_password", farm.bsg.data.types.TypeString.project(pp, "twilio_password"));
+      this.data.put("admin_phone", farm.bsg.data.types.TypeString.project(pp, "admin_phone"));
       this.data.put("product_imaging_thumbprint_size", farm.bsg.data.types.TypeNumber.project(pp, "product_imaging_thumbprint_size"));
       this.data.put("product_imaging_normal_size", farm.bsg.data.types.TypeNumber.project(pp, "product_imaging_normal_size"));
       this.data.put("description", farm.bsg.data.types.TypeString.project(pp, "description"));
@@ -2950,6 +3004,7 @@ public class QueryEngine {
       this.data.put("subscribe_message", farm.bsg.data.types.TypeString.project(pp, "subscribe_message"));
       this.data.put("unsubscribe_keyword", farm.bsg.data.types.TypeString.project(pp, "unsubscribe_keyword"));
       this.data.put("unsubscribe_message", farm.bsg.data.types.TypeString.project(pp, "unsubscribe_message"));
+      this.data.put("event", farm.bsg.data.types.TypeString.project(pp, "event"));
     }
 
     public PutResult apply(Subscription subscription) {

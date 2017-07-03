@@ -1,16 +1,22 @@
 package farm.bsg;
 
+import org.slf4j.Logger;
+
+import farm.bsg.models.SiteProperties;
+import farm.bsg.models.Subscriber;
 import farm.bsg.models.Subscription;
+import farm.bsg.ops.Logs;
 
 public class EventBus {
+    private static final Logger LOG = Logs.of(EventBus.class);
 
     public static enum Event {
         TaskCreation("tc", "Task Creation", "Fires when a new task is created"), // A new task was created
-        
+
         TaskSummary("ts", "Task Summary", "Fires at the given subscription time"), // a task summary of all tasks sent during morning (if there are any)
-        
+
         DirectPublish("dp", "Direct Publish", "Fires when someone publishes");
-        
+
         public final String code;
         public final String fullName;
         public final String description;
@@ -21,23 +27,46 @@ public class EventBus {
             this.description = description;
         }
     }
-    
-    public class EventPayload {
+
+    public static class EventPayload {
         public final String shortText;
-        
+
         public EventPayload(String shortText) {
             this.shortText = shortText;
         }
     }
-    
+
     private final QueryEngine query;
 
     public EventBus(QueryEngine query) {
         this.query = query;
     }
-    
-    public void triger(Event event, EventPayload payload) {
-        for (Subscription sub : query.select_subscription().done()) {
+
+    public void trigger(Event event, EventPayload payload) {
+        int count = 0;
+        SiteProperties properties = query.siteproperties_get();
+        for (Subscription sub : query.select_subscription().where_event_eq(event.code).done()) {
+            for (Subscriber subscriber : query.select_subscriber().where_subscription_eq(sub.getId()).done()) {
+                if (dispatch(subscriber, payload, properties)) {
+                    count++;
+                }
+            }
         }
+        LOG.info("sent:" + payload.shortText + " to:" + count);
     }
+
+    public boolean dispatch(Subscriber subscriber, EventPayload payload, SiteProperties properties) {
+        String source = subscriber.get("source");
+        if ("SMS".equals(source)) {
+            return properties.sendTextMessage(subscriber.get("from"), payload.shortText);
+        }
+        if ("EMAIL".equals(source)) {
+            // TODO, need to set up email recv and email send.
+        }
+        if ("FB".equals(source)) {
+            return properties.sendFacebookMessage(subscriber.get("from"), payload.shortText);
+        }
+        return false;
+    }
+
 }

@@ -3,6 +3,8 @@ package farm.bsg.pages;
 import java.util.List;
 import java.util.UUID;
 
+import farm.bsg.EventBus.Event;
+import farm.bsg.EventBus.EventPayload;
 import farm.bsg.Security.Permission;
 import farm.bsg.html.Block;
 import farm.bsg.html.Html;
@@ -52,18 +54,22 @@ public class Tasks extends SessionPage {
 
     public String create() {
         person().mustHave(Permission.EditTasks);
-        return createUpdateForm("Create Task", UUID.randomUUID().toString(), "create", TASKS_CREATE);
+        return createUpdateForm("Create Task", UUID.randomUUID().toString(), "create", TASKS_CREATE, true);
     }
 
     public String update() {
         person().mustHave(Permission.EditTasks);
-        return createUpdateForm("Update Task", session.getParam("id"), "update", TASKS_UPDATE);
+        return createUpdateForm("Update Task", session.getParam("id"), "update", TASKS_UPDATE, false);
     }
 
-    private String createUpdateForm(String title, String id, String commitLabel, SimpleURI caller) {
+    private String createUpdateForm(String title, String id, String commitLabel, SimpleURI caller, boolean notify) {
         Task task = query().task_by_id(id, true);
         Block formInner = Html.block();
         formInner.add(Html.input("id").pull(task));
+        
+        if (notify) {
+            formInner.add(Html.input("notify").value("true"));
+        }
 
         formInner.add(Html.wrapped().form_group() //
                 .wrap(Html.label("name", "Name")) //
@@ -94,6 +100,10 @@ public class Tasks extends SessionPage {
             query().del(task);
         } else {
             query().put(task);
+            if ("true".equals(session.getParam("notify"))) {
+                EventPayload payload = new EventPayload("'" + task.get("name") + "' was created.");
+                engine.eventBus.trigger(Event.TaskCreation, payload);
+            }
         }
         redirect(TASKS.href().value);
         return null;

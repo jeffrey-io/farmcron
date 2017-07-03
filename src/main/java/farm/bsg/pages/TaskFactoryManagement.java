@@ -6,7 +6,10 @@ import java.util.UUID;
 import org.joda.time.DateTime;
 
 import farm.bsg.BsgCounters;
+import farm.bsg.EventBus;
 import farm.bsg.ProductEngine;
+import farm.bsg.EventBus.Event;
+import farm.bsg.EventBus.EventPayload;
 import farm.bsg.Security.Permission;
 import farm.bsg.cron.HourlyJob;
 import farm.bsg.data.RawObject;
@@ -177,13 +180,12 @@ public class TaskFactoryManagement extends SessionPage {
                     task.generateAndSetId();
                     task.copyFrom(factory, "name", "description", "priority");
                     task.setState("created");
-                    int daysDue = factory.getAsInt("slack");
-                    if (daysDue > 0) {
-                        task.setDue(now, daysDue);
-                    }
+                    task.setDue(now, factory.getAsInt("slack"));
                     factory.set("current_task", task.getId());
                     engine.put(factory);
                     engine.put(task);
+                    EventPayload payload = new EventPayload("'" + task.get("name") + "' has been scheduled automatically.");
+                    engine.eventBus.trigger(Event.TaskCreation, payload);
                 }
             }
         }
