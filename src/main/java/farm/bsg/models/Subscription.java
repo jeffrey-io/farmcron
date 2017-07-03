@@ -32,6 +32,14 @@ public class Subscription extends RawObject {
         c.section("Data: Subscription");
     }
     
+    public boolean isOpen() {
+        return !isNullOrEmpty("subscribe_keyword") && !isNullOrEmpty("unsubscribe_keyword");
+    }
+    
+    public EventBus.Event getEvent() {
+        return EventBus.Event.fromCode(get("event"));
+    }
+    
     @Override
     protected void invalidateCache() {
     }

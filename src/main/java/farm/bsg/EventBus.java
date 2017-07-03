@@ -11,20 +11,31 @@ public class EventBus {
     private static final Logger LOG = Logs.of(EventBus.class);
 
     public static enum Event {
-        TaskCreation("tc", "Task Creation", "Fires when a new task is created"), // A new task was created
+        TaskCreation("tc", "Task Creation", "Fires when a new task is created", true), // A new task was created
 
-        TaskSummary("ts", "Task Summary", "Fires at the given subscription time"), // a task summary of all tasks sent during morning (if there are any)
+        TaskSummary("ts", "Task Summary", "Fires at the given subscription time", true), // a task summary of all tasks sent during morning (if there are any)
 
-        DirectPublish("dp", "Direct Publish", "Fires when someone publishes");
+        DirectPublish("dp", "Direct Publish", "Fires when someone publishes", false);
 
-        public final String code;
-        public final String fullName;
-        public final String description;
+        public final String  code;
+        public final String  fullName;
+        public final String  description;
+        public final boolean automatic;
 
-        private Event(String code, String fullName, String description) {
+        private Event(String code, String fullName, String description, boolean automatic) {
             this.code = code;
             this.fullName = fullName;
             this.description = description;
+            this.automatic = automatic;
+        }
+
+        public static Event fromCode(String code) {
+            for (Event evt : Event.values()) {
+                if (evt.code.equals(code)) {
+                    return evt;
+                }
+            }
+            return Event.DirectPublish;
         }
     }
 
@@ -50,6 +61,17 @@ public class EventBus {
                 if (dispatch(subscriber, payload, properties)) {
                     count++;
                 }
+            }
+        }
+        LOG.info("sent:" + payload.shortText + " to:" + count);
+    }
+
+    public void publish(Subscription subscription, EventPayload payload) {
+        int count = 0;
+        SiteProperties properties = query.siteproperties_get();
+        for (Subscriber subscriber : query.select_subscriber().where_subscription_eq(subscription.getId()).done()) {
+            if (dispatch(subscriber, payload, properties)) {
+                count++;
             }
         }
         LOG.info("sent:" + payload.shortText + " to:" + count);

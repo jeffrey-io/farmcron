@@ -5,6 +5,7 @@ import farm.bsg.data.Type;
 
 public class ObjectModelForm {
 
+    @Deprecated
     public static String htmlOf(RawObject o) {
         StringBuilder sb = new StringBuilder();
 

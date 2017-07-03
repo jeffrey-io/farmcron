@@ -24,6 +24,16 @@ public class Tasks extends SessionPage {
         super(session, TASKS);
     }
 
+    public static HtmlPump priorityRender(int status) {
+        if (status == 0) {
+            return Html.tag().danger().pill().content("urgent");
+        }
+        if (status == 1) {
+            return Html.tag().warning().pill().content("high");
+        }
+        return Html.tag().info().pill().content("normal");
+    }
+
     public HtmlPump tabs(SimpleURI current) {
         Link tabList = Html.link(TASKS.href(), "Tasks").nav_link().active_if_href_is(current.href());
         Link tabCreate = Html.link(TASKS_CREATE.href(), "Create").nav_link().active_if_href_is(current.href());
@@ -45,9 +55,10 @@ public class Tasks extends SessionPage {
                     .add(Html.link(TASKS_UPDATE.href("id", task.getId()), "{update}").btn_primary()) //
                     .add_if(ableToStart && task.canStart(), Html.link(TASKS_TRANSITION.href("id", task.getId(), "state", "started"), "{start}").btn_primary())//
                     .add_if(ableToClose && task.canClose(), Html.link(TASKS_TRANSITION.href("id", task.getId(), "state", "closed"), "{close}").btn_primary());
-            table.row(task.get("name"), task.get("state"), task.get("due_date"), actions);
+            HtmlPump name = Html.block().add(task.get("name")).add(priorityRender(task.getAsInt("priority")));
+            table.row(name, task.get("state"), task.get("due_date"), actions);
         }
-        
+
         block.add(table);
         return finish_pump(block);
     }
@@ -66,7 +77,7 @@ public class Tasks extends SessionPage {
         Task task = query().task_by_id(id, true);
         Block formInner = Html.block();
         formInner.add(Html.input("id").pull(task));
-        
+
         if (notify) {
             formInner.add(Html.input("notify").value("true"));
         }

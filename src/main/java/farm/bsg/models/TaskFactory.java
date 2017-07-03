@@ -15,11 +15,9 @@ public class TaskFactory extends RawObject {
             Field.STRING("name").addProjection("edit"), // EDIT-AVAILABLE
             Field.STRING("description").addProjection("edit"), // EDIT-AVAILABLE
             Field.STRING("current_task"), //
-
-            Field.NUMBER("priority").addProjection("edit"), // EDIT-AVAILABLE
+            Field.NUMBER("priority").withDefault(2).addProjection("edit"), // EDIT-AVAILABLE
             Field.NUMBER("frequency").addProjection("edit"), // EDIT-AVAILABLE
             Field.NUMBER("slack").addProjection("edit"), // EDIT-AVAILABLE
-
             Field.MONTHFILTER("month_filter").addProjection("edit"), // EDIT-AVAILABLE
             Field.DAYFILTER("day_filter").addProjection("edit") // EDIT-AVAILABLE
     );

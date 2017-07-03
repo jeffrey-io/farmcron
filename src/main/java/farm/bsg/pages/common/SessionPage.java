@@ -37,6 +37,7 @@ public class SessionPage extends GenericPage {
         session.redirect(href);
     }
 
+    @Deprecated
     public void redirect(String uri) {
         session.redirect(new FinishedHref(uri));
     }

@@ -22,6 +22,9 @@ public class Task extends RawObject {
             Field.DATETIME("created"), //
             Field.DATETIME("started"), //
             Field.DATETIME("closed"), //
+            
+            Field.STRING("notification_token_for_closed"), //
+            Field.STRING("notification_short_text_for_closed"), //
 
             Field.STRING("state").alwaysTrim().emptyStringSameAsNull().makeIndex(false) //
     );

@@ -6,7 +6,6 @@ import java.util.UUID;
 import org.joda.time.DateTime;
 
 import farm.bsg.BsgCounters;
-import farm.bsg.EventBus;
 import farm.bsg.ProductEngine;
 import farm.bsg.EventBus.Event;
 import farm.bsg.EventBus.EventPayload;
@@ -38,7 +37,7 @@ public class TaskFactoryManagement extends SessionPage {
         Link tabCreate = Html.link(TASKS_FACTORY_CREATE.href(), "Create").nav_link().active_if_href_is(current.href());
         return Html.nav().pills().with(tabList).with_if(person().has(Permission.EditTaskFactory), tabCreate);
     }
-
+    
     public static HtmlPump getProgress(TaskFactory factory, Task task, long now) {
         if (task != null) {
             String state = task.get("state");
@@ -74,7 +73,8 @@ public class TaskFactoryManagement extends SessionPage {
             }
             Block actions = Html.block().add_if(person().has(Permission.EditTaskFactory), Html.link(TASKS_FACTORY_EDIT.href("id", factory.getId()), "{update}").btn_primary());
             HtmlPump progress = getProgress(factory, currentTask, System.currentTimeMillis());
-            table.row(factory.get("name"), progress, actions);
+            HtmlPump name = Html.block().add(factory.get("name")).add(Tasks.priorityRender(factory.getAsInt("priority")));
+            table.row(name, progress, actions);
         }
         block.add(table);
         return finish_pump(block);
