@@ -22,21 +22,4 @@ public class ObjectModelForm {
         return sb.toString();
     }
 
-    public static String transferObjectInHiddenFieldsExceptSkipped(RawObject o, String... toSkip) {
-        HashSet<String> set = new HashSet<>();
-        for (String skip : toSkip) {
-            set.add(skip);
-        }
-        StringBuilder sb = new StringBuilder();
-        for (Type t : o.getTypes()) {
-            if (set.contains(t.name())) {
-                continue;
-            }
-            String value = o.get(t.name());
-            if (value != null) {
-                sb.append("<input type=\"hidden\" name=\"" + t.name() + "\" value=\"" + value + "\" />");
-            }
-        }
-        return sb.toString();
-    }
 }

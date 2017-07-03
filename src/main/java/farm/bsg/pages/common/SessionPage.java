@@ -17,6 +17,7 @@ public class SessionPage extends GenericPage {
         this.currentTitle = engine.navbar.title(uri.toRoutingPattern());
     }
 
+    @Deprecated
     public String formalize_html(String body) {
         String navbar = engine.navbar.html(href, session);
         return engine.template.html(currentTitle, navbar, body);

@@ -10,7 +10,7 @@ public class ManualRouter implements MultiTenantRouter {
     private HashMap<String, ProductEngine> engines;
 
     private ProductEngine                  engineWhenNotFound;
-    private boolean                        isSecure;
+    private final boolean                        isSecure;
 
     public ManualRouter(boolean isSecure) {
         this.engines = new HashMap<>();
@@ -27,7 +27,7 @@ public class ManualRouter implements MultiTenantRouter {
         this.engineWhenNotFound = engine;
     }
 
-    public void addDomain(String domain, ProductEngine engine) {
+    public synchronized void addDomain(String domain, ProductEngine engine) {
         this.engines.put(domain, engine);
     }
 
@@ -42,7 +42,7 @@ public class ManualRouter implements MultiTenantRouter {
     }
 
     @Override
-    public ProductEngine findByDomain(String domainRaw) {
+    public synchronized ProductEngine findByDomain(String domainRaw) {
         String domain = domainRaw.toLowerCase().trim();
         ProductEngine engine = engines.get(domain);
         if (engine == null) {

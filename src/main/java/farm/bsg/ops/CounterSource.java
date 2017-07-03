@@ -65,7 +65,7 @@ public class CounterSource {
             }
             sb.append(counter.name + " = " + counter.get() + "<br />");
         }
-        lastSection = null;
+        lastSection = "";
         sb.append("<h2>Histograms</h2>");
         for (Histogram histo : histograms) {
             if (!lastSection.equals(histo.section)) {

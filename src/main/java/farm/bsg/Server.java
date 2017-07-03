@@ -45,18 +45,17 @@ public class Server {
         return router;
     }
 
-    private static ProductEngine prodScope(JobManager jobManager, AmazonS3 s3, String scope) throws Exception {
-        PersistenceLogger persistence = new AmazonS3StorageLogger(s3, "state.bsg.farm", "customers/" + scope + "/");
+    private static ProductEngine prodScope(JobManager jobManager, AmazonS3 s3, String scope, ServerOptions options) throws Exception {
+        PersistenceLogger persistence = new AmazonS3StorageLogger(s3, options.bucket , "customers/" + scope + "/");
         return new ProductEngine(jobManager, persistence, getGenericTemplate());
     }
 
-    public static MultiTenantRouter prodRouter() throws Exception {
+    public static MultiTenantRouter prodRouter(ServerOptions options) throws Exception {
         JobManager jobManager = new JobManager();
         InstanceProfileCredentialsProvider provider = new InstanceProfileCredentialsProvider(true);
-        AmazonS3 s3 = AmazonS3ClientBuilder.standard().withRegion(Regions.US_WEST_2).withCredentials(provider).build();
+        AmazonS3 s3 = AmazonS3ClientBuilder.standard().withRegion(Regions.fromName(options.region)).withCredentials(provider).build();
         ManualRouter router = new ManualRouter(true);
-        router.addDomain("bsg.farm", prodScope(jobManager, s3, "jeffie"));
-        router.addDomain("demo.bsg.farm", prodScope(jobManager, s3, "demo"));
+        router.addDomain("bsg.farm", prodScope(jobManager, s3, "jeffie", options));
         jobManager.start();
         return router;
     }
@@ -68,13 +67,13 @@ public class Server {
         Service forwarding = ssl_forwarding();
 
         port(8080);
-        get("/ping", (req, res) -> "Hello");
+        get("/ping", (req, res) -> "HELLO WORLD");
 
         boolean secure = true;
         MultiTenantRouter router;
         if (options.production) {
             LOG.info("setting up production router");
-            router = prodRouter();
+            router = prodRouter(options);
         } else {
             LOG.info("setting up development router");
             secure = false;
