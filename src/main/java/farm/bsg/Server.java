@@ -30,7 +30,7 @@ import spark.Service;
 
 public class Server {
 
-    private static final Logger LOG = makeLogAndCaptureStdOutputs(true); 
+    private static final Logger LOG = makeLogAndCaptureStdOutputs(false); 
     
     private static Logger makeLogAndCaptureStdOutputs(boolean skip) {
         if (skip) {
