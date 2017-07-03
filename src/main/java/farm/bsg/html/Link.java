@@ -24,6 +24,7 @@ public class Link extends HtmlPump {
         return this;
     }
 
+    @Deprecated
     public Link active_if_href_is(String currenfHref) {
         this.active = href.equals(currenfHref);
         return this;

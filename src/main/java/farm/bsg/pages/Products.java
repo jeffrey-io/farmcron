@@ -14,6 +14,7 @@ import farm.bsg.models.Product;
 import farm.bsg.ops.CounterCodeGen;
 import farm.bsg.pages.common.SessionPage;
 import farm.bsg.route.BinaryFile;
+import farm.bsg.route.FinishedHref;
 import farm.bsg.route.RoutingTable;
 import farm.bsg.route.SessionRequest;
 import farm.bsg.route.SimpleURI;
@@ -23,7 +24,7 @@ public class Products extends SessionPage {
     public Products(SessionRequest session) {
         super(session, PRODUCTS);
     }
-    
+
     public String list() {
         Table products = new Table("Name", "Category", "Description", "Price");
         for (Product p : engine.select_product().to_list().inline_order_lexographically_asc_by("category", "name").done()) {
@@ -32,29 +33,29 @@ public class Products extends SessionPage {
                     p.get("category"), //
                     p.get("description"), //
                     p.get("price"));
-                    
+
         }
 
         Block page = Html.block();
-        page.add(tabs("/products"));
+        page.add(tabs(PRODUCTS.href()));
         page.add(Html.wrapped().h4().wrap("All Products"));
         page.add(products);
         return finish_pump(page);
     }
-    
+
     public Product pullProduct() {
-        Product product= query().product_by_id(session.getParam("id"), true);
+        Product product = query().product_by_id(session.getParam("id"), true);
         product.importValuesFromReqeust(session, "");
         product.set("who", person().getId());
         return product;
     }
 
-    public HtmlPump tabs(String current) {
+    public HtmlPump tabs(FinishedHref current) {
         Link tab1 = Html.link(PRODUCTS.href(), "List All Products").nav_link().active_if_href_is(current);
         Link tab2 = Html.link(PRODUCTS_EDIT.href("id", UUID.randomUUID().toString()), "Create New Product").nav_link().active_if_href_is(current);
         return Html.nav().pills().with(tab1).with(tab2);
     }
-    
+
     public String commit() {
         Product product = pullProduct();
         BinaryFile file = session.getFile("file_image");
@@ -66,10 +67,10 @@ public class Products extends SessionPage {
             }
         }
         engine.put(product);
-        redirect("/products");
+        redirect(PRODUCTS.href());
         return null;
     }
-    
+
     public String edit() {
         Product product = pullProduct();
 
@@ -100,36 +101,33 @@ public class Products extends SessionPage {
         formInner.add(Html.wrapped().form_group() //
                 .wrap(Html.label("file_image", "Image")) //
                 .wrap(Html.input("file_image").id_from_name().file()));
-        
+
         String imageContentType = product.get("image_content_type");
         String imageContent = product.get("image");
         if (imageContentType != null) {
-          formInner.add(Html.img().content(imageContentType, imageContent).width(400));
+            formInner.add(Html.img().content(imageContentType, imageContent).width(400));
         }
-        
+
         formInner.add(Html.wrapped().form_group() //
                 .wrap(Html.input("submit").id_from_name().value("Save").submit()));
 
         Block page = Html.block();
-        page.add(tabs("/product-edit"));
+        page.add(tabs(PRODUCTS_EDIT.href()));
         page.add(Html.wrapped().h4().wrap("Edit"));
         page.add(Html.form("post", PRODUCTS_COMMIT.href()).multipart().inner(formInner));
         return finish_pump(page);
     }
-    
+
     public static void link(RoutingTable routing) {
         routing.navbar(PRODUCTS, "Products", Permission.SeeProductsTab);
         routing.get(PRODUCTS, (session) -> new Products(session).list());
-        
         routing.get_or_post(PRODUCTS_EDIT, (session) -> new Products(session).edit());
-        
         routing.post(PRODUCTS_COMMIT, (session) -> new Products(session).commit());
     }
-    
-    public static SimpleURI PRODUCTS = new SimpleURI("/products");
-    public static SimpleURI PRODUCTS_EDIT = new SimpleURI("/product-edit");
-    public static SimpleURI PRODUCTS_COMMIT = new SimpleURI("/commit-product");
-    
+
+    public static SimpleURI PRODUCTS        = new SimpleURI("/admin/products");
+    public static SimpleURI PRODUCTS_EDIT   = new SimpleURI("/admin/products;edit");
+    public static SimpleURI PRODUCTS_COMMIT = new SimpleURI("/admin/products;edit;commit");
 
     public static void link(CounterCodeGen c) {
         c.section("Page: Products");

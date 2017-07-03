@@ -67,35 +67,34 @@ public class Security {
     public enum Permission {
         Public("public", Roles.GOD, Roles.OWNER, Roles.UNPAID_EMPLOYEE, Roles.PAID_EMPLOYEE), // everyone can see or do this
 
-       
         // CHECK RELATED ACTIONS
         SeeChecksTab("see_checks_tab", Roles.GOD, Roles.OWNER), //
         SeeOutstandingChecksForEveryone("see_all_checks", Roles.GOD, Roles.OWNER), //
         CheckMake("check_make", Roles.GOD, Roles.OWNER), //
-        
+
         // TASK RELATED PERMISSIONS
-        SeeTaskFactoryTab("see_task_factories_tab", Roles.GOD, Roles.OWNER, Roles.MANAGER),
-        EditTaskFactory("edit_task_factories", Roles.GOD, Roles.OWNER, Roles.MANAGER),
-        SeeTasksTab("see_tasks_tab", Roles.GOD, Roles.OWNER, Roles.MANAGER),
-        EditTasks("edit_tasks", Roles.GOD, Roles.OWNER, Roles.MANAGER),
-        StartTask("start_task", Roles.GOD, Roles.OWNER, Roles.MANAGER, Roles.PAID_EMPLOYEE),
-        CloseTask("close_task", Roles.GOD, Roles.OWNER, Roles.MANAGER, Roles.PAID_EMPLOYEE),
-        
-        
+        SeeTaskFactoryTab("see_task_factories_tab", Roles.GOD, Roles.OWNER, Roles.MANAGER), //
+        EditTaskFactory("edit_task_factories", Roles.GOD, Roles.OWNER, Roles.MANAGER), //
+        SeeTasksTab("see_tasks_tab", Roles.GOD, Roles.OWNER, Roles.MANAGER), //
+        EditTasks("edit_tasks", Roles.GOD, Roles.OWNER, Roles.MANAGER), //
+        StartTask("start_task", Roles.GOD, Roles.OWNER, Roles.MANAGER, Roles.PAID_EMPLOYEE), //
+        CloseTask("close_task", Roles.GOD, Roles.OWNER, Roles.MANAGER, Roles.PAID_EMPLOYEE), //
+
         // SUBSCRIPTION RELATED activities
         SubscriptionView("subscriptions_view", Roles.GOD, Roles.OWNER), //
         SubscriptionWrite("subscriptions_write", Roles.GOD, Roles.OWNER), //
         SubscriptionPublish("subscriptions_publish", Roles.GOD, Roles.OWNER), //
 
-        SeeHabitsTab("see_habits_tab", Roles.GOD, Roles.OWNER), //
+        // HABITS
+        HabitsUnlocked("habits_unlocked", Roles.GOD, Roles.OWNER), //
 
-        
-        // 
+        // for employees to report wages
         SeePayrollTab("see_payroll_tab", Roles.GOD, Roles.OWNER, Roles.PAID_EMPLOYEE),
 
+        // Product Management
         SeeProductsTab("see_products_tab", Roles.GOD, Roles.OWNER, Roles.MANAGER), //
         CreateProduct("create_product", Roles.GOD, Roles.OWNER, Roles.MANAGER), //
-        
+
         // For managing peoples
         PeopleManagement("people_manager", Roles.GOD, Roles.OWNER, Roles.MANAGER), //
 
@@ -117,10 +116,10 @@ public class Security {
         GOD("god"), // all permissions
         OWNER("owner"), // owner of the business
         MANAGER("manager"), // manager of people
-        
+
         ALL_CHORES("chores"), // chore
         ALL_EVENTS("events"), // chore
-                
+
         UNPAID_EMPLOYEE("unpaid_employee"), // i.e. child
         PAID_EMPLOYEE("employee"); //
 

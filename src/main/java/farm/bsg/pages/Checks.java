@@ -185,10 +185,10 @@ public class Checks extends SessionPage {
             query().put(check);
 
             // populate the check
-            redirect("/check-view?id=" + check.getId());
+            redirect(CHECKS_VIEW.href("id", check.getId()));
             return null;
         } else {
-            redirect("/audit-check?employee=" + employee.getId() + "&error=newdata");
+            redirect(CHECKS_AUDIT.href("employee", employee.getId(), "error", "newdata"));
             return null;
         }
     }
@@ -200,13 +200,13 @@ public class Checks extends SessionPage {
         routing.get(CHECKS_CONFIRM, (session) -> new Checks(session).confirm());
         routing.get(CHECKS_VIEW, (session) -> new Checks(session).visualize());
     }
-    
-    public static final SimpleURI CHECKS_HOME = new SimpleURI("/admin/checks");
-    
+
+    public static final SimpleURI CHECKS_HOME    = new SimpleURI("/admin/checks");
+
     // TODO: link this in
-    public static final SimpleURI CHECKS_AUDIT = new SimpleURI("/audit-check");
+    public static final SimpleURI CHECKS_AUDIT   = new SimpleURI("/audit-check");
     public static final SimpleURI CHECKS_CONFIRM = new SimpleURI("/confirm-check");
-    public static final SimpleURI CHECKS_VIEW = new SimpleURI("/check-view");
+    public static final SimpleURI CHECKS_VIEW    = new SimpleURI("/check-view");
 
     public static void link(CounterCodeGen c) {
         c.section("Page: Checks");

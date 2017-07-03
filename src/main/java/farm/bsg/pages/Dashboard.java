@@ -18,7 +18,7 @@ public class Dashboard extends SessionPage {
     public Object show() {
         BsgCounters.I.dashboard_hits.bump();
         Block page = Html.block();
-        if (has(Permission.SeeHabitsTab)) {
+        if (has(Permission.HabitsUnlocked)) {
             page.add(Html.wrapped().h5().wrap("Habit Briefing"));
             page.add(new Habits(session).habits_as_cards());
         }

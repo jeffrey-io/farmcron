@@ -19,6 +19,7 @@ import farm.bsg.html.Table;
 import farm.bsg.models.Habit;
 import farm.bsg.ops.CounterCodeGen;
 import farm.bsg.pages.common.SessionPage;
+import farm.bsg.route.FinishedHref;
 import farm.bsg.route.RoutingTable;
 import farm.bsg.route.SessionRequest;
 import farm.bsg.route.SimpleURI;
@@ -30,6 +31,7 @@ public class Habits extends SessionPage {
     }
 
     public HtmlPump habits_as_cards() {
+        person().mustHave(Permission.HabitsUnlocked);
         Block block = Html.block();
         ArrayList<Habit> habits = query().select_habit() //
                 .scope(person().getId()).to_list() //
@@ -59,13 +61,14 @@ public class Habits extends SessionPage {
     }
 
     public String list_available_as_cards() {
+        person().mustHave(Permission.HabitsUnlocked);
         Block page = Html.block();
-        page.add(tabs("/habits"));
+        page.add(tabs(HABITS.href()));
         page.add(habits_as_cards());
         return finish_pump(page);
     }
 
-    public HtmlPump tabs(String current) {
+    public HtmlPump tabs(FinishedHref current) {
         Link tab1 = Html.link(HABITS.href(), "Unlocked Habits").nav_link().active_if_href_is(current);
         Link tab2 = Html.link(HABITS_ALL.href(), "All Habits A-Z").nav_link().active_if_href_is(current);
         Link tab3 = Html.link(HABITS_TIMELINE.href(), "Edit Timeline").nav_link().active_if_href_is(current);
@@ -74,8 +77,9 @@ public class Habits extends SessionPage {
     }
 
     public String all() {
+        person().mustHave(Permission.HabitsUnlocked);
         Block block = Html.block();
-        block.add(tabs("/habits-all"));
+        block.add(tabs(HABITS_ALL.href()));
         Table table = new Table("Name", "Last Done", "Last Arg", "Actions");
         List<Habit> habits = query().select_habit().scope(person().getId()).to_list().inline_order_lexographically_by(true, false, "name").done();
         for (Habit habit : habits) {
@@ -96,6 +100,7 @@ public class Habits extends SessionPage {
     }
 
     public String bulk_commit() {
+        person().mustHave(Permission.HabitsUnlocked);
         int k = 0;
         while (true) {
             String id = session.getParam("id_" + k);
@@ -112,6 +117,7 @@ public class Habits extends SessionPage {
     }
 
     public String timeline() {
+        person().mustHave(Permission.HabitsUnlocked);
         Table table = new Table("Name", "Unlock", "Warning");
         List<Habit> habits = query().select_habit().scope(person().getId()).to_list().inline_order_lexographically_by(true, false, "unlock_time", "warn_time", "name").done();
         int k = 0;
@@ -125,7 +131,7 @@ public class Habits extends SessionPage {
             k++;
         }
         Block innerForm = Html.block() //
-                .add(tabs("/habits-timeline")).add(table) //
+                .add(tabs(HABITS_TIMELINE.href())).add(table) //
                 .add(Html.input("submit").submit().value("Bulk Edit Times"));
         return finish_pump(Html.form("post", HABITS_BULK_COMMIT.href()).inner(innerForm));
     }
@@ -138,6 +144,7 @@ public class Habits extends SessionPage {
     }
 
     public String history() {
+        person().mustHave(Permission.HabitsUnlocked);
         Habit habit = pullHabit();
         Map<String, String> history = habit.getHistory();
         Table table = Html.table("Date", "value");
@@ -145,26 +152,29 @@ public class Habits extends SessionPage {
             table.row(entry.getKey(), entry.getValue());
         }
         Block page = Html.block();
-        page.add(tabs("/habits-all"));
+        page.add(tabs(HABITS_ALL.href()));
         page.add(table);
         return finish_pump(page);
     }
 
     public String edit_old() {
+        person().mustHave(Permission.HabitsUnlocked);
         Habit habit = pullHabit();
-        return edit(habit, "/habits-all", "Apply", "Edit Habit");
+        return edit(habit, HABITS_ALL.href(), "Apply", "Edit Habit");
     }
 
     public String make_new() {
+        person().mustHave(Permission.HabitsUnlocked);
         Habit habit = new Habit();
         habit.generateAndSetId();
         String sessionId = session.getPerson().getId();
         habit.set("id", sessionId + "/" + UUID.randomUUID().toString());
         habit.set("who", person().getId());
-        return edit(habit, "/new-habit", "Make", "New Habit");
+        return edit(habit, HABITS_NEW.href(), "Make", "New Habit");
     }
 
-    private String edit(Habit habit, String current, String commitLabel, String title) {
+    private String edit(Habit habit, FinishedHref current, String commitLabel, String title) {
+        person().mustHave(Permission.HabitsUnlocked);
         Block formInner = Html.block();
         formInner.add(Html.input("id").pull(habit));
         formInner.add(Html.input("who").pull(habit));
@@ -195,6 +205,7 @@ public class Habits extends SessionPage {
     }
 
     private String provide_data(Habit habit) {
+        person().mustHave(Permission.HabitsUnlocked);
         Block formInner = Html.block();
         formInner.add(Html.input("id").pull(habit));
         formInner.add(Html.wrapped().form_group() //
@@ -204,13 +215,14 @@ public class Habits extends SessionPage {
                 .wrap(Html.input("submit").id_from_name().value(currentTitle).submit()));
 
         Block page = Html.block();
-        page.add(tabs("/habits"));
+        page.add(tabs(HABITS.href()));
         page.add(Html.wrapped().h4().wrap("Provide Arg:" + habit.get("name")));
         page.add(Html.form("post", HABITS_PERFORM.href()).inner(formInner));
         return finish_pump(page);
     }
 
     public String commit() {
+        person().mustHave(Permission.HabitsUnlocked);
         Habit habit = pullHabit();
         if  (habit.isNullOrEmpty("name")) {
             query().del(habit);
@@ -218,11 +230,12 @@ public class Habits extends SessionPage {
             query().put(habit);
         }
         
-        redirect("/habits-all");
+        redirect(HABITS_ALL.href());
         return null;
     }
 
     public String ask_or_perform() {
+        person().mustHave(Permission.HabitsUnlocked);
         Habit habit = pullHabit();
         String arg = session.getParam("arg");
         boolean argApplied = arg != null;
@@ -249,13 +262,13 @@ public class Habits extends SessionPage {
             }
             habit.set("history", Jackson.toJsonString(history));
             query().put(habit);
-            redirect("/habits");
+            redirect(HABITS.href());
             return null;
         }
     }
 
     public static void link(RoutingTable routing) {
-        routing.navbar(HABITS, "Habits", Permission.SeeHabitsTab);
+        routing.navbar(HABITS, "Habits", Permission.HabitsUnlocked);
         routing.get(HABITS, (session) -> new Habits(session).list_available_as_cards());
         routing.get(HABITS_ALL, (session) -> new Habits(session).all());
         routing.get(HABITS_TIMELINE, (session) -> new Habits(session).timeline());
@@ -267,15 +280,15 @@ public class Habits extends SessionPage {
         routing.get_or_post(HABITS_PERFORM, (session) -> new Habits(session).ask_or_perform());
     }
     
-    public static SimpleURI HABITS = new SimpleURI("/habits");
-    public static SimpleURI HABITS_ALL = new SimpleURI("/habits-all");
-    public static SimpleURI HABITS_TIMELINE = new SimpleURI("/habits-timeline");
-    public static SimpleURI HABITS_HISTORY = new SimpleURI("/habits-history");
-    public static SimpleURI HABITS_EDIT = new SimpleURI("/habit-edit");
-    public static SimpleURI HABITS_NEW = new SimpleURI("/new-habit");
-    public static SimpleURI HABITS_COMMIT_EDIT = new SimpleURI("/commit-habit-edit");
-    public static SimpleURI HABITS_BULK_COMMIT = new SimpleURI("/bulk-commit-habit-changes");
-    public static SimpleURI HABITS_PERFORM = new SimpleURI("/habit-perform");
+    public static SimpleURI HABITS = new SimpleURI("/you;habits");
+    public static SimpleURI HABITS_ALL = new SimpleURI("/you;habits;all");
+    public static SimpleURI HABITS_TIMELINE = new SimpleURI("/you;habits;timeline");
+    public static SimpleURI HABITS_HISTORY = new SimpleURI("/you;habits;history");
+    public static SimpleURI HABITS_EDIT = new SimpleURI("/you;habit;edit");
+    public static SimpleURI HABITS_NEW = new SimpleURI("/you;create;habit");
+    public static SimpleURI HABITS_COMMIT_EDIT = new SimpleURI("/you;habit;edit;commit");
+    public static SimpleURI HABITS_BULK_COMMIT = new SimpleURI("/you;habits;bulk;commit");
+    public static SimpleURI HABITS_PERFORM = new SimpleURI("/you;habit;perform");
 
 
     public static void link(CounterCodeGen c) {
