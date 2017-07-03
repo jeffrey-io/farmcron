@@ -90,7 +90,7 @@ public class EventBus {
         if ("EMAIL".equals(source)) {
             // TODO, need to set up email recv and email send.
         }
-        if ("FB".equals(source)) {
+        if ("facebook".equals(source)) {
             return properties.sendFacebookMessage(subscriber.get("from"), payload.shortText);
         }
         return false;

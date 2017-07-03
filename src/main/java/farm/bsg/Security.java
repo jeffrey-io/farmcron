@@ -82,8 +82,10 @@ public class Security {
         CloseTask("close_task", Roles.GOD, Roles.OWNER, Roles.MANAGER, Roles.PAID_EMPLOYEE),
         
         
-        // CHECK RELATED ACTIONS
-        SeeSubscripionsTab("see_subscriptions_tab", Roles.GOD, Roles.OWNER), //
+        // SUBSCRIPTION RELATED activities
+        SubscriptionView("subscriptions_view", Roles.GOD, Roles.OWNER), //
+        SubscriptionWrite("subscriptions_write", Roles.GOD, Roles.OWNER), //
+        SubscriptionPublish("subscriptions_publish", Roles.GOD, Roles.OWNER), //
 
         SeeHabitsTab("see_habits_tab", Roles.GOD, Roles.OWNER), //
 

@@ -68,6 +68,7 @@ public class Subscriptions extends SessionPage {
     }
 
     public String list() {
+        person().mustHave(Permission.SubscriptionView);
         Block page = Html.block();
         page.add(Html.wrapped().h3().wrap("All Subscriptions"));
 
@@ -75,19 +76,20 @@ public class Subscriptions extends SessionPage {
         List<Subscription> subs = Subscriptions.getSubscriptions(query());
         for (Subscription sub : subs) {
             HtmlPump actions = Html.block() //
-                    .add(Html.link(SUBSCRIPTIONS_EDIT.href("id", sub.getId()), "edit").btn_secondary()) //
+                    .add_if(person().has(Permission.SubscriptionWrite), Html.link(SUBSCRIPTIONS_EDIT.href("id", sub.getId()), "edit").btn_secondary()) //
                     .add(Html.link(SUBSCRIPTIONS_VIEW.href("id", sub.getId()), "view").btn_secondary());
             table.row(//
                     sub.get("name"), //
                     actions);
         }
         page.add(table);
-        page.add(Html.link(SUBSCRIPTIONS_NEW.href(), "Create New Subscription").btn_primary());
+        page.add_if(person().has(Permission.SubscriptionWrite), Html.link(SUBSCRIPTIONS_NEW.href(), "Create New Subscription").btn_primary());
         page.add(Html.link(SUBSCRIPTIONS_TEST.href(), "Test Robot").btn_secondary());
         return finish_pump(page);
     }
 
     public String test() {
+        person().mustHave(Permission.SubscriptionView);
         Block page = Html.block();
         page.add(Html.wrapped().h3().wrap("Test Robot"));
 
@@ -113,6 +115,7 @@ public class Subscriptions extends SessionPage {
     }
 
     public String view() {
+        person().mustHave(Permission.SubscriptionView);
         Subscription sub = pullSubscription();
 
         Block page = Html.block();
@@ -160,15 +163,18 @@ public class Subscriptions extends SessionPage {
             page.add(table);
         }
 
-        Block formInner = Html.block();
-        formInner.add(Html.input("subscription").value(sub.getId()));
-        formInner.add(Html.input("source").value("SMS"));
-        formInner.add(Html.wrapped().form_group() //
-                .wrap(Html.label("from", "Phone Number")) //
-                .wrap(Html.input("from").id_from_name().text()));
-        formInner.add(Html.wrapped().form_group() //
-                .wrap(Html.input("submit").id_from_name().value("Update").submit()));
-        page.add(Html.form("post", SUBSCRIPTIONS_ADD_SUBSCRIBER.href()).inner(formInner));
+        if (person().has(Permission.SubscriptionWrite)) {
+            Block formInner = Html.block();
+            formInner.add(Html.input("subscription").value(sub.getId()));
+            formInner.add(Html.input("source").value("SMS"));
+            formInner.add(Html.wrapped().form_group() //
+                    .wrap(Html.label("from", "Phone Number")) //
+                    .wrap(Html.input("from").id_from_name().text()));
+            formInner.add(Html.wrapped().form_group() //
+                    .wrap(Html.input("submit").id_from_name().value("Update").submit()));
+            page.add(Html.wrapped().h4().wrap("Add SMS Subscriber"));
+            page.add(Html.form("post", SUBSCRIPTIONS_ADD_SUBSCRIBER.href()).inner(formInner));
+        }
         return finish_pump(page);
     }
 
@@ -186,6 +192,8 @@ public class Subscriptions extends SessionPage {
     }
 
     public String add() {
+        person().mustHave(Permission.SubscriptionView);
+        person().mustHave(Permission.SubscriptionWrite);
         Subscriber subscriber = new Subscriber();
         subscriber.set("id", getConstructedId());
         subscriber.importValuesFromReqeust(session, "");
@@ -195,6 +203,8 @@ public class Subscriptions extends SessionPage {
     }
 
     public String publish() {
+        person().mustHave(Permission.SubscriptionView);
+        person().mustHave(Permission.SubscriptionPublish);
         Subscription sub = query().subscription_by_id(session.getParam("subscription"), false);
         if (sub == null) {
             return "invalid sub";
@@ -209,6 +219,9 @@ public class Subscriptions extends SessionPage {
     }
 
     public String remove() {
+        person().mustHave(Permission.SubscriptionView);
+        person().mustHave(Permission.SubscriptionWrite);
+
         Subscriber subscriber = query().subscriber_by_id(getConstructedId(), false);
         if (subscriber != null) {
             query().del(subscriber);
@@ -218,6 +231,8 @@ public class Subscriptions extends SessionPage {
     }
 
     private String edit() {
+        person().mustHave(Permission.SubscriptionView);
+        person().mustHave(Permission.SubscriptionWrite);
         Subscription sub = pullSubscription();
         Block formInner = Html.block();
         formInner.add(Html.input("id").pull(sub));
@@ -260,6 +275,8 @@ public class Subscriptions extends SessionPage {
     }
 
     public String commit() {
+        person().mustHave(Permission.SubscriptionView);
+        person().mustHave(Permission.SubscriptionWrite);
         Subscription sub = pullSubscription();
         query().put(sub);
         redirect(SUBSCRIPTIONS.href());
@@ -267,7 +284,7 @@ public class Subscriptions extends SessionPage {
     }
 
     public static void link(RoutingTable routing) {
-        routing.navbar(SUBSCRIPTIONS, "Subscriptions", Permission.SeeSubscripionsTab);
+        routing.navbar(SUBSCRIPTIONS, "Subscriptions", Permission.SubscriptionView);
 
         routing.text((engine, message) -> {
             Result result = Subscriptions.evaluate(engine, message.message);

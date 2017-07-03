@@ -152,7 +152,7 @@ public class TaskFactoryManagement extends SessionPage {
                 query().put(factory);
             }
         }
-        redirect(TASKS_FACTORY.href().value);
+        redirect(TASKS_FACTORY.href());
         return null;
     }
 

@@ -87,6 +87,10 @@ public class Tasks extends SessionPage {
                 .wrap(Html.input("name").id_from_name().pull(task).text()));
 
         formInner.add(Html.wrapped().form_group() //
+                .wrap(Html.label("priority", "Priority")) //
+                .wrap(Html.input("priority").id_from_name().pull(task).text()));
+
+        formInner.add(Html.wrapped().form_group() //
                 .wrap(Html.label("description", "Description")) //
                 .wrap(Html.input("description").id_from_name().pull(task).text()));
 
@@ -116,7 +120,7 @@ public class Tasks extends SessionPage {
                 engine.eventBus.trigger(Event.TaskCreation, payload);
             }
         }
-        redirect(TASKS.href().value);
+        redirect(TASKS.href());
         return null;
     }
 
@@ -136,7 +140,7 @@ public class Tasks extends SessionPage {
                 query().put(task);
             }
         }
-        redirect(TASKS.href().value);
+        redirect(TASKS.href());
         return null;
     }
 

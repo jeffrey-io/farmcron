@@ -199,7 +199,7 @@ public class PublicSite {
             WakeInputFile file = query().wakeinputfile_by_id(session.getParam("id"), false);
             if ("true".equals(session.getParam("delete"))) {
                 engine.del(file);
-                redirect("/public");
+                redirect(PUBLIC.href());
                 return null;
             }
             file.importValuesFromReqeust(session, "");
@@ -213,7 +213,7 @@ public class PublicSite {
                 file.set("contents", new String(Base64.encodeBase64(file_1.bytes)));
             }
             engine.put(file);
-            redirect("/public");
+            redirect(PUBLIC.href());
             return null;
         }
 
@@ -223,7 +223,7 @@ public class PublicSite {
             file.generateAndSetId();
             file.importValuesFromReqeust(session, "");
             engine.put(file);
-            redirect("/public");
+            redirect(PUBLIC.href());
             return null;
         }
 
@@ -289,6 +289,7 @@ public class PublicSite {
         }
 
         public String commit_upload_json_gz() {
+            person().mustHave(Permission.WebMaster);
             StringBuilder page = new StringBuilder();
             try {
                 BinaryFile file = session.getFile("file_gz");
@@ -355,17 +356,18 @@ public class PublicSite {
         routing.post(PUBLIC_COMMIT_UPLOAD_JSON_GZ, (session) -> new EditingPublicSite(session).commit_upload_json_gz());
     }
 
-    public static SimpleURI PUBLIC                         = new SimpleURI("/public");
-    public static SimpleURI PUBLIC_UPLOAD                  = new SimpleURI("/public-upload");
-    public static SimpleURI PUBLIC_UPLOAD_WAKE             = new SimpleURI("/upload-wake-file");
-    public static SimpleURI PUBLIC_CREATE_WAKE_FILE        = new SimpleURI("/create-wake-file");
-    public static SimpleURI PUBLIC_CREATE_WAKE_FILE_COMMIT = new SimpleURI("/create-wake-file-commit");
-    public static SimpleURI PUBLIC_UPDATE_WAKE_FILE_COMMIT = new SimpleURI("/update-wake-file-commit");
-    public static SimpleURI PUBLIC_WAKE_EDIT               = new SimpleURI("/public-wake-edit");
+    public static SimpleURI PUBLIC                         = new SimpleURI("/admin/public-site");
+    public static SimpleURI PUBLIC_UPLOAD                  = new SimpleURI("/admin/public-site;upload-file");
+    public static SimpleURI PUBLIC_CREATE_WAKE_FILE        = new SimpleURI("/admin/public-site;create-new-file");
 
-    public static SimpleURI PUBLIC_DOWNLOAD_JSON_GZ        = new SimpleURI("/public;download.json.gz");
-    public static SimpleURI PUBLIC_UPLOAD_JSON_GZ          = new SimpleURI("/public;upload;json;gz");
-    public static SimpleURI PUBLIC_COMMIT_UPLOAD_JSON_GZ   = new SimpleURI("/public;commit;upload.json.gz");
+    public static SimpleURI PUBLIC_UPLOAD_WAKE             = new SimpleURI("/admin/public-site;upload-wake-file");
+    public static SimpleURI PUBLIC_CREATE_WAKE_FILE_COMMIT = new SimpleURI("/admin/public-site;create-wake-file-commit");
+    public static SimpleURI PUBLIC_UPDATE_WAKE_FILE_COMMIT = new SimpleURI("/admin/public-site;update-wake-file-commit");
+    public static SimpleURI PUBLIC_WAKE_EDIT               = new SimpleURI("/admin/public-site;public-wake-edit");
+
+    public static SimpleURI PUBLIC_DOWNLOAD_JSON_GZ        = new SimpleURI("/admin/public-site-download.json.gz");
+    public static SimpleURI PUBLIC_UPLOAD_JSON_GZ          = new SimpleURI("/admin/public-site;upload;json;gz");
+    public static SimpleURI PUBLIC_COMMIT_UPLOAD_JSON_GZ   = new SimpleURI("/admin/public-site;commit;upload.json.gz");
 
     public static void link(CounterCodeGen c) {
         c.section("Page: Public Site");
