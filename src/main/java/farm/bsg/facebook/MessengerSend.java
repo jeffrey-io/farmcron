@@ -58,7 +58,7 @@ public class MessengerSend {
         }
     }
 
-    public void send(String userId, String text) {
+    public boolean send(String userId, String text) {
         HashMap<String, Object> node = new HashMap<>();
         HashMap<String, Object> recipient = new HashMap<>();
         HashMap<String, Object> message = new HashMap<>();
@@ -73,5 +73,6 @@ public class MessengerSend {
 
         byte[] result = executeJsonPost(url, body);
         System.out.println(new String(result));
+        return true;
     }
 }

@@ -5,7 +5,10 @@ import static spark.Spark.*;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.InputStream;
+import java.io.PrintStream;
+
 import org.slf4j.Logger;
+import org.slf4j.impl.OutputStreamLogger;
 
 import com.amazon.speech.Sdk;
 import com.amazonaws.auth.InstanceProfileCredentialsProvider;
@@ -27,7 +30,18 @@ import spark.Service;
 
 public class Server {
 
-    private static final Logger LOG = Logs.of(Server.class);
+    private static final Logger LOG = makeLogAndCaptureStdOutputs(); 
+    
+    private static Logger makeLogAndCaptureStdOutputs() {
+        ByteArrayOutputStream stderrOutBytes = new ByteArrayOutputStream();
+        PrintStream stderrOut = new PrintStream(stderrOutBytes);
+        System.setErr(stderrOut);
+        Logger logger = Logs.of(Server.class);
+        stderrOut.flush();
+        System.setErr(new PrintStream(new OutputStreamLogger("STDERR")));
+        System.setOut(new PrintStream(new OutputStreamLogger("STDOUT")));
+        return logger;
+    }
 
     private static String getGenericTemplate() throws Exception {
         String html = Server.getTextFile("generic.html");

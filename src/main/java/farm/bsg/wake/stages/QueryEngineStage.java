@@ -15,7 +15,6 @@ import farm.bsg.wake.sources.EngineJoinSource;
 import farm.bsg.wake.sources.InjectBuildId;
 import farm.bsg.wake.sources.MarkdownFilteredSource;
 import farm.bsg.wake.sources.Source;
-import farm.bsg.wake.sources.TableOfContentsSource;
 import farm.bsg.wake.sources.TagsFilteredSource;
 
 public class QueryEngineStage extends Stage {

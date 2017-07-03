@@ -2860,6 +2860,7 @@ public class QueryEngine {
       this.data.put("category", farm.bsg.data.types.TypeString.project(pp, "category"));
       this.data.put("customizations", farm.bsg.data.types.TypeString.project(pp, "customizations"));
       this.data.put("price", farm.bsg.data.types.TypeNumber.project(pp, "price"));
+      this.data.put("old_price", farm.bsg.data.types.TypeNumber.project(pp, "old_price"));
       this.data.put("image", farm.bsg.data.types.TypeBytesInBase64.project(pp, "image"));
       this.data.put("image_content_type", farm.bsg.data.types.TypeString.project(pp, "image_content_type"));
       this.data.put("image_hash", farm.bsg.data.types.TypeString.project(pp, "image_hash"));
@@ -2944,6 +2945,7 @@ public class QueryEngine {
       this.data.put("id", farm.bsg.data.types.TypeUUID.project(pp, "id"));
       this.data.put("__token", farm.bsg.data.types.TypeString.project(pp, "__token"));
       this.data.put("name", farm.bsg.data.types.TypeString.project(pp, "name"));
+      this.data.put("description", farm.bsg.data.types.TypeString.project(pp, "description"));
       this.data.put("subscribe_keyword", farm.bsg.data.types.TypeString.project(pp, "subscribe_keyword"));
       this.data.put("subscribe_message", farm.bsg.data.types.TypeString.project(pp, "subscribe_message"));
       this.data.put("unsubscribe_keyword", farm.bsg.data.types.TypeString.project(pp, "unsubscribe_keyword"));
@@ -2972,6 +2974,7 @@ public class QueryEngine {
       this.data.put("id", farm.bsg.data.types.TypeUUID.project(pp, "id"));
       this.data.put("__token", farm.bsg.data.types.TypeString.project(pp, "__token"));
       this.data.put("owner", farm.bsg.data.types.TypeString.project(pp, "owner"));
+      this.data.put("cart_id", farm.bsg.data.types.TypeNumber.project(pp, "cart_id"));
       this.data.put("name", farm.bsg.data.types.TypeString.project(pp, "name"));
       this.data.put("description", farm.bsg.data.types.TypeString.project(pp, "description"));
       this.data.put("priority", farm.bsg.data.types.TypeNumber.project(pp, "priority"));

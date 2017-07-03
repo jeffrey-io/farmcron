@@ -3,15 +3,21 @@ package farm.bsg.cron;
 import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;
 
+import org.slf4j.Logger;
+
+import farm.bsg.ops.Logs;
+
 /**
  * This is where all time gets managed and jobs are executed asynchronously
  * 
  * @author jeffrey
  */
 public class JobManager {
+    private Logger                     LOG = Logs.of(JobManager.class);
+
     private final ArrayList<HourlyJob> hourlyJobs;
-    private boolean alive;
-    private Thread lastThread;
+    private boolean                    alive;
+    private Thread                     lastThread;
 
     public JobManager() {
         this.hourlyJobs = new ArrayList<>();
@@ -20,6 +26,7 @@ public class JobManager {
 
     /**
      * add an hourly job to execute... hourly
+     * 
      * @param job
      */
     public synchronized void add(HourlyJob job) {
@@ -27,6 +34,7 @@ public class JobManager {
     }
 
     private synchronized boolean runHourly() {
+        LOG.info("running hourly jobs");
         for (HourlyJob job : hourlyJobs) {
             job.run(System.currentTimeMillis());
         }
@@ -57,6 +65,7 @@ public class JobManager {
                 started.countDown();
                 while (runHourly()) {
                     try {
+                        LOG.info("sleeping");
                         Thread.sleep(60 * 60 * 1000);
                     } catch (InterruptedException ie) {
                     }
@@ -70,7 +79,7 @@ public class JobManager {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-        
+
     }
 
 }

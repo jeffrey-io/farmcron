@@ -57,6 +57,15 @@ public abstract class RawObject {
     public List<Type> getTypes() {
         return schema.getTypes();
     }
+    
+    public boolean areAnyNull(String... keys) {
+        for (String key : keys) {
+            if (isNullOrEmpty(key)) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     protected abstract void invalidateCache();
 

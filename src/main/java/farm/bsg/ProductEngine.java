@@ -11,8 +11,8 @@ public class ProductEngine extends QueryEngine {
     public final Authenticator   auth;
     public final NavBar          navbar;
     public final GenericTemplate template;
-
     public final AlexaCommands   alexa;
+    public final EventBus eventBus;
 
     public ProductEngine(JobManager manager, PersistenceLogger persistence, String pageTemplate) throws Exception {
         super(persistence);
@@ -22,6 +22,7 @@ public class ProductEngine extends QueryEngine {
         this.alexa = new AlexaCommands(this);
 
         this.template = new GenericTemplate(pageTemplate);
+        this.eventBus = new EventBus(this);
         manager.add(new TaskFactoryManagement.TaskFactoryMonitor(this));
     }
 }

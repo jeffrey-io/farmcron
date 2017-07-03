@@ -1,7 +1,5 @@
 package farm.bsg.html.shit;
 
-import java.util.HashSet;
-
 import farm.bsg.data.RawObject;
 import farm.bsg.data.Type;
 

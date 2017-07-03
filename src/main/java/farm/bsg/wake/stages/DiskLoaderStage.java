@@ -6,7 +6,6 @@ package farm.bsg.wake.stages;
 import farm.bsg.wake.sources.BangedSource;
 import farm.bsg.wake.sources.MarkdownFilteredSource;
 import farm.bsg.wake.sources.Source;
-import farm.bsg.wake.sources.TableOfContentsSource;
 import farm.bsg.wake.sources.TagsFilteredSource;
 
 import java.io.File;

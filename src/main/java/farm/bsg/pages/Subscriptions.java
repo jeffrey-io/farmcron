@@ -5,15 +5,12 @@ import java.util.UUID;
 
 import farm.bsg.QueryEngine;
 import farm.bsg.Security.Permission;
-import farm.bsg.data.types.TypeDayFilter;
-import farm.bsg.data.types.TypeMonthFilter;
 import farm.bsg.html.Block;
 import farm.bsg.html.Html;
 import farm.bsg.html.Table;
 import farm.bsg.html.shit.ObjectModelForm;
 import farm.bsg.models.Subscriber;
 import farm.bsg.models.Subscription;
-import farm.bsg.models.TaskFactory;
 import farm.bsg.ops.CounterCodeGen;
 import farm.bsg.pages.common.SessionPage;
 import farm.bsg.route.RoutingTable;

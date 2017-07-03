@@ -27,6 +27,7 @@ public class Site extends SessionPage {
         if (session.hasNonNullQueryParam("commit")) {
             if (has(Permission.WebMaster)) {
                 query().put(properties);
+                properties.notifyAdmin("Twilio Link Working");
             } else {
                 sb.append("Unable to save");
                 // handle error
