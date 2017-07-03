@@ -66,15 +66,20 @@ public class EventBus {
         LOG.info("sent:" + payload.shortText + " to:" + count);
     }
 
-    public void publish(Subscription subscription, EventPayload payload) {
+    public int publish(Subscription subscription, EventPayload payload) {
         int count = 0;
         SiteProperties properties = query.siteproperties_get();
         for (Subscriber subscriber : query.select_subscriber().where_subscription_eq(subscription.getId()).done()) {
-            if (dispatch(subscriber, payload, properties)) {
-                count++;
-            }
+            query.executor.execute(new Runnable() {
+                @Override
+                public void run() {
+                    dispatch(subscriber, payload, properties);
+                }
+            });
+            count++;
         }
         LOG.info("sent:" + payload.shortText + " to:" + count);
+        return count;
     }
 
     public boolean dispatch(Subscriber subscriber, EventPayload payload, SiteProperties properties) {

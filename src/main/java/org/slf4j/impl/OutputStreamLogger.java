@@ -8,11 +8,9 @@ import org.slf4j.Logger;
 import farm.bsg.ops.Logs;
 
 public class OutputStreamLogger extends OutputStream {
-    private final String prefix;
     private final Logger log;
 
     public OutputStreamLogger(String prefix) {
-        this.prefix = prefix;
         this.log = Logs.of(OutputStreamLogger.class, prefix);
     }
 

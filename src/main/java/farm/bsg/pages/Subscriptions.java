@@ -4,10 +4,12 @@ import java.util.List;
 import java.util.UUID;
 
 import farm.bsg.EventBus.Event;
+import farm.bsg.EventBus.EventPayload;
 import farm.bsg.QueryEngine;
 import farm.bsg.Security.Permission;
 import farm.bsg.html.Block;
 import farm.bsg.html.Html;
+import farm.bsg.html.HtmlPump;
 import farm.bsg.html.Table;
 import farm.bsg.models.Subscriber;
 import farm.bsg.models.Subscription;
@@ -66,45 +68,48 @@ public class Subscriptions extends SessionPage {
     }
 
     public String list() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("<h5>All Subscriptions</h5>");
+        Block page = Html.block();
+        page.add(Html.wrapped().h3().wrap("All Subscriptions"));
+
         Table table = new Table("Name", "Actions");
         List<Subscription> subs = Subscriptions.getSubscriptions(query());
         for (Subscription sub : subs) {
-            String actions = "<a class=\"btn btn-secondary\" href=\"/subscription-edit?id=" + sub.get("id") + "\">edit</a>";
-            actions += "<a class=\"btn btn-secondary\" href=\"/subscription-view?id=" + sub.get("id") + "\">view</a>";
-
+            HtmlPump actions = Html.block() //
+                    .add(Html.link(SUBSCRIPTIONS_EDIT.href("id", sub.getId()), "edit").btn_secondary()) //
+                    .add(Html.link(SUBSCRIPTIONS_VIEW.href("id", sub.getId()), "view").btn_secondary());
             table.row(//
                     sub.get("name"), //
                     actions);
         }
-        sb.append(table.toHtml());
-        sb.append("<a class=\"btn btn-primary\" href=\"/subscription-test\">Test Your Keywords</a>");
-        sb.append("<a class=\"btn btn-secondary\" href=\"/new-subscription\">New Subscription</a>");
-        return formalize_html(sb.toString());
+        page.add(table);
+        page.add(Html.link(SUBSCRIPTIONS_NEW.href(), "Create New Subscription").btn_primary());
+        page.add(Html.link(SUBSCRIPTIONS_TEST.href(), "Test Robot").btn_secondary());
+        return finish_pump(page);
     }
 
     public String test() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("<h5>Test Your Engine</h5>");
-        sb.append("<form method=\"post\" action=\"/subscription-test\">");
+        Block page = Html.block();
+        page.add(Html.wrapped().h3().wrap("Test Robot"));
+
+        Block formInner = Html.block();
+        formInner.add(Html.wrapped().form_group() //
+                .wrap(Html.label("message", "message")) //
+                .wrap(Html.input("message").id_from_name().text()));
+        formInner.add(Html.wrapped().form_group() //
+                .wrap(Html.input("submit").id_from_name().value("Test").submit()));
+        page.add(Html.form("post", SUBSCRIPTIONS_TEST.href()).inner(formInner));
+
         String message = session.getParam("message");
-        sb.append(Html.label("message", "Message").toHtml());
-        sb.append(Html.input("message").text().id_from_name().autofocus().value(message).toHtml());
-        sb.append("<input type=\"submit\"></form>");
         if (message != null) {
-            sb.append("<hr />");
             Result result = Subscriptions.evaluate(query(), message);
 
             if (result == null) {
-                sb.append("<strong>The robot did not understand</strong>");
+                page.add(Html.wrapped().strong().wrap("The robot did not understand."));
             } else {
-                sb.append("<strong>Output:</strong>").append(result.response);
-                sb.append("<br /> {action=" + result.action + "}");
-                sb.append("<br /> {subscription=" + result.winner.get("name") + "}");
+                page.add(Html.wrapped().strong().wrap("Output: " + result.action + " ; subscription=" + result.winner.get("name")));
             }
         }
-        return formalize_html(sb.toString());
+        return finish_pump(page);
     }
 
     public String view() {
@@ -134,7 +139,7 @@ public class Subscriptions extends SessionPage {
             Block formInner = Html.block();
             formInner.add(Html.input("subscription").value(sub.getId()));
             formInner.add(Html.wrapped().form_group() //
-                    .wrap(Html.label("short_message", "message")) //
+                    .wrap(Html.label("short_message", "Short Message (SMS, Facebook)")) //
                     .wrap(Html.input("short_message").id_from_name().text()));
             formInner.add(Html.wrapped().form_group() //
                     .wrap(Html.input("submit").id_from_name().value("Publish").submit()));
@@ -146,9 +151,8 @@ public class Subscriptions extends SessionPage {
         if (subscribers.size() > 0) {
             Table table = new Table("source", "from", "action");
             for (Subscriber subscriber : subscribers) {
-                String href = SUBSCRIPTIONS_REMOVE_SUB.href("subscription", sub.getId(), "from", subscriber.get("from"), "source", subscriber.get("source")).value;
+                String href = SUBSCRIPTIONS_REMOVE_SUBCRIBER.href("subscription", sub.getId(), "from", subscriber.get("from"), "source", subscriber.get("source")).value;
                 String actions = "<a class=\"btn btn-secondary\" href=\"" + href + "\">delete</a>";
-
                 table.row( //
                         subscriber.get("source"), //
                         subscriber.get("from"), actions); //
@@ -164,7 +168,7 @@ public class Subscriptions extends SessionPage {
                 .wrap(Html.input("from").id_from_name().text()));
         formInner.add(Html.wrapped().form_group() //
                 .wrap(Html.input("submit").id_from_name().value("Update").submit()));
-        page.add(Html.form("post", SUBSCRIPTIONS_ADD.href()).inner(formInner));
+        page.add(Html.form("post", SUBSCRIPTIONS_ADD_SUBSCRIBER.href()).inner(formInner));
         return finish_pump(page);
     }
 
@@ -186,24 +190,30 @@ public class Subscriptions extends SessionPage {
         subscriber.set("id", getConstructedId());
         subscriber.importValuesFromReqeust(session, "");
         query().put(subscriber);
-        redirect("/subscription-view?id=" + session.getParam("subscription"));
+        redirect(SUBSCRIPTIONS_VIEW.href("id", session.getParam("subscription")));
         return null;
     }
 
     public String publish() {
-        return "Published!";
+        Subscription sub = query().subscription_by_id(session.getParam("subscription"), false);
+        if (sub == null) {
+            return "invalid sub";
+        }
+        String shortMessage = session.getParam("short_message");
+        if ("".equals(shortMessage) || shortMessage == null) {
+            return "no publish payload";
+        }
+        EventPayload payload = new EventPayload(shortMessage);
+        int count = engine.eventBus.publish(sub, payload);
+        return "Published:" + count;
     }
 
     public String remove() {
         Subscriber subscriber = query().subscriber_by_id(getConstructedId(), false);
         if (subscriber != null) {
             query().del(subscriber);
-        } else {
-            for (Subscriber s : query().select_subscriber().scope(session.getParam("subscription")).done()) {
-                System.out.println(s.getId() + "/" + getConstructedId());
-            }
         }
-        redirect("/subscription-view?id=" + session.getParam("subscription"));
+        redirect(SUBSCRIPTIONS_VIEW.href("id", session.getParam("subscription")));
         return null;
     }
 
@@ -252,7 +262,7 @@ public class Subscriptions extends SessionPage {
     public String commit() {
         Subscription sub = pullSubscription();
         query().put(sub);
-        redirect("/subscriptions");
+        redirect(SUBSCRIPTIONS.href());
         return null;
     }
 
@@ -287,8 +297,8 @@ public class Subscriptions extends SessionPage {
         });
 
         routing.get(SUBSCRIPTIONS, (session) -> new Subscriptions(session).list());
-        routing.post(SUBSCRIPTIONS_ADD, (session) -> new Subscriptions(session).add());
-        routing.get_or_post(SUBSCRIPTIONS_REMOVE_SUB, (session) -> new Subscriptions(session).remove());
+        routing.post(SUBSCRIPTIONS_ADD_SUBSCRIBER, (session) -> new Subscriptions(session).add());
+        routing.get_or_post(SUBSCRIPTIONS_REMOVE_SUBCRIBER, (session) -> new Subscriptions(session).remove());
         routing.post(SUBSCRIPTIONS_PUBLISH, (session) -> new Subscriptions(session).publish());
 
         routing.get(SUBSCRIPTIONS_NEW, (session) -> {
@@ -301,16 +311,15 @@ public class Subscriptions extends SessionPage {
         routing.post(SUBSCRIPTIONS_COMMIT_EDIT, (session) -> new Subscriptions(session).commit());
     }
 
-    public static SimpleURI SUBSCRIPTIONS             = new SimpleURI("/admin/subscriptions");
-    public static SimpleURI SUBSCRIPTIONS_ADD         = new SimpleURI("/admin/subscriptions;subscriber;add");
-    public static SimpleURI SUBSCRIPTIONS_REMOVE_SUB  = new SimpleURI("/admin/subscriptions;subscriber;remove");
-    public static SimpleURI SUBSCRIPTIONS_PUBLISH     = new SimpleURI("/admin/subscriptions;publish");
-
-    public static SimpleURI SUBSCRIPTIONS_NEW         = new SimpleURI("/new-subscription");
-    public static SimpleURI SUBSCRIPTIONS_EDIT        = new SimpleURI("/subscription-edit");
-    public static SimpleURI SUBSCRIPTIONS_TEST        = new SimpleURI("/subscription-test");
-    public static SimpleURI SUBSCRIPTIONS_VIEW        = new SimpleURI("/subscription-view");
-    public static SimpleURI SUBSCRIPTIONS_COMMIT_EDIT = new SimpleURI("/commit-subscription-edit");
+    public static SimpleURI SUBSCRIPTIONS                  = new SimpleURI("/admin/subscriptions");
+    public static SimpleURI SUBSCRIPTIONS_NEW              = new SimpleURI("/admin/subscriptions;create");
+    public static SimpleURI SUBSCRIPTIONS_EDIT             = new SimpleURI("/admin/subscriptions;edit");
+    public static SimpleURI SUBSCRIPTIONS_VIEW             = new SimpleURI("/admin/subscriptions;view");
+    public static SimpleURI SUBSCRIPTIONS_ADD_SUBSCRIBER   = new SimpleURI("/admin/subscriptions;subscriber;add");
+    public static SimpleURI SUBSCRIPTIONS_REMOVE_SUBCRIBER = new SimpleURI("/admin/subscriptions;subscriber;remove");
+    public static SimpleURI SUBSCRIPTIONS_PUBLISH          = new SimpleURI("/admin/subscriptions;publish");
+    public static SimpleURI SUBSCRIPTIONS_TEST             = new SimpleURI("/admin/subscriptions;test");
+    public static SimpleURI SUBSCRIPTIONS_COMMIT_EDIT      = new SimpleURI("/admin/subscriptions;commit");
 
     public static void link(CounterCodeGen c) {
         c.section("Page: Subscriptions");
