@@ -18,6 +18,7 @@ import farm.bsg.models.Subscriber;
 import farm.bsg.models.Subscription;
 import farm.bsg.models.Task;
 import farm.bsg.models.TaskFactory;
+import farm.bsg.models.TaxBaton;
 import farm.bsg.models.WakeInputFile;
 
 import java.util.ArrayList;
@@ -31,8 +32,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
-import java.util.function.Consumer;
-import java.util.function.Predicate;
+import java.util.function.*;
 
 /****************************************************************
 WARNING: Generated
@@ -570,6 +570,43 @@ public class QueryEngine {
 }
 
   /**************************************************
+  Basic Operations (look up, type transfer, keys, immutable copies) (tax-baton/)
+  **************************************************/
+
+  public TaxBaton taxbaton_by_id(String id, boolean create) {
+    Value v = storage.get("tax-baton/" + id);
+    if (v == null && !create) {
+      return null;
+    }
+    TaxBaton result = taxbaton_of(v);
+    result.set("id", id);
+    return result;
+  }
+
+  private TaxBaton taxbaton_of(Value v) {
+    TaxBaton item = new TaxBaton();
+    if (v != null) {
+      item.injectValue(v);
+    }
+    return item;
+  }
+
+  private ArrayList<TaxBaton> taxbatons_of(ArrayList<Value> values) {
+    ArrayList<TaxBaton> list = new ArrayList<>(values.size());
+    for (Value v : values) {
+      list.add(taxbaton_of(v));
+    }
+    return list;
+  }
+
+  public String make_key_taxbaton(String id) {
+    StringBuilder key = new StringBuilder();
+    key.append("tax-baton/");
+    key.append(id);
+    return key.toString();
+}
+
+  /**************************************************
   Basic Operations (look up, type transfer, keys, immutable copies) (wake_input/)
   **************************************************/
 
@@ -727,6 +764,10 @@ public class QueryEngine {
   **************************************************/
 
   /**************************************************
+  Indexing (tax-baton/)
+  **************************************************/
+
+  /**************************************************
   Indexing (wake_input/)
   **************************************************/
 
@@ -790,6 +831,17 @@ public class QueryEngine {
 
     public CartListHolder fork() {
       return new CartListHolder(this.list);
+    }
+
+    public HashMap<String, ArrayList<Cart>> groupBy(Function<Cart, String> f) {
+      StringGroupBy<Cart> map = new StringGroupBy<>();
+      Iterator<Cart> it = list.iterator();
+      while (it.hasNext()) {
+        Cart v = it.next();
+        String key = f.apply(v);
+        map.add(key, v);
+      }
+      return map.index;
     }
 
     public CartListHolder inline_order_lexographically_asc_by(String... keys) {
@@ -930,6 +982,17 @@ public class QueryEngine {
 
     public CartItemListHolder fork() {
       return new CartItemListHolder(this.list);
+    }
+
+    public HashMap<String, ArrayList<CartItem>> groupBy(Function<CartItem, String> f) {
+      StringGroupBy<CartItem> map = new StringGroupBy<>();
+      Iterator<CartItem> it = list.iterator();
+      while (it.hasNext()) {
+        CartItem v = it.next();
+        String key = f.apply(v);
+        map.add(key, v);
+      }
+      return map.index;
     }
 
     public CartItemListHolder inline_order_lexographically_asc_by(String... keys) {
@@ -1106,6 +1169,17 @@ public class QueryEngine {
       return new CheckListHolder(this.list);
     }
 
+    public HashMap<String, ArrayList<Check>> groupBy(Function<Check, String> f) {
+      StringGroupBy<Check> map = new StringGroupBy<>();
+      Iterator<Check> it = list.iterator();
+      while (it.hasNext()) {
+        Check v = it.next();
+        String key = f.apply(v);
+        map.add(key, v);
+      }
+      return map.index;
+    }
+
     public CheckListHolder inline_order_lexographically_asc_by(String... keys) {
       Collections.sort(this.list, new LexographicalOrder<Check>(keys, true, true));
       return this;
@@ -1280,6 +1354,17 @@ public class QueryEngine {
       return new HabitListHolder(this.list);
     }
 
+    public HashMap<String, ArrayList<Habit>> groupBy(Function<Habit, String> f) {
+      StringGroupBy<Habit> map = new StringGroupBy<>();
+      Iterator<Habit> it = list.iterator();
+      while (it.hasNext()) {
+        Habit v = it.next();
+        String key = f.apply(v);
+        map.add(key, v);
+      }
+      return map.index;
+    }
+
     public HabitListHolder inline_order_lexographically_asc_by(String... keys) {
       Collections.sort(this.list, new LexographicalOrder<Habit>(keys, true, true));
       return this;
@@ -1401,6 +1486,17 @@ public class QueryEngine {
 
     public PayrollEntryListHolder fork() {
       return new PayrollEntryListHolder(this.list);
+    }
+
+    public HashMap<String, ArrayList<PayrollEntry>> groupBy(Function<PayrollEntry, String> f) {
+      StringGroupBy<PayrollEntry> map = new StringGroupBy<>();
+      Iterator<PayrollEntry> it = list.iterator();
+      while (it.hasNext()) {
+        PayrollEntry v = it.next();
+        String key = f.apply(v);
+        map.add(key, v);
+      }
+      return map.index;
     }
 
     public PayrollEntryListHolder inline_order_lexographically_asc_by(String... keys) {
@@ -1558,6 +1654,17 @@ public class QueryEngine {
 
     public PersonListHolder fork() {
       return new PersonListHolder(this.list);
+    }
+
+    public HashMap<String, ArrayList<Person>> groupBy(Function<Person, String> f) {
+      StringGroupBy<Person> map = new StringGroupBy<>();
+      Iterator<Person> it = list.iterator();
+      while (it.hasNext()) {
+        Person v = it.next();
+        String key = f.apply(v);
+        map.add(key, v);
+      }
+      return map.index;
     }
 
     public PersonListHolder inline_order_lexographically_asc_by(String... keys) {
@@ -1768,6 +1875,17 @@ public class QueryEngine {
       return new ProductListHolder(this.list);
     }
 
+    public HashMap<String, ArrayList<Product>> groupBy(Function<Product, String> f) {
+      StringGroupBy<Product> map = new StringGroupBy<>();
+      Iterator<Product> it = list.iterator();
+      while (it.hasNext()) {
+        Product v = it.next();
+        String key = f.apply(v);
+        map.add(key, v);
+      }
+      return map.index;
+    }
+
     public ProductListHolder inline_order_lexographically_asc_by(String... keys) {
       Collections.sort(this.list, new LexographicalOrder<Product>(keys, true, true));
       return this;
@@ -1891,6 +2009,17 @@ public class QueryEngine {
       return new SitePropertiesListHolder(this.list);
     }
 
+    public HashMap<String, ArrayList<SiteProperties>> groupBy(Function<SiteProperties, String> f) {
+      StringGroupBy<SiteProperties> map = new StringGroupBy<>();
+      Iterator<SiteProperties> it = list.iterator();
+      while (it.hasNext()) {
+        SiteProperties v = it.next();
+        String key = f.apply(v);
+        map.add(key, v);
+      }
+      return map.index;
+    }
+
     public SitePropertiesListHolder inline_order_lexographically_asc_by(String... keys) {
       Collections.sort(this.list, new LexographicalOrder<SiteProperties>(keys, true, true));
       return this;
@@ -2012,6 +2141,17 @@ public class QueryEngine {
 
     public SubscriberListHolder fork() {
       return new SubscriberListHolder(this.list);
+    }
+
+    public HashMap<String, ArrayList<Subscriber>> groupBy(Function<Subscriber, String> f) {
+      StringGroupBy<Subscriber> map = new StringGroupBy<>();
+      Iterator<Subscriber> it = list.iterator();
+      while (it.hasNext()) {
+        Subscriber v = it.next();
+        String key = f.apply(v);
+        map.add(key, v);
+      }
+      return map.index;
     }
 
     public SubscriberListHolder inline_order_lexographically_asc_by(String... keys) {
@@ -2154,6 +2294,17 @@ public class QueryEngine {
       return new SubscriptionListHolder(this.list);
     }
 
+    public HashMap<String, ArrayList<Subscription>> groupBy(Function<Subscription, String> f) {
+      StringGroupBy<Subscription> map = new StringGroupBy<>();
+      Iterator<Subscription> it = list.iterator();
+      while (it.hasNext()) {
+        Subscription v = it.next();
+        String key = f.apply(v);
+        map.add(key, v);
+      }
+      return map.index;
+    }
+
     public SubscriptionListHolder inline_order_lexographically_asc_by(String... keys) {
       Collections.sort(this.list, new LexographicalOrder<Subscription>(keys, true, true));
       return this;
@@ -2292,6 +2443,17 @@ public class QueryEngine {
 
     public TaskListHolder fork() {
       return new TaskListHolder(this.list);
+    }
+
+    public HashMap<String, ArrayList<Task>> groupBy(Function<Task, String> f) {
+      StringGroupBy<Task> map = new StringGroupBy<>();
+      Iterator<Task> it = list.iterator();
+      while (it.hasNext()) {
+        Task v = it.next();
+        String key = f.apply(v);
+        map.add(key, v);
+      }
+      return map.index;
     }
 
     public TaskListHolder inline_order_lexographically_asc_by(String... keys) {
@@ -2451,6 +2613,17 @@ public class QueryEngine {
       return new TaskFactoryListHolder(this.list);
     }
 
+    public HashMap<String, ArrayList<TaskFactory>> groupBy(Function<TaskFactory, String> f) {
+      StringGroupBy<TaskFactory> map = new StringGroupBy<>();
+      Iterator<TaskFactory> it = list.iterator();
+      while (it.hasNext()) {
+        TaskFactory v = it.next();
+        String key = f.apply(v);
+        map.add(key, v);
+      }
+      return map.index;
+    }
+
     public TaskFactoryListHolder inline_order_lexographically_asc_by(String... keys) {
       Collections.sort(this.list, new LexographicalOrder<TaskFactory>(keys, true, true));
       return this;
@@ -2517,6 +2690,140 @@ public class QueryEngine {
   }
 
   /**************************************************
+  Query Engine (tax-baton/)
+  **************************************************/
+
+  public TaxBatonSetQuery select_taxbaton() {
+    return new TaxBatonSetQuery();
+  }
+
+  public class TaxBatonListHolder {
+    private final ArrayList<TaxBaton> list;
+
+    private TaxBatonListHolder(HashSet<String> keys, String scope) {
+      if (keys == null) {
+        this.list = taxbatons_of(fetch_all("tax-baton/" + scope));
+      } else {
+        this.list = taxbatons_of(fetch(keys));
+      }
+    }
+
+    private TaxBatonListHolder(ArrayList<TaxBaton> list) {
+      this.list = list;
+    }
+
+    public TaxBatonListHolder inline_filter(Predicate<TaxBaton> filter) {
+      Iterator<TaxBaton> it = list.iterator();
+      while (it.hasNext()) {
+        if (filter.test(it.next())) {
+          it.remove();
+        }
+      }
+      return this;
+    }
+
+    public TaxBatonListHolder limit(int count) {
+      Iterator<TaxBaton> it = list.iterator();
+      int at = 0;
+      while (it.hasNext()) {
+        it.next();
+        if (at >= count) {
+          it.remove();
+        }
+        at++;
+      }
+      return this;
+    }
+
+    public TaxBatonListHolder inline_apply(Consumer<TaxBaton> consumer) {
+      Iterator<TaxBaton> it = list.iterator();
+      while (it.hasNext()) {
+        consumer.accept(it.next());
+      }
+      return this;
+    }
+
+    public TaxBatonListHolder fork() {
+      return new TaxBatonListHolder(this.list);
+    }
+
+    public HashMap<String, ArrayList<TaxBaton>> groupBy(Function<TaxBaton, String> f) {
+      StringGroupBy<TaxBaton> map = new StringGroupBy<>();
+      Iterator<TaxBaton> it = list.iterator();
+      while (it.hasNext()) {
+        TaxBaton v = it.next();
+        String key = f.apply(v);
+        map.add(key, v);
+      }
+      return map.index;
+    }
+
+    public TaxBatonListHolder inline_order_lexographically_asc_by(String... keys) {
+      Collections.sort(this.list, new LexographicalOrder<TaxBaton>(keys, true, true));
+      return this;
+    }
+
+    public TaxBatonListHolder inline_order_lexographically_desc_by(String... keys) {
+      Collections.sort(this.list, new LexographicalOrder<TaxBaton>(keys, false, true));
+      return this;
+    }
+
+    public TaxBatonListHolder inline_order_lexographically_by(boolean asc, boolean caseSensitive, String... keys) {
+      Collections.sort(this.list, new LexographicalOrder<TaxBaton>(keys, asc, caseSensitive));
+      return this;
+    }
+
+    public TaxBatonListHolder inline_order_by(Comparator<TaxBaton> comparator) {
+      Collections.sort(this.list, comparator);
+      return this;
+    }
+
+    public int count() {
+      return this.list.size();
+    }
+    public TaxBaton first() {
+      if (this.list.size() == 0) {
+        return null;
+      }
+      return this.list.get(0);
+    }
+    public ArrayList<TaxBaton> done() {
+      return this.list;
+    }
+  }
+
+  public class TaxBatonSetQuery {
+    private String scope;
+    private HashSet<String> keys;
+
+    private TaxBatonSetQuery() {
+      this.scope = "";
+      this.keys = null;
+    }
+
+    public TaxBatonListHolder to_list() {
+      return new TaxBatonListHolder(this.keys, this.scope);
+    }
+
+    public ArrayList<TaxBaton> done() {
+      return new TaxBatonListHolder(this.keys, this.scope).done();
+    }
+
+    public int count() {
+      if (this.keys == null) {
+        return to_list().count();
+      } else {
+        return this.keys.size();
+      }
+    }
+
+    public TaxBatonSetQuery scope(String scope) {
+      this.scope += scope + "/";
+      return this;
+    }
+  }
+
+  /**************************************************
   Query Engine (wake_input/)
   **************************************************/
 
@@ -2572,6 +2879,17 @@ public class QueryEngine {
 
     public WakeInputFileListHolder fork() {
       return new WakeInputFileListHolder(this.list);
+    }
+
+    public HashMap<String, ArrayList<WakeInputFile>> groupBy(Function<WakeInputFile, String> f) {
+      StringGroupBy<WakeInputFile> map = new StringGroupBy<>();
+      Iterator<WakeInputFile> it = list.iterator();
+      while (it.hasNext()) {
+        WakeInputFile v = it.next();
+        String key = f.apply(v);
+        map.add(key, v);
+      }
+      return map.index;
     }
 
     public WakeInputFileListHolder inline_order_lexographically_asc_by(String... keys) {
@@ -3037,6 +3355,8 @@ public class QueryEngine {
       this.data.put("created", farm.bsg.data.types.TypeDateTime.project(pp, "created"));
       this.data.put("started", farm.bsg.data.types.TypeDateTime.project(pp, "started"));
       this.data.put("closed", farm.bsg.data.types.TypeDateTime.project(pp, "closed"));
+      this.data.put("notification_token_for_closed", farm.bsg.data.types.TypeString.project(pp, "notification_token_for_closed"));
+      this.data.put("notification_short_text_for_closed", farm.bsg.data.types.TypeString.project(pp, "notification_short_text_for_closed"));
       this.data.put("state", farm.bsg.data.types.TypeString.project(pp, "state"));
     }
 
@@ -3102,6 +3422,30 @@ public class QueryEngine {
 
   public TaskFactoryProjection_edit projection_taskfactory_edit_of(ProjectionProvider pp) {
     return new TaskFactoryProjection_edit(pp);
+  }
+
+
+  /**************************************************
+  Projects (tax-baton/)
+  **************************************************/
+
+  public class TaxBatonProjection_admin {
+    private final HashMap<String, String> data;
+    
+    public TaxBatonProjection_admin(ProjectionProvider pp) {
+      this.data = new HashMap<String, String>();
+      this.data.put("id", farm.bsg.data.types.TypeUUID.project(pp, "id"));
+      this.data.put("__token", farm.bsg.data.types.TypeString.project(pp, "__token"));
+      this.data.put("code", farm.bsg.data.types.TypeString.project(pp, "code"));
+    }
+
+    public PutResult apply(TaxBaton taxbaton) {
+      return taxbaton.validateAndApplyProjection(this.data);
+    }
+  }
+
+  public TaxBatonProjection_admin projection_taxbaton_admin_of(ProjectionProvider pp) {
+    return new TaxBatonProjection_admin(pp);
   }
 
 
@@ -3274,6 +3618,18 @@ public class QueryEngine {
 
   public PutResult del(TaskFactory taskfactory) {
     return storage.put(taskfactory.getStorageKey(), null, false);
+  }
+
+  /**************************************************
+  Writing Back to DB (tax-baton/)
+  **************************************************/
+
+  public PutResult put(TaxBaton taxbaton) {
+    return storage.put(taxbaton.getStorageKey(), new Value(taxbaton.toJson()), false);
+  }
+
+  public PutResult del(TaxBaton taxbaton) {
+    return storage.put(taxbaton.getStorageKey(), null, false);
   }
 
   /**************************************************

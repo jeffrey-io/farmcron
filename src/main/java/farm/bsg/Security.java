@@ -68,9 +68,7 @@ public class Security {
         Public("public", Roles.GOD, Roles.OWNER, Roles.UNPAID_EMPLOYEE, Roles.PAID_EMPLOYEE), // everyone can see or do this
 
         // CHECK RELATED ACTIONS
-        SeeChecksTab("see_checks_tab", Roles.GOD, Roles.OWNER), //
-        SeeOutstandingChecksForEveryone("see_all_checks", Roles.GOD, Roles.OWNER), //
-        CheckMake("check_make", Roles.GOD, Roles.OWNER), //
+        CheckWriter("check_writer", Roles.GOD, Roles.OWNER), //
 
         // TASK RELATED PERMISSIONS
         SeeTaskFactoryTab("see_task_factories_tab", Roles.GOD, Roles.OWNER, Roles.MANAGER), //

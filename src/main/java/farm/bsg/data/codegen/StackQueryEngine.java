@@ -73,6 +73,18 @@ public class StackQueryEngine {
         lines.add("    }");
 
         lines.add("");
+        lines.add("    public HashMap<String, ArrayList<" + name + ">> groupBy(Function<" + name + ", String> f) {");
+        lines.add("      StringGroupBy<" + name + "> map = new StringGroupBy<>();");
+        lines.add("      Iterator<" + name + "> it = list.iterator();");
+        lines.add("      while (it.hasNext()) {");
+        lines.add("        " + name + " v = it.next();");
+        lines.add("        String key = f.apply(v);");
+        lines.add("        map.add(key, v);");
+        lines.add("      }");
+        lines.add("      return map.index;");
+        lines.add("    }");
+
+        lines.add("");
         lines.add("    public " + name + "ListHolder inline_order_lexographically_asc_by(String... keys) {");
         lines.add("      Collections.sort(this.list, new LexographicalOrder<" + name + ">(keys, true, true));");
         lines.add("      return this;");

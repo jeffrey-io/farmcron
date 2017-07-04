@@ -19,8 +19,7 @@ public class Imports {
         imports.add("farm.bsg.data.*");
         imports.add("farm.bsg.data.contracts.*");
         imports.add("java.util.Collections");
-        imports.add("java.util.function.Predicate");
-        imports.add("java.util.function.Consumer");
+        imports.add("java.util.function.*");
         imports.add("java.util.Iterator");
         imports.add("java.util.HashMap");
         imports.add("java.util.Comparator");
