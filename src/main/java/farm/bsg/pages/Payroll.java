@@ -265,10 +265,10 @@ public class Payroll extends SessionPage {
         routing.get_or_post(PAYROLL_SUMMARY, (session) -> new Payroll(session).summary());
     }
 
-    public static SimpleURI PAYROLL              = new SimpleURI("/payroll");
-    public static SimpleURI PAYROLL_CASH_ADVANCE = new SimpleURI("/cash-advance");
-    public static SimpleURI PAYROLL_WIZARD       = new SimpleURI("/payroll-wizard");
-    public static SimpleURI PAYROLL_SUMMARY      = new SimpleURI("/payroll-summary");
+    public static SimpleURI PAYROLL              = new SimpleURI("/you;payroll");
+    public static SimpleURI PAYROLL_CASH_ADVANCE = new SimpleURI("/you;payroll;cash-advance");
+    public static SimpleURI PAYROLL_WIZARD       = new SimpleURI("/you;payroll;wizard");
+    public static SimpleURI PAYROLL_SUMMARY      = new SimpleURI("/you;payroll;summary");
 
     public static void link(CounterCodeGen c) {
         c.section("Page: Payroll");

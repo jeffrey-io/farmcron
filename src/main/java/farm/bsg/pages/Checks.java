@@ -259,11 +259,9 @@ public class Checks extends SessionPage {
     public static final SimpleURI CHECKS_HOME       = new SimpleURI("/admin/checks");
     public static final SimpleURI CHECKS_TAXES      = new SimpleURI("/admin/checks;taxes");
     public static final SimpleURI CHECKS_TAXES_PAID = new SimpleURI("/admin/checks;taxes-paid");
-
-    // TODO: link this in
     public static final SimpleURI CHECKS_AUDIT      = new SimpleURI("/admin/checks;audit");
-    public static final SimpleURI CHECKS_CONFIRM    = new SimpleURI("/confirm-check");
-    public static final SimpleURI CHECKS_VIEW       = new SimpleURI("/check-view");
+    public static final SimpleURI CHECKS_CONFIRM    = new SimpleURI("/admin/checks;confirm");
+    public static final SimpleURI CHECKS_VIEW       = new SimpleURI("/admin/checks;view");
 
     public static void link(CounterCodeGen c) {
         c.section("Page: Checks");

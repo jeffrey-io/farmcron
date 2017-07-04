@@ -39,18 +39,21 @@ public class PublicSiteBuilder extends DirtyBitIndexer {
             }
             StringBuilder js = new StringBuilder();
             StringBuilder css = new StringBuilder();
-            
+
             for (WakeInputFile file : engine.select_wakeinputfile().done()) {
                 String contentType = file.get("content_type");
-                String content = new String(Base64.decodeBase64(file.get("contents").getBytes()));
-                if ("text/javascript".equals(contentType)) {
-                    js.append(content);
-                }
-                if ("text/css".equals(contentType)) {
-                    css.append(content);
+                String contentsRaw = file.get("contents");
+                if (contentsRaw != null) {
+                    String content = new String(Base64.decodeBase64(contentsRaw.getBytes()));
+                    if ("text/javascript".equals(contentType)) {
+                        js.append(content);
+                    }
+                    if ("text/css".equals(contentType)) {
+                        css.append(content);
+                    }
                 }
             }
-            
+
             // bring in YUI compressor here
             engine.publicBlobCache.write("/" + buildId + ".js", new UriBlobCache.UriBlob("text/javascript", js.toString().getBytes(Charsets.UTF_8)));
             engine.publicBlobCache.write("/" + buildId + ".css", new UriBlobCache.UriBlob("text/css", css.toString().getBytes(Charsets.UTF_8)));

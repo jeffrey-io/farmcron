@@ -55,7 +55,7 @@ public class Tasks extends SessionPage {
                     .add(Html.link(TASKS_UPDATE.href("id", task.getId()), "{update}").btn_primary()) //
                     .add_if(ableToStart && task.canStart(), Html.link(TASKS_TRANSITION.href("id", task.getId(), "state", "started"), "{start}").btn_primary())//
                     .add_if(ableToClose && task.canClose(), Html.link(TASKS_TRANSITION.href("id", task.getId(), "state", "closed"), "{close}").btn_primary());
-            HtmlPump name = Html.block().add(task.get("name")).add(priorityRender(task.getAsInt("priority")));
+            HtmlPump name = Html.block().add(task.get("name")).add(priorityRender((int) task.getAsDouble("priority")));
             table.row(name, task.get("state"), task.get("due_date"), actions);
         }
 
