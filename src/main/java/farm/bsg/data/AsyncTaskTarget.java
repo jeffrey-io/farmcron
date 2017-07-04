@@ -6,9 +6,9 @@ import java.util.function.BooleanSupplier;
 public interface AsyncTaskTarget {
 
     void begin();
-    
+
     void complete(boolean success);
-    
+
     public static void execute(ExecutorService executor, AsyncTaskTarget task, BooleanSupplier body) {
         executor.execute(new Runnable() {
             @Override

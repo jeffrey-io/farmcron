@@ -14,12 +14,12 @@ public class DelegateRequest implements RequestResponseWrapper, ProjectionProvid
     public DelegateRequest(RequestResponseWrapper delegate) {
         this.delegate = delegate;
     }
-    
+
     @Override
     public BinaryFile getFile(String key) {
         return delegate.getFile(key);
     }
-    
+
     @Override
     public String getURI() {
         return delegate.getURI();

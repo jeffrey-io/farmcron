@@ -9,8 +9,8 @@ import farm.bsg.route.RoutingTable;
 
 public class PageBootstrap {
 
-    public final TestWorld                        world;
-    public final MultiTenantRouter                router;
+    public final TestWorld         world;
+    public final MultiTenantRouter router;
     private final MockRoutingTable routing;
 
     public PageBootstrap() throws Exception {

@@ -5,7 +5,6 @@ import java.util.function.Function;
 
 import com.google.common.base.Charsets;
 
-
 public class UriBlobCache {
 
     public static class UriBlob {
@@ -23,7 +22,7 @@ public class UriBlobCache {
                 return new UriBlob(contentType, new byte[0]);
             }
             return new UriBlob(contentType, output.getBytes(Charsets.UTF_8));
-        }        
+        }
     }
 
     private final HashMap<String, UriBlob> blobs;
@@ -39,6 +38,5 @@ public class UriBlobCache {
     public synchronized UriBlob get(String uri) {
         return blobs.get(uri);
     }
-    
 
 }

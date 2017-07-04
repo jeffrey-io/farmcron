@@ -48,6 +48,7 @@ public class Table extends HtmlPump {
         this.rows.add(row);
         return this;
     }
+
     public Table footer(Object... footer) {
         if (footer.length != headings.length) {
             throw new RuntimeException("does not have right length");
@@ -56,6 +57,7 @@ public class Table extends HtmlPump {
         this.rows.add(footer);
         return this;
     }
+
     @Override
     public void pump(StringBuilder html) {
         html.append("<table class=\"" + tableClass + "\">");

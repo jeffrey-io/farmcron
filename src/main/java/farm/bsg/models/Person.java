@@ -10,58 +10,59 @@ import java.util.TimeZone;
 import org.apache.commons.codec.binary.Hex;
 import org.joda.time.DateTime;
 
-import farm.bsg.data.RawObject;
-import farm.bsg.data.Value;
-import farm.bsg.ops.CounterCodeGen;
 import farm.bsg.QueryEngine;
 import farm.bsg.Security;
 import farm.bsg.Security.Permission;
 import farm.bsg.data.Authenticator;
 import farm.bsg.data.Field;
 import farm.bsg.data.ObjectSchema;
+import farm.bsg.data.RawObject;
+import farm.bsg.data.Value;
+import farm.bsg.ops.CounterCodeGen;
 
 public class Person extends RawObject {
-    public static final ObjectSchema SCHEMA = ObjectSchema.persisted("person/", //
-            Field.STRING("login").makeIndex(true), // used
-            Field.STRING("name").addProjection("contact_info"), // -
-            Field.STRING("phone").addProjection("contact_info").makeIndex(false), // -
-            Field.STRING("email").addProjection("contact_info"), // -
+    public static final ObjectSchema SCHEMA            = ObjectSchema.persisted("person/",                              //
+            Field.STRING("login").makeIndex(true),                                                                      // used
+            Field.STRING("name").addProjection("contact_info"),                                                         // -
+            Field.STRING("phone").addProjection("contact_info").makeIndex(false),                                       // -
+            Field.STRING("email").addProjection("contact_info"),                                                        // -
 
-            Field.STRING("address_1").addProjection("contact_info"), // -
-            Field.STRING("address_2").addProjection("contact_info"), // -
-            Field.STRING("city").addProjection("contact_info"), // -
-            Field.STRING("state").addProjection("contact_info"), // -
-            Field.STRING("postal").addProjection("contact_info"), // -
-            Field.STRING("country").addProjection("contact_info"), // -
-            
-            Field.STRING("salt"), // used
-            Field.STRING("hash"), // used
+            Field.STRING("address_1").addProjection("contact_info"),                                                    // -
+            Field.STRING("address_2").addProjection("contact_info"),                                                    // -
+            Field.STRING("city").addProjection("contact_info"),                                                         // -
+            Field.STRING("state").addProjection("contact_info"),                                                        // -
+            Field.STRING("postal").addProjection("contact_info"),                                                       // -
+            Field.STRING("country").addProjection("contact_info"),                                                      // -
 
-            Field.STRING("cookie").makeIndex(false), // generated once
-            Field.STRING("super_cookie").makeIndex(false), // generated once
-            Field.STRING("notification_token").makeIndex(false), // token to map SMS, Facebook to user habits
+            Field.STRING("salt"),                                                                                       // used
+            Field.STRING("hash"),                                                                                       // used
+
+            Field.STRING("cookie").makeIndex(false),                                                                    // generated once
+            Field.STRING("super_cookie").makeIndex(false),                                                              // generated once
+            Field.STRING("notification_token").makeIndex(false),                                                        // token to map SMS, Facebook to user habits
             Field.STRING("notification_uri"),
 
-            Field.STRING("fiscal_timezone"), // defaults to PST, used
-            Field.NUMBER("default_mileage"), // copied; used
-            Field.NUMBER("hourly_wage_compesation"), // used
-            Field.NUMBER("mileage_compensation"), // copied
+                                                               Field.STRING("fiscal_timezone"),                         // defaults to PST, used
+                                                               Field.NUMBER("default_mileage"),                         // copied; used
+                                                               Field.NUMBER("hourly_wage_compesation"),                 // used
+                                                               Field.NUMBER("mileage_compensation"),                    // copied
 
-            Field.NUMBER("bonus_target"), //
-            Field.NUMBER("min_performance_multiplier"), //
-            Field.NUMBER("max_performance_multiplier"), //
-            Field.NUMBER("monthly_benefits"), // used
-            Field.NUMBER("tax_withholding"), // tax witholding
+                                                               Field.NUMBER("bonus_target"),                            //
+                                                               Field.NUMBER("min_performance_multiplier"),              //
+                                                               Field.NUMBER("max_performance_multiplier"),              //
+                                                               Field.NUMBER("monthly_benefits"),                        // used
+                                                               Field.NUMBER("tax_withholding"),                         // tax witholding
 
-            Field.TOKEN_STRING_LIST("permissions_and_roles") //
-    );
-        
-    private boolean permissionChecked = false;
+                                                               Field.TOKEN_STRING_LIST("permissions_and_roles")         //
+                                                         );
+
+    private boolean                  permissionChecked = false;
+
     public Person() {
         super(SCHEMA);
         this.permissions = new HashSet<>();
         this.permissionChecked = false;
-        
+
     }
 
     private final HashSet<Permission> permissions;
@@ -117,7 +118,7 @@ public class Person extends RawObject {
     public String getCurrentMonth() {
         return fiscalTimeZone(getFiscalTimezone(), "yyyyMM").format(new Date());
     }
-    
+
     public String getFutureMonth(int dMonth) {
         return fiscalTimeZone(getFiscalTimezone(), "yyyyMM").format(DateTime.now().plusMonths(dMonth).toDate());
     }
@@ -139,11 +140,11 @@ public class Person extends RawObject {
     @Override
     protected void invalidateCache() {
     }
-    
+
     public void clearPermissionChecked() {
         permissionChecked = false;
     }
-    
+
     public boolean wasPermissionChecked() {
         return permissionChecked;
     }

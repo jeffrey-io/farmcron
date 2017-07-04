@@ -45,7 +45,7 @@ public class Html {
     public static Link link(String href, HtmlPump label) {
         return new Link(href, label);
     }
-    
+
     public static Img img() {
         return new Img();
     }

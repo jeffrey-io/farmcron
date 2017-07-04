@@ -6,13 +6,12 @@ import farm.bsg.data.RawObject;
 import farm.bsg.ops.CounterCodeGen;
 
 public class CartItem extends RawObject {
-    
+
     public static final ObjectSchema SCHEMA = ObjectSchema.persisted("cart-item/", //
             Field.STRING("cart").makeIndex(false), //
             Field.STRING("product").makeIndex(false), //
-            Field.NUMBER("quantity"),
-            Field.STRING("customizations").makeIndex(false) //
-            );
+            Field.NUMBER("quantity"), Field.STRING("customizations").makeIndex(false) //
+    );
 
     public CartItem() {
         super(SCHEMA);
@@ -25,5 +24,5 @@ public class CartItem extends RawObject {
     public static void link(CounterCodeGen c) {
         c.section("Data: CartItem");
     }
-    
+
 }

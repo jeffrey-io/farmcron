@@ -43,7 +43,7 @@ public class Site extends SessionPage {
         formInner.add(Html.wrapped().form_group() //
                 .wrap(Html.label("description", "Description")) //
                 .wrap(Html.input("description").id_from_name().pull(properties).textarea(4, 60)));
-        
+
         formInner.add(Html.wrapped().form_group() //
                 .wrap(Html.label("fb_page_token", "Facebook Page Token")) //
                 .wrap(Html.input("fb_page_token").id_from_name().pull(properties).text()));
@@ -76,10 +76,9 @@ public class Site extends SessionPage {
                 .wrap(Html.input("submit").id_from_name().value("Update").submit()));
 
         Block page = Html.block();
-        page.add(Html.form("post",  SITE.href()).inner(formInner));
+        page.add(Html.form("post", SITE.href()).inner(formInner));
         return finish_pump(page);
     }
-    
 
     public static void link(RoutingTable routing) {
         routing.navbar(SITE, "Site", Permission.WebMaster);

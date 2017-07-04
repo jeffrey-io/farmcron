@@ -2,9 +2,9 @@ package farm.bsg.html;
 
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Random;
 import java.util.TreeMap;
-import java.util.Map.Entry;
 import java.util.function.Function;
 
 import farm.bsg.data.RawObject;
@@ -35,7 +35,7 @@ public class Input extends HtmlPump {
         this.name = name;
         this.id = name;
     }
-    
+
     public static HtmlPump reset(String name) {
         return new Input("__reset_" + name).value("");
     }
@@ -54,7 +54,7 @@ public class Input extends HtmlPump {
         }
         return this;
     }
-    
+
     public Input file() {
         this.type = "file";
         return this;
@@ -109,7 +109,7 @@ public class Input extends HtmlPump {
     public Input pull(RawObject o) {
         return pull(o, name);
     }
-    
+
     public Input pull(RawObject o, String key) {
         String value = o.get(key);
         this.value = value;
@@ -123,7 +123,7 @@ public class Input extends HtmlPump {
         this.type = "radio";
         return this.options(valueToLabelsMap);
     }
-    
+
     public Input select_hour() {
         TreeMap<String, String> times = new TreeMap<>();
         times.put("00", "12:00 AM (midnight)");

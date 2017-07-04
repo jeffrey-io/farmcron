@@ -63,7 +63,7 @@ public class QueryEngineStage extends Stage {
     public Collection<Source> sources() {
         return sources;
     }
-    
+
     public Stage compile() {
         // sort them for giggles
         final SortByOrderStage sorted = new SortByOrderStage(this);
@@ -78,6 +78,6 @@ public class QueryEngineStage extends Stage {
         // enable linkage between pages
         final LinkageStage linked = new LinkageStage(withTemplates);
         // clean up the HTML
-        return new CompressHTMLStage(linked);        
+        return new CompressHTMLStage(linked);
     }
 }

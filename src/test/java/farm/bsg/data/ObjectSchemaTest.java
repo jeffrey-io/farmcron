@@ -15,7 +15,7 @@ public class ObjectSchemaTest {
             schema.getTypes().add(Field.BOOL("nope"));
             failed = true;
         } catch (Exception err) {
-            
+
         }
         Assert.assertFalse(failed);
     }

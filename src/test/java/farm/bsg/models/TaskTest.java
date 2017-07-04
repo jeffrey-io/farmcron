@@ -10,7 +10,7 @@ public class TaskTest {
         task.setState("created");
         task.set("created", "2017-06-22T02:40Z");
         long now = 1498099238370L;
-        
+
         Assert.assertTrue(task.canStart());
         Assert.assertTrue(task.canClose());
         for (int delta = -100; delta < 100; delta++) {
@@ -54,5 +54,5 @@ public class TaskTest {
         Assert.assertEquals("2017-06-26T07:00Z", task.get("due_date"));
         task.setDue(now, 1);
         Assert.assertEquals("2017-06-23T07:00Z", task.get("due_date"));
-    }    
+    }
 }

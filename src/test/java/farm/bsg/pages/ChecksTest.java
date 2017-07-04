@@ -6,7 +6,7 @@ import org.junit.Test;
 import farm.bsg.PageBootstrap;
 import farm.bsg.PageTesting;
 
-public class ChecksTest extends PageTesting{
+public class ChecksTest extends PageTesting {
 
     @Test
     public void Coverage() throws Exception {

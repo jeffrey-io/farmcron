@@ -6,7 +6,7 @@ import farm.bsg.ProductEngine;
 
 public class CustomerRequest extends DelegateRequest {
     public final ProductEngine engine;
-    private String cartId;
+    private String             cartId;
 
     /**
      * 
@@ -23,11 +23,11 @@ public class CustomerRequest extends DelegateRequest {
             generateNewCartId();
         }
     }
-    
+
     public String getCartId() {
         return cartId;
     }
-    
+
     public String generateNewCartId() {
         String gCartId = UUID.randomUUID().toString();
         while (engine.cart_by_id(gCartId, false) != null) {

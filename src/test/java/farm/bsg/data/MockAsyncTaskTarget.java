@@ -33,7 +33,7 @@ public class MockAsyncTaskTarget implements AsyncTaskTarget {
             completeLatch = null;
         }
     }
-    
+
     public void assertLastSuccess(boolean expected) {
         Assert.assertEquals(expected, lastSuccess);
     }

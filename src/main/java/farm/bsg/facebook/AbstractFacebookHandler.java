@@ -2,15 +2,15 @@ package farm.bsg.facebook;
 
 import farm.bsg.BsgCounters;
 import farm.bsg.ProductEngine;
-import farm.bsg.route.RequestResponseWrapper;
 import farm.bsg.route.MultiTenantRouter;
+import farm.bsg.route.RequestResponseWrapper;
 import farm.bsg.route.RoutingTable;
 import farm.bsg.route.text.TextMessage;
 
 public class AbstractFacebookHandler {
 
-    private final MultiTenantRouter       router;
-    private final RoutingTable routing;
+    private final MultiTenantRouter router;
+    private final RoutingTable      routing;
 
     public AbstractFacebookHandler(MultiTenantRouter router, RoutingTable routing) {
         this.router = router;

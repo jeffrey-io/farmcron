@@ -16,14 +16,14 @@ public class Subscription extends RawObject {
 
             Field.STRING("unsubscribe_keyword"), //
             Field.STRING("unsubscribe_message"), //
-            
+
             Field.STRING("event").makeIndex(false) //
     );
-            
+
     public Subscription() {
         super(SCHEMA);
     }
-    
+
     public boolean isInterest(EventBus.Event event) {
         return event.code.equals(get("event"));
     }
@@ -31,15 +31,15 @@ public class Subscription extends RawObject {
     public static void link(CounterCodeGen c) {
         c.section("Data: Subscription");
     }
-    
+
     public boolean isOpen() {
         return !isNullOrEmpty("subscribe_keyword") && !isNullOrEmpty("unsubscribe_keyword");
     }
-    
+
     public EventBus.Event getEvent() {
         return EventBus.Event.fromCode(get("event"));
     }
-    
+
     @Override
     protected void invalidateCache() {
     }

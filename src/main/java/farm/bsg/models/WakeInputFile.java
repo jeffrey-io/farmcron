@@ -27,7 +27,7 @@ public class WakeInputFile extends RawObject {
         c.counter("compile_wake", "wake files are being compiled");
         c.counter("wake_file_written_blob_cache", "a file was generated and put in the blob cache");
     }
-    
+
     public boolean isImage() {
         String contentType = get("content_type");
         if ("image/jpeg".equals(contentType)) {

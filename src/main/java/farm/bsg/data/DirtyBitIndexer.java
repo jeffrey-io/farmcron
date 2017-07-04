@@ -14,13 +14,13 @@ public abstract class DirtyBitIndexer implements KeyValuePairLogger, AsyncTaskTa
     public static enum State {
         DIRTY, TASK_IN_PROGRESS, TASK_IN_PROGRESS_NEEDS_DIRTY, CLEAN
     }
-    
+
     private State state;
-    
+
     public DirtyBitIndexer() {
         this.state = State.CLEAN;
     }
-    
+
     @Override
     public void validate(String key, Value oldValue, Value newValue, PutResult result) {
     }
@@ -31,7 +31,7 @@ public abstract class DirtyBitIndexer implements KeyValuePairLogger, AsyncTaskTa
             onDirty(this);
         }
     }
-    
+
     private synchronized boolean markDirtyUnderLock() {
         switch (state) {
             case CLEAN:
@@ -41,12 +41,12 @@ public abstract class DirtyBitIndexer implements KeyValuePairLogger, AsyncTaskTa
                 state = State.TASK_IN_PROGRESS_NEEDS_DIRTY;
             default:
                 return false;
-             
+
         }
     }
-    
+
     public abstract void onDirty(AsyncTaskTarget target);
-    
+
     @Override
     public synchronized void begin() {
         state = State.TASK_IN_PROGRESS;
@@ -59,15 +59,15 @@ public abstract class DirtyBitIndexer implements KeyValuePairLogger, AsyncTaskTa
                 return true;
             default:
                 if (success) {
-                  state = State.CLEAN;
-                  return false;
+                    state = State.CLEAN;
+                    return false;
                 } else {
-                  state = State.DIRTY;
-                  return true;
+                    state = State.DIRTY;
+                    return true;
                 }
         }
     }
-    
+
     @Override
     public void complete(boolean success) {
         if (completeUnderLock(success)) {

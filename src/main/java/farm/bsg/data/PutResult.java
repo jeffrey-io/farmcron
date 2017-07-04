@@ -57,7 +57,7 @@ public class PutResult {
     public boolean success() {
         return successful;
     }
-    
+
     @Override
     public String toString() {
         if (successful) {

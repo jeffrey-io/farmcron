@@ -2,7 +2,7 @@ package farm.bsg.route;
 
 import farm.bsg.ProductEngine;
 
-public class AnonymousRequest extends DelegateRequest  {
+public class AnonymousRequest extends DelegateRequest {
     public final ProductEngine engine;
 
     /**

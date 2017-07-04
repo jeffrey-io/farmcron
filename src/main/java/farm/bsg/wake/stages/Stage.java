@@ -3,14 +3,14 @@
  */
 package farm.bsg.wake.stages;
 
-import farm.bsg.wake.sources.Source;
-
 import java.util.Collection;
+
+import farm.bsg.wake.sources.Source;
 
 /**
  * Defines a stage of the site generation
  */
 public abstract class Stage {
 
-  public abstract Collection<Source> sources();
+    public abstract Collection<Source> sources();
 }

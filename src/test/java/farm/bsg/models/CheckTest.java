@@ -10,5 +10,5 @@ public class CheckTest {
         Check check = new Check();
         Assert.assertNotNull(check.toJson());
     }
-    
+
 }

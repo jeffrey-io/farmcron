@@ -6,14 +6,15 @@ package farm.bsg.route;
  * @author jeffrey
  */
 public interface RequestResponseWrapper {
-    
+
     /**
      * @return the full uri of the request
      */
     public String getURI();
-    
+
     /**
-     * return a binary file 
+     * return a binary file
+     * 
      * @param key
      * @return a binary file
      */
@@ -49,7 +50,8 @@ public interface RequestResponseWrapper {
     /**
      * forward the request to a different URI
      * 
-     * @param uri the uri to redirect the request to
+     * @param uri
+     *            the uri to redirect the request to
      */
     public void redirect(FinishedHref href);
 }

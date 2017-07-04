@@ -86,17 +86,17 @@ public class EngineJoinSource extends Source {
             pMap.put("description", product.get("description"));
             pMap.put("price", "$" + product.get("price"));
             pMap.put("old_price", "$" + product.get("old_price"));
-            
+
             HashMap<String, String> image = new HashMap<>();
             String contentType = product.get("image_content_type");
             image.put("type", contentType);
             if (contentType != null) {
-              image.put("data", product.get("image"));
-              
-              pMap.put("image", image);
+                image.put("data", product.get("image"));
+
+                pMap.put("image", image);
             }
             pMap.put("add_url", YourCart.CART_ADD.href("pid", product.getId()).value);
-                        
+
             String category = product.get("category");
             if (category != null) {
                 category = category.toLowerCase().trim();

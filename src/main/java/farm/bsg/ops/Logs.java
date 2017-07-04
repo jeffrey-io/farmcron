@@ -8,7 +8,7 @@ public class Logs {
     public static Logger of(Class<?> clazz) {
         return StaticLoggerBinder.getSingleton().database.getLogger(clazz.getSimpleName());
     }
-    
+
     public static Logger of(Class<?> clazz, String suffix) {
         return StaticLoggerBinder.getSingleton().database.getLogger(clazz.getSimpleName() + ":" + suffix);
     }

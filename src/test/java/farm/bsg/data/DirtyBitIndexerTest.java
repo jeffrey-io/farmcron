@@ -17,7 +17,7 @@ public class DirtyBitIndexerTest {
     public void Dedupe() {
         MockDirtyBitIndexer indexer = new MockDirtyBitIndexer();
         for (int k = 0; k < 1000; k++) {
-          indexer.put(null, null, null);
+            indexer.put(null, null, null);
         }
         indexer.sendBegin();
         indexer.sendComplete(true);
@@ -28,7 +28,7 @@ public class DirtyBitIndexerTest {
     public void DedupeWithInflight() {
         MockDirtyBitIndexer indexer = new MockDirtyBitIndexer();
         for (int k = 0; k < 1000; k++) {
-          indexer.put(null, null, null);
+            indexer.put(null, null, null);
         }
         indexer.sendBegin();
         indexer.put(null, null, null);
@@ -44,5 +44,5 @@ public class DirtyBitIndexerTest {
         indexer.sendBegin();
         indexer.sendComplete(true);
         indexer.assertDirtyCalls(3);
-    }    
+    }
 }

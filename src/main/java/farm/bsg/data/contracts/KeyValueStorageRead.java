@@ -24,8 +24,7 @@ public interface KeyValueStorageRead {
      * 
      * @param prefix
      *            the prefix
-     * @return a map of all elements in storage where the keys share the given
-     *         prefix
+     * @return a map of all elements in storage where the keys share the given prefix
      */
     public Map<String, Value> scan(String prefix);
 }

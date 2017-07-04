@@ -11,7 +11,6 @@ public class TypeBytesInBase64 extends Type {
         super(name);
     }
 
-
     @Override
     public String type() {
         return "bytes_base_64";
@@ -22,20 +21,18 @@ public class TypeBytesInBase64 extends Type {
         return value;
     }
 
-
     @Override
     public boolean validate(String value) {
         return Base64.isBase64(value);
     }
 
-
     @Override
     public String defaultValue() {
         return null;
     }
-    
+
     public static String project(ProjectionProvider provider, String key) {
         // TODO, need to see if I should do anything special for files here.... I should also encode it, here...
         return provider.first(key);
-    }    
+    }
 }

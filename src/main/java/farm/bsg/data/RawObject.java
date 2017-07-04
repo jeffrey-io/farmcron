@@ -41,7 +41,7 @@ public abstract class RawObject {
     public void generateAndSetId() {
         set("id", UUID.randomUUID().toString());
     }
-    
+
     public Map<String, String> asMap() {
         return Collections.unmodifiableMap(data);
     }
@@ -53,11 +53,11 @@ public abstract class RawObject {
     public String getStorageKey() {
         return getPrefix() + getId();
     }
-    
+
     public List<Type> getTypes() {
         return schema.getTypes();
     }
-    
+
     public boolean areAnyNull(String... keys) {
         for (String key : keys) {
             if (isNullOrEmpty(key)) {
@@ -107,7 +107,7 @@ public abstract class RawObject {
         }
         return value;
     }
-    
+
     public boolean isNullOrEmpty(String name) {
         String value = get(name);
         if (value == null) {
@@ -246,7 +246,7 @@ public abstract class RawObject {
             }
         }
     }
-    
+
     public void importValuesFromMap(Map<String, String> map) {
         for (Entry<String, String> entry : map.entrySet()) {
             set(entry.getKey(), entry.getValue());

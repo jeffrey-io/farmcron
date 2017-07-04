@@ -33,7 +33,7 @@ public class Dashboard extends SessionPage {
         routing.navbar(DASHBOARD, "Dashboard", Permission.Public);
         routing.get_or_post(DASHBOARD, (session) -> new Dashboard(session).show());
     }
-    
+
     public static SimpleURI DASHBOARD = new SimpleURI("/admin/dashboard");
 
     public static void link(CounterCodeGen c) {

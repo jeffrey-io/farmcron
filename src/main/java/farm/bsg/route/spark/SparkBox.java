@@ -50,7 +50,7 @@ public class SparkBox implements RequestResponseWrapper {
                         }
                         String str = item.getString();
                         if (str.length() > 0) {
-                          members.add(str);
+                            members.add(str);
                         }
                     }
                 }
@@ -66,7 +66,7 @@ public class SparkBox implements RequestResponseWrapper {
         }
 
     }
-    
+
     @Override
     public BinaryFile getFile(String key) {
         BinaryFile file = files.get(key);
@@ -98,7 +98,7 @@ public class SparkBox implements RequestResponseWrapper {
     @Override
     public boolean hasNonNullQueryParam(String key) {
         if (body.containsKey(key)) {
-          return true;
+            return true;
         }
         return request.queryParams().contains(key);
     }

@@ -1,10 +1,10 @@
 package farm.bsg.data;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 import farm.bsg.TestWorld;
 import farm.bsg.TestWorld.TestLogger;
-import org.junit.Assert;
 
 public class MultiPrefixLoggerTest {
 

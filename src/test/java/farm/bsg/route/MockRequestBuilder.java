@@ -8,7 +8,7 @@ import farm.bsg.data.Authenticator.AuthResult;
 
 public class MockRequestBuilder {
 
-    public final String                  uri;
+    public final String                   uri;
     private final ProductEngine           engine;
     private final HashMap<String, String> params;
     private final HashMap<String, String> cookies;

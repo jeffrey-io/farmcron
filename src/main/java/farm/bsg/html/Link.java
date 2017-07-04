@@ -29,11 +29,11 @@ public class Link extends HtmlPump {
         this.active = href.equals(currenfHref);
         return this;
     }
-    
+
     public Link active_if_href_is(FinishedHref currenfHref) {
         this.active = href.equals(currenfHref.value);
         return this;
-    }    
+    }
 
     public Link card_link() {
         return clazz("card-link");

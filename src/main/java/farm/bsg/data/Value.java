@@ -64,7 +64,6 @@ public class Value {
         return false;
     }
 
-
     public static int stringCompareWithNullChecks(String a, String b, boolean caseSensitive) {
         if (a == null && b == null) {
             return 0;

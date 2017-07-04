@@ -9,6 +9,7 @@ import java.util.TreeSet;
 import java.util.concurrent.ThreadLocalRandom;
 
 import org.apache.commons.codec.binary.Hex;
+
 import farm.bsg.Security.Permission;
 import farm.bsg.data.RawObject;
 import farm.bsg.html.Block;
@@ -168,7 +169,7 @@ public class Checks extends SessionPage {
         redirect(CHECKS_TAXES.href());
         return null;
     }
-    
+
     public Table computeTaxTable(String currentPeriod) {
         Table table = Html.table("Person", "Event", "Value", "Action");
         for (Person person : query().select_person().done()) {

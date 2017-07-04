@@ -6,9 +6,9 @@ import java.util.UUID;
 import org.joda.time.DateTime;
 
 import farm.bsg.BsgCounters;
-import farm.bsg.ProductEngine;
 import farm.bsg.EventBus.Event;
 import farm.bsg.EventBus.EventPayload;
+import farm.bsg.ProductEngine;
 import farm.bsg.Security.Permission;
 import farm.bsg.cron.HourlyJob;
 import farm.bsg.data.RawObject;
@@ -37,7 +37,7 @@ public class TaskFactoryManagement extends SessionPage {
         Link tabCreate = Html.link(TASKS_FACTORY_CREATE.href(), "Create").nav_link().active_if_href_is(current.href());
         return Html.nav().pills().with(tabList).with_if(person().has(Permission.EditTaskFactory), tabCreate);
     }
-    
+
     public static HtmlPump getProgress(TaskFactory factory, Task task, long now) {
         if (task != null) {
             String state = task.get("state");

@@ -3,6 +3,7 @@ package farm.bsg.data;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.util.HashMap;
+
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
@@ -163,7 +164,7 @@ public class Authenticator {
             throw new RuntimeException(e);
         }
     }
-    
+
     public static void link(CounterCodeGen c) {
         c.section("Auth");
         c.counter("auth_attempt_login", "an auth was attempted");

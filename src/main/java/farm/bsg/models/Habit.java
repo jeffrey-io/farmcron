@@ -15,26 +15,24 @@ import farm.bsg.ops.CounterCodeGen;
 import farm.bsg.ops.Logs;
 
 public class Habit extends RawObject {
-    private final static Logger LOG = Logs.of(Habit.class);
+    private final static Logger LOG    = Logs.of(Habit.class);
 
-    public static ObjectSchema SCHEMA = ObjectSchema.persisted("habits/", //
-            Field.STRING("who").markAsScope(), // DONE;
-            Field.STRING("last_done"), // DONE; COMPUTED
+    public static ObjectSchema  SCHEMA = ObjectSchema.persisted("habits/",                                //
+            Field.STRING("who").markAsScope(),                                                            // DONE;
+            Field.STRING("last_done"),                                                                    // DONE; COMPUTED
 
-            Field.STRING("unlock_time").addProjection("edit"), // DONE; USED
-            Field.STRING("warn_time").addProjection("edit"), // DONE; INPUTED; USED
+            Field.STRING("unlock_time").addProjection("edit"),                                            // DONE; USED
+            Field.STRING("warn_time").addProjection("edit"),                                              // DONE; INPUTED; USED
 
-            Field.STRING("name").emptyStringSameAsNull().alwaysTrim().addProjection("edit"), // DONE; USED
-            Field.STRING("has_arg").addProjection("edit"), // DONE; USED
-            Field.STRING("last_arg_given"), // DONE; COMPUTED
-            Field.STRING("history") // DONE; COMPUTED
-    );
-    
+            Field.STRING("name").emptyStringSameAsNull().alwaysTrim().addProjection("edit"),              // DONE; USED
+            Field.STRING("has_arg").addProjection("edit"),                                                // DONE; USED
+            Field.STRING("last_arg_given"),                                                               // DONE; COMPUTED
+            Field.STRING("history")                                                                       // DONE; COMPUTED
+                                         );
+
     public Habit() {
         super(SCHEMA);
     }
-
-
 
     public TreeMap<String, String> getHistory() {
         String history = get("history");

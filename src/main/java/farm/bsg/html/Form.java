@@ -3,11 +3,11 @@ package farm.bsg.html;
 public class Form extends HtmlPump {
     private final String href;
 
-    private String clazz;
+    private String       clazz;
     private final String method;
     private HtmlPump     inner;
     private boolean      multipartFormData;
-    private String id;
+    private String       id;
 
     public Form(String method, String href) {
         this.method = method;
@@ -26,12 +26,12 @@ public class Form extends HtmlPump {
         this.clazz = clazz;
         return this;
     }
-    
+
     public Form multipart() {
         this.multipartFormData = true;
         return this;
     }
-    
+
     public Form withId(String id) {
         this.id = id;
         return this;

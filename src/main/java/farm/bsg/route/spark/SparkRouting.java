@@ -101,7 +101,7 @@ public class SparkRouting extends RoutingTable {
             }
         });
     }
-    
+
     @Override
     public void get(ControlledURI path, SessionRoute route) {
         RequestMetrics metrics = counterSource.request("get", path.toRoutingPattern());

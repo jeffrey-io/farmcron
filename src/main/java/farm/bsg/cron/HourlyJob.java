@@ -7,6 +7,6 @@ package farm.bsg.cron;
  */
 @FunctionalInterface
 public interface HourlyJob {
-    
+
     void run(long now);
 }

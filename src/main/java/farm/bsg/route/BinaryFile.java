@@ -4,7 +4,7 @@ public class BinaryFile {
     public final String filename;
     public final String contentType;
     public final byte[] bytes;
-    
+
     public BinaryFile(String filename, String contentType, byte[] bytes) {
         this.filename = filename;
         this.contentType = contentType;

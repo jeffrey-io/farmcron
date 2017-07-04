@@ -6,7 +6,7 @@ public class SetupToolCLI {
         for (String arg : args) {
             System.out.println("arg:" + arg);
         }
-        
+
         // TODO: list all customer buckets
         // TODO: create a new customer bucket
     }

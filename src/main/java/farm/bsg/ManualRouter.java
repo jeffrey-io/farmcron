@@ -10,7 +10,7 @@ public class ManualRouter implements MultiTenantRouter {
     private HashMap<String, ProductEngine> engines;
 
     private ProductEngine                  engineWhenNotFound;
-    private final boolean                        isSecure;
+    private final boolean                  isSecure;
 
     public ManualRouter(boolean isSecure) {
         this.engines = new HashMap<>();

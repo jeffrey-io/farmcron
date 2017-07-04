@@ -1,11 +1,12 @@
 package farm.bsg.models;
 
-import farm.bsg.data.RawObject;
-import farm.bsg.ops.CounterCodeGen;
 import java.util.List;
+
 import farm.bsg.QueryEngine;
 import farm.bsg.data.Field;
 import farm.bsg.data.ObjectSchema;
+import farm.bsg.data.RawObject;
+import farm.bsg.ops.CounterCodeGen;
 
 public class PayrollEntry extends RawObject {
 
@@ -25,8 +26,7 @@ public class PayrollEntry extends RawObject {
             Field.NUMBER("tax_withholding"), // done; copied
             Field.NUMBER("taxes"), // done; computed
             Field.NUMBER("benefits"), // done; used (NEED INPUT)
-            Field.BOOL("is_performance_related_bonus"),
-            Field.STRING("check").makeIndex(false), // indicates a payment was made
+            Field.BOOL("is_performance_related_bonus"), Field.STRING("check").makeIndex(false), // indicates a payment was made
             Field.STRING("unpaid").makeIndex(false) // if not "paid", then it is the employee id; DONE; indexed
     );
 

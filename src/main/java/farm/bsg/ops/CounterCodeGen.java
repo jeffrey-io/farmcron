@@ -4,16 +4,16 @@ import java.util.ArrayList;
 import java.util.HashSet;
 
 public class CounterCodeGen {
-    
+
     private static enum LazyType {
         Event, EventAlarm, Histogram
     }
 
     private class LazyCounter {
-        public final String  section;
+        public final String   section;
         public final LazyType type;
-        public final String  name;
-        public final String  description;
+        public final String   name;
+        public final String   description;
 
         public LazyCounter(String section, LazyType type, String name, String description) {
             this.section = section;

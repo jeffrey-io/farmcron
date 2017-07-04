@@ -43,7 +43,6 @@ public class StackQueryEngine {
         lines.add("      return this;");
         lines.add("    }");
 
-        
         lines.add("");
         lines.add("    public " + name + "ListHolder limit(int count) {");
         lines.add("      Iterator<" + name + "> it = list.iterator();");
@@ -100,7 +99,7 @@ public class StackQueryEngine {
         lines.add("      return this;");
         lines.add("    }");
         lines.add("");
-        lines.add("    public " + name + "ListHolder inline_order_by(Comparator<"+name+"> comparator) {");
+        lines.add("    public " + name + "ListHolder inline_order_by(Comparator<" + name + "> comparator) {");
         lines.add("      Collections.sort(this.list, comparator);");
         lines.add("      return this;");
         lines.add("    }");

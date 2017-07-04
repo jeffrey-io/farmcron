@@ -2,7 +2,7 @@ package farm.bsg.ops;
 
 public class RequestMetrics {
 
-    private final Counter hits;
+    private final Counter   hits;
     private final Histogram latency;
 
     public class InflightRequest {

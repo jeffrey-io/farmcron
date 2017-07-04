@@ -10,7 +10,7 @@ public class JobManagerTest {
         mgr.start();
         mgr.stop();
     }
-    
+
     @Test
     public void HourlyRunFirst() {
         JobManager mgr = new JobManager();

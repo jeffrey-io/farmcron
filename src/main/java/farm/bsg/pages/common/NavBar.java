@@ -23,7 +23,7 @@ public class NavBar {
     }
 
     private ArrayList<NavItem>      items;
-    private ProductEngine engine;
+    private ProductEngine           engine;
     private HashMap<String, String> uri2title;
 
     public NavBar(ProductEngine engine) {

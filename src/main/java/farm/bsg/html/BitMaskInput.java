@@ -25,13 +25,13 @@ public class BitMaskInput extends HtmlPump {
     public BitMaskInput pull(RawObject o) {
         return pull(o, name);
     }
-    
+
     public BitMaskInput pull(RawObject o, String key) {
         String value = o.get(key);
         this.value = value;
         return this;
     }
-    
+
     @Override
     public void pump(StringBuilder html) {
         Table table = Html.table("Label", "Is Selected");

@@ -25,11 +25,11 @@ public class TaskFactory extends RawObject {
     public TaskFactory() {
         super(SCHEMA);
     }
-    
+
     @Override
     protected void invalidateCache() {
     }
-    
+
     public boolean ready(long now) {
         DateTime consideration = new DateTime(now);
         Set<Integer> monthsAvailale = TypeMonthFilter.ordinalsOf(get("month_filter"));

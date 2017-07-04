@@ -12,7 +12,7 @@ public class ProductEngine extends QueryEngine {
     public final NavBar          navbar;
     public final GenericTemplate template;
     public final AlexaCommands   alexa;
-    public final EventBus eventBus;
+    public final EventBus        eventBus;
 
     public ProductEngine(JobManager manager, PersistenceLogger persistence, String pageTemplate) throws Exception {
         super(persistence);

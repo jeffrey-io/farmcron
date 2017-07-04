@@ -13,7 +13,7 @@ public class Task extends RawObject {
             Field.STRING("owner").makeIndex(false),
 
             Field.NUMBER("cart_id"), // for when tasks are created by an order
-            
+
             Field.STRING("name"), //
             Field.STRING("description"), //
             Field.NUMBER("priority").withDefault(3), //
@@ -22,7 +22,7 @@ public class Task extends RawObject {
             Field.DATETIME("created"), //
             Field.DATETIME("started"), //
             Field.DATETIME("closed"), //
-            
+
             Field.STRING("notification_token_for_closed"), //
             Field.STRING("notification_short_text_for_closed"), //
 
@@ -75,7 +75,7 @@ public class Task extends RawObject {
         DateTime dayAfterPerformed = lastPerformed.minusMillis(lastPerformed.getMillisOfDay()).plusDays(daysAfter);
         return today.isAfter(dayAfterPerformed);
     }
-    
+
     public void setDue(long now, int daysDue) {
         DateTime dueDate = new DateTime(now).plusDays(daysDue + 1);
         dueDate = dueDate.minusMillis(dueDate.getMillisOfDay());

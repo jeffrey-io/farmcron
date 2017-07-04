@@ -30,7 +30,7 @@ public class SimpleURI extends ControlledURI {
             return new FinishedHref(this.uri);
         }
     }
-    
+
     @Override
     public String toRoutingPattern() {
         return uri;

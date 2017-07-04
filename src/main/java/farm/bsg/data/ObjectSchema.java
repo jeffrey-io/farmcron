@@ -11,15 +11,15 @@ public class ObjectSchema {
     private final String                prefix;
     private final List<Type>            typesInOrder;
     private final HashMap<String, Type> schema;
-    private final List<String> dirtyBitIndicesJavaTypes;
-    public final boolean singleton;
-    public final boolean ephemeral;
-    
+    private final List<String>          dirtyBitIndicesJavaTypes;
+    public final boolean                singleton;
+    public final boolean                ephemeral;
+
     public static class Properties {
-        public final String prefix;
+        public final String  prefix;
         public final boolean singleton;
         public final boolean ephemeral;
-        
+
         public Properties(String prefix, boolean singleton, boolean ephemeral) {
             this.prefix = prefix;
             this.singleton = singleton;
@@ -29,6 +29,7 @@ public class ObjectSchema {
 
     /**
      * Generate a schema that will be persisted
+     * 
      * @param prefix
      * @param types
      * @return
@@ -71,15 +72,15 @@ public class ObjectSchema {
         this.typesInOrder = Collections.unmodifiableList(orderedTypes);
         this.dirtyBitIndicesJavaTypes = new ArrayList<>();
     }
-    
+
     public boolean isSingleton() {
         return singleton;
     }
-    
+
     public boolean isEphemeral() {
         return ephemeral;
     }
-    
+
     public ObjectSchema dirty(String javaClass) {
         this.dirtyBitIndicesJavaTypes.add(javaClass);
         return this;
@@ -88,7 +89,7 @@ public class ObjectSchema {
     public String getPrefix() {
         return prefix;
     }
-    
+
     public List<String> getDirtyBitIndicesJavaTypes() {
         return Collections.unmodifiableList(dirtyBitIndicesJavaTypes);
     }

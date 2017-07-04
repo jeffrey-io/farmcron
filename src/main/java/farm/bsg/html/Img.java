@@ -2,26 +2,26 @@ package farm.bsg.html;
 
 public class Img extends HtmlPump {
 
-    private String contentType = null;
-    private String content = null;
-    private Integer width = null;
-    private Integer height = null;
-    
+    private String  contentType = null;
+    private String  content     = null;
+    private Integer width       = null;
+    private Integer height      = null;
+
     public Img() {
     }
-    
+
     public Img content(String contentType, String content) {
         this.contentType = contentType;
         this.content = content;
         return this;
     }
-    
+
     public Img size(Integer w, Integer h) {
         this.width = w;
         this.height = h;
         return this;
     }
-    
+
     public Img width(Integer w) {
         this.width = w;
         return this;

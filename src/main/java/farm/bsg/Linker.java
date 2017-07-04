@@ -27,7 +27,8 @@ public class Linker {
         Checks.link(routing);
         People.link(routing);
         Products.link(routing);
-        PublicSite.link(routing);;
+        PublicSite.link(routing);
+        ;
         SignIn.link(routing, router);
         Site.link(routing);
         TaskFactoryManagement.link(routing);

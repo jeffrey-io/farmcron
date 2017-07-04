@@ -1,6 +1,9 @@
 package farm.bsg;
 
-import static spark.Spark.*;
+import static spark.Spark.get;
+import static spark.Spark.port;
+import static spark.Spark.post;
+import static spark.Spark.stop;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -30,8 +33,8 @@ import spark.Service;
 
 public class Server {
 
-    private static final Logger LOG = makeLogAndCaptureStdOutputs(false); 
-    
+    private static final Logger LOG = makeLogAndCaptureStdOutputs(false);
+
     private static Logger makeLogAndCaptureStdOutputs(boolean skip) {
         if (skip) {
             return Logs.of(Server.class);
@@ -56,7 +59,7 @@ public class Server {
         File devStorage = new File("/farm");
         PersistenceLogger persistence = new DiskStorageLogger(devStorage);
         ProductEngine engine = new ProductEngine(jobManager, persistence, getGenericTemplate());
-        
+
         ManualRouter router = new ManualRouter(false);
         router.setDefault(engine);
         jobManager.start();
@@ -64,7 +67,7 @@ public class Server {
     }
 
     private static ProductEngine prodScope(JobManager jobManager, AmazonS3 s3, String scope, ServerOptions options) throws Exception {
-        PersistenceLogger persistence = new AmazonS3StorageLogger(s3, options.bucket , "customers/" + scope + "/");
+        PersistenceLogger persistence = new AmazonS3StorageLogger(s3, options.bucket, "customers/" + scope + "/");
         ProductEngine engine = new ProductEngine(jobManager, persistence, getGenericTemplate());
         if (!engine.siteproperties_get().notifyAdmin("Process Started:" + System.currentTimeMillis())) {
             LOG.error("failed to notify admin");

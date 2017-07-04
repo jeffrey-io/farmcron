@@ -10,7 +10,7 @@ import farm.bsg.route.SessionRoute;
 
 public interface SparkBoxConverter<T, R> {
     public T convert(ProductEngine engine, SparkBox request);
-    
+
     public static final SparkBoxConverter<CustomerRequest, CustomerRoute>   TO_CUSTOMER_REQUEST  = new SparkBoxConverter<CustomerRequest, CustomerRoute>() {
                                                                                                      @Override
                                                                                                      public CustomerRequest convert(ProductEngine engine, SparkBox request) {

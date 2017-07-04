@@ -3,8 +3,8 @@ package farm.bsg.pages;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.Map.Entry;
+import java.util.UUID;
 
 import com.amazonaws.util.json.Jackson;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -224,12 +224,12 @@ public class Habits extends SessionPage {
     public String commit() {
         person().mustHave(Permission.HabitsUnlocked);
         Habit habit = pullHabit();
-        if  (habit.isNullOrEmpty("name")) {
+        if (habit.isNullOrEmpty("name")) {
             query().del(habit);
         } else {
             query().put(habit);
         }
-        
+
         redirect(HABITS_ALL.href());
         return null;
     }
@@ -279,17 +279,16 @@ public class Habits extends SessionPage {
         routing.get_or_post(HABITS_BULK_COMMIT, (session) -> new Habits(session).bulk_commit());
         routing.get_or_post(HABITS_PERFORM, (session) -> new Habits(session).ask_or_perform());
     }
-    
-    public static SimpleURI HABITS = new SimpleURI("/you;habits");
-    public static SimpleURI HABITS_ALL = new SimpleURI("/you;habits;all");
-    public static SimpleURI HABITS_TIMELINE = new SimpleURI("/you;habits;timeline");
-    public static SimpleURI HABITS_HISTORY = new SimpleURI("/you;habits;history");
-    public static SimpleURI HABITS_EDIT = new SimpleURI("/you;habit;edit");
-    public static SimpleURI HABITS_NEW = new SimpleURI("/you;create;habit");
+
+    public static SimpleURI HABITS             = new SimpleURI("/you;habits");
+    public static SimpleURI HABITS_ALL         = new SimpleURI("/you;habits;all");
+    public static SimpleURI HABITS_TIMELINE    = new SimpleURI("/you;habits;timeline");
+    public static SimpleURI HABITS_HISTORY     = new SimpleURI("/you;habits;history");
+    public static SimpleURI HABITS_EDIT        = new SimpleURI("/you;habit;edit");
+    public static SimpleURI HABITS_NEW         = new SimpleURI("/you;create;habit");
     public static SimpleURI HABITS_COMMIT_EDIT = new SimpleURI("/you;habit;edit;commit");
     public static SimpleURI HABITS_BULK_COMMIT = new SimpleURI("/you;habits;bulk;commit");
-    public static SimpleURI HABITS_PERFORM = new SimpleURI("/you;habit;perform");
-
+    public static SimpleURI HABITS_PERFORM     = new SimpleURI("/you;habit;perform");
 
     public static void link(CounterCodeGen c) {
         c.section("Page: Habits");

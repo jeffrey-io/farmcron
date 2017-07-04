@@ -12,6 +12,7 @@ import farm.bsg.html.Input;
 import farm.bsg.ops.CounterCodeGen;
 import farm.bsg.route.MultiTenantRouter;
 import farm.bsg.route.RoutingTable;
+import farm.bsg.route.SimpleURI;
 
 public class SignIn {
 
@@ -45,7 +46,7 @@ public class SignIn {
 
     public static void link(RoutingTable routing, MultiTenantRouter router) throws Exception {
         final String template = Server.getTextFile("sign-in.html");
-        get("/sign-in", (req, res) -> {
+        get(SIGNIN.href().value, (req, res) -> {
 
             try {
                 String host = req.headers("Host");
@@ -66,7 +67,7 @@ public class SignIn {
                 throw err;
             }
         });
-        post("/execute-sign-in", (req, res) -> {
+        post(SIGNIN_EXECUTE.href().value, (req, res) -> {
             try {
                 String host = req.headers("Host");
                 ProductEngine engine = router.findByDomain(req.headers("Host"));
@@ -79,9 +80,9 @@ public class SignIn {
                 String prefix = (router.isSecure() ? "https://" : "http://") + host;
                 if (authResult.allowed) {
                     res.cookie("xs", authResult.cookie);
-                    res.redirect(prefix + "/dashboard");
+                    res.redirect(prefix + Dashboard.DASHBOARD.href().value);
                 } else {
-                    res.redirect(prefix + "/sign-in?username=" + username + "&invalid=T");
+                    res.redirect(prefix + SIGNIN.href("username", username, "invalid", "T").value);
                 }
             } catch (Exception err) {
                 err.printStackTrace();
@@ -89,6 +90,9 @@ public class SignIn {
             return null;
         });
     }
+
+    public static SimpleURI SIGNIN         = new SimpleURI("/admin/sign-in");
+    public static SimpleURI SIGNIN_EXECUTE = new SimpleURI("/admin/sign-in;execute");
 
     public static void link(CounterCodeGen c) {
         c.section("Page: Sign-In");

@@ -11,7 +11,7 @@ import farm.bsg.data.types.TypeStringTokenList;
 import farm.bsg.data.types.TypeUUID;
 
 public class Field {
-    
+
     public static Type UUID(String name) {
         return new TypeUUID(name);
     }
@@ -39,12 +39,11 @@ public class Field {
     public static TypeNumber NUMBER(String name) {
         return new TypeNumber(name);
     }
-    
+
     public static Type DAYFILTER(String name) {
         return new TypeDayFilter(name);
     }
-    
-    
+
     public static Type MONTHFILTER(String name) {
         return new TypeMonthFilter(name);
     }

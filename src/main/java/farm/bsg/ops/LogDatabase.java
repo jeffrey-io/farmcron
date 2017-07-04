@@ -19,11 +19,11 @@ public class LogDatabase implements ILoggerFactory {
     public org.slf4j.Logger getLogger(String name) {
         return new StreamLogger(name, this);
     }
-    
+
     public void witnessThrowable(Throwable throwable) {
-        
+
     }
-    
+
     public synchronized void dump(StringBuilder sb) {
         for (String line : lines) {
             sb.append(line);

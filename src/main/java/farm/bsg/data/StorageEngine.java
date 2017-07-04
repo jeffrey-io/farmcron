@@ -38,7 +38,7 @@ public class StorageEngine {
     public synchronized PutResult put(String key, Value value) {
         return put(key, value, false);
     }
-    
+
     public synchronized PutResult put(String key, Value value, boolean ephemeral) {
         PutResult result = new PutResult();
         Value prior = memory.get(key);

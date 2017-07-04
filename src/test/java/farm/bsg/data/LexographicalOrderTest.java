@@ -3,14 +3,11 @@ package farm.bsg.data;
 import java.util.ArrayList;
 import java.util.Collections;
 
-import org.junit.Test;
-
 import org.junit.Assert;
+import org.junit.Test;
 
 public class LexographicalOrderTest {
 
-    
-    
     @Test
     public void CompareString() {
         ObjectSchema schema = ObjectSchema.persisted("x/", Field.STRING("key"));

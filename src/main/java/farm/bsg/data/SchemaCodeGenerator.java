@@ -3,6 +3,7 @@ package farm.bsg.data;
 import java.util.ArrayList;
 import java.util.Map.Entry;
 import java.util.TreeMap;
+
 import farm.bsg.data.codegen.Helpers;
 import farm.bsg.data.codegen.Imports;
 import farm.bsg.data.codegen.IndexingEngine;
@@ -16,9 +17,9 @@ import farm.bsg.data.codegen.Writes;
 public class SchemaCodeGenerator {
 
     private final TreeMap<String, ObjectSchema> schemas;
-    private String                           javaPackage;
-    private String                           className;
-    private Imports imports = new Imports();
+    private String                              javaPackage;
+    private String                              className;
+    private Imports                             imports = new Imports();
 
     public SchemaCodeGenerator(String javaPackage, String className) {
         this.schemas = new TreeMap<>();
@@ -112,7 +113,6 @@ public class SchemaCodeGenerator {
             Projections.write(lines, entry.getKey(), entry.getValue());
         }
 
-        
         for (Entry<String, ObjectSchema> entry : schemas.entrySet()) {
             section(lines, "Writing Back to DB", entry.getValue());
             Writes.write(lines, entry.getKey(), entry.getValue());
