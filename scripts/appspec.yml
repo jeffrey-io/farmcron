@@ -3,6 +3,8 @@ os: linux
 files:
   - source: app.jar
     destination: /home/ec2-user
+  - source: setup.sh
+    destination: /home/ec2-user
 hooks:
   ApplicationStart:
     - location: start.sh
