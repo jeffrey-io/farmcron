@@ -9,7 +9,7 @@ import farm.bsg.route.SimpleURI;
 
 public class SessionPage extends GenericPage {
     protected final SessionRequest session;
-    protected String             currentTitle;
+    protected String               currentTitle;
 
     public SessionPage(SessionRequest session, SimpleURI uri) {
         super(session.engine, uri);
@@ -17,16 +17,11 @@ public class SessionPage extends GenericPage {
         this.currentTitle = engine.navbar.title(uri.toRoutingPattern());
     }
 
-    @Deprecated
-    public String formalize_html(String body) {
-        String navbar = engine.navbar.html(href, session);
-        return engine.template.html(currentTitle, navbar, body);
-    }
-    
     public String finish_pump(HtmlPump pump) {
         StringBuilder html = new StringBuilder();
         pump.pump(html);
-        return formalize_html(html.toString());
+        String navbar = engine.navbar.html(href, session);
+        return engine.template.html(currentTitle, navbar, html.toString());
     }
 
     public Person person() {

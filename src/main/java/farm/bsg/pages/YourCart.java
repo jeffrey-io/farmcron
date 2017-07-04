@@ -27,7 +27,7 @@ public class YourCart extends CustomerPage {
     public YourCart(CustomerRequest request) {
         super(request, CART);
     }
-    
+
     public String add() {
         String productId = request.getParam("pid");
         String cartId = request.getCartId();
@@ -58,7 +58,7 @@ public class YourCart extends CustomerPage {
         request.redirect(CART.href("back", request.getParam("$$referer")));
         return null;
     }
-    
+
     public String update() {
         String itemId = request.getParam("item");
         int quantity = ParameterHelper.getIntParamWithDefault(request, "quantity", 1);
@@ -78,12 +78,12 @@ public class YourCart extends CustomerPage {
     public Object show() {
         UriBlob blob = query().publicBlobCache.get("/*cart.html");
         if (blob != null) {
-            return showWithTemplate(blob);
+            return showCartWithTemplate(blob);
         }
-        return showDefault();
+        return showCartDefault();
     }
 
-    public Object showWithTemplate(UriBlob blob) {
+    public Object showCartWithTemplate(UriBlob blob) {
         HashMap<String, Object> tree = new HashMap<>();
         ArrayList<Object> items = new ArrayList<>();
         double ticketPrice = 0;
@@ -100,7 +100,7 @@ public class YourCart extends CustomerPage {
                 iMap.put("price", price);
                 iMap.put("quantity", quantity);
                 iMap.put("total", total);
-                iMap.put("remove_url", CART_UPDATE.href("item", item.getId(), "quantity", "0").value);                
+                iMap.put("remove_url", CART_UPDATE.href("item", item.getId(), "quantity", "0").value);
                 items.add(iMap);
             }
         }
@@ -116,7 +116,7 @@ public class YourCart extends CustomerPage {
         });
     }
 
-    public String showDefault() {
+    public String showCartDefault() {
         Table cart = new Table("Name", "Quantity", "Unit Price", "Total", "Actions");
         double ticketPrice = 0;
         for (CartItem item : engine.select_cartitem().where_cart_eq(request.getCartId()).to_list().done()) {
@@ -146,19 +146,16 @@ public class YourCart extends CustomerPage {
         return page.toHtml();
     }
 
-    public String checkout() {
-        return null;
-    }
-
     public static void link(RoutingTable routing) {
         routing.customer_get(CART, (cr) -> new YourCart(cr).show());
         routing.customer_get_or_post(CART_ADD, (cr) -> new YourCart(cr).add());
         routing.customer_get_or_post(CART_UPDATE, (cr) -> new YourCart(cr).update());
     }
 
-    public static final SimpleURI CART        = new SimpleURI("/cart");
-    public static final SimpleURI CART_ADD    = new SimpleURI("/cart;add");
-    public static final SimpleURI CART_UPDATE = new SimpleURI("/cart;update");
+    public static final SimpleURI CART          = new SimpleURI("/cart");
+    public static final SimpleURI CART_ADD      = new SimpleURI("/cart;add");
+    public static final SimpleURI CART_UPDATE   = new SimpleURI("/cart;update");
+    public static final SimpleURI CART_CHECKOUT = new SimpleURI("/cart;checkout");
 
     public static void link(CounterCodeGen c) {
         c.section("Page: Your Cart");

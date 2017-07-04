@@ -3,7 +3,7 @@ package farm.bsg;
 import farm.bsg.cron.JobManager;
 import farm.bsg.data.Authenticator;
 import farm.bsg.data.contracts.PersistenceLogger;
-import farm.bsg.html.shit.GenericTemplate;
+import farm.bsg.html.GenericTemplate;
 import farm.bsg.pages.TaskFactoryManagement;
 import farm.bsg.pages.common.NavBar;
 

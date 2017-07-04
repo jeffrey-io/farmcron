@@ -46,6 +46,10 @@ public class WrappedBlock extends HtmlPump {
         clazz = "form-group";
         return this;
     }
+    public WrappedBlock form_small_heading() {
+        clazz = "form-small-heading";
+        return this;
+    }
 
     public WrappedBlock small() {
         tag = "small";

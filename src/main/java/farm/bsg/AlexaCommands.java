@@ -18,14 +18,12 @@ import farm.bsg.ops.CounterCodeGen;
 
 public class AlexaCommands implements Speechlet {
 
-    private final ProductEngine                            engine;
     private transient final SpeechletToSpeechletV2Adapter  adapter;
     private transient final ServletSpeechletRequestHandler handler;
 
     public AlexaCommands(ProductEngine engine) {
         this.adapter = new SpeechletToSpeechletV2Adapter(this);
         this.handler = new ServletSpeechletRequestHandler();
-        this.engine = engine;
     }
 
     public boolean auth(byte[] serializedSpeechletRequest, String signature, String chain) {

@@ -28,8 +28,8 @@ public class People extends SessionPage {
             Person person = new Person();
             person.injectValue(s);
             Block actions = Html.block();
-            actions.add(Html.link(PERSON_VIEW.href(), "view").btn_secondary());
-            actions.add(Html.link(PERSON_EDIT.href(), "edit").btn_secondary());
+            actions.add(Html.link(PERSON_VIEW.href("id", person.getId()), "view").btn_secondary());
+            actions.add(Html.link(PERSON_EDIT.href("id", person.getId()), "edit").btn_secondary());
             people.row(person.get("name"), actions);
         }
         page.add(Html.W().h3().wrap("People"));
@@ -40,7 +40,7 @@ public class People extends SessionPage {
     }
 
     public Person pullPerson() {
-        Person person = query().person_by_id(session.getParam("id"), true);
+        Person person = query().person_by_id(session.getParam("id"), false);
         person.importValuesFromReqeust(session, "");
         return person;
     }
@@ -48,10 +48,9 @@ public class People extends SessionPage {
     public String create() {
         person().mustHave(Permission.PeopleManagement);
         String login = session.getParam("login");
-        
+
         Block page = Html.block();
         page.add(Html.W().h3().wrap("Create New Person"));
-        
 
         Block formInner = Html.block();
         formInner.add(Html.input("id").value(UUID.randomUUID().toString()));
@@ -105,25 +104,66 @@ public class People extends SessionPage {
                 redirect(PERSON_CREATE.href("login", session.getParam("login"), "error", "password-not-match"));
             }
         }
-        
+
         Block page = Html.block();
         page.add(Html.W().h3().wrap("Edit Person"));
 
         Block formInner = Html.block();
         formInner.add(Html.input("id").pull(person));
 
-        page.add(Html.W().h3().wrap("Contact Information"));
+        formInner.add(Html.W().h3().wrap("Contact Information"));
         injectContact(formInner, person);
 
-        page.add(Html.W().h3().wrap("Employment"));
+        formInner.add(Html.W().h3().wrap("Employment"));
 
-        
+        formInner.add(Html.wrapped().form_group() //
+                .wrap(Html.label("default_mileage", "Default Mileage")) //
+                .wrap(Html.input("default_mileage").id_from_name().pull(person).text()));
+
+        formInner.add(Html.wrapped().form_group() //
+                .wrap(Html.label("hourly_wage_compesation", "Hourly Wage")) //
+                .wrap(Html.input("hourly_wage_compesation").id_from_name().pull(person).text()));
+
+        formInner.add(Html.wrapped().form_group() //
+                .wrap(Html.label("mileage_compensation", "Mileage Compenstation")) //
+                .wrap(Html.input("mileage_compensation").id_from_name().pull(person).text()));
+
+        formInner.add(Html.wrapped().form_group() //
+                .wrap(Html.label("fiscal_timezone", "Fiscal Timezone")) //
+                .wrap(Html.input("fiscal_timezone").id_from_name().pull(person).text()));
+
+        formInner.add(Html.W().h3().wrap("Bonus"));
+
+        formInner.add(Html.wrapped().form_group() //
+                .wrap(Html.label("bonus_target", "Bonus Target")) //
+                .wrap(Html.input("bonus_target").id_from_name().pull(person).text()));
+
+        formInner.add(Html.wrapped().form_group() //
+                .wrap(Html.label("min_performance_multiplier", "Minimum Performance Multiplier")) //
+                .wrap(Html.input("min_performance_multiplier").id_from_name().pull(person).text()));
+
+        formInner.add(Html.wrapped().form_group() //
+                .wrap(Html.label("max_performance_multiplier", "Maximum Performance Multiplier")) //
+                .wrap(Html.input("max_performance_multiplier").id_from_name().pull(person).text()));
+
+        formInner.add(Html.W().h3().wrap("Benefits"));
+
+        formInner.add(Html.wrapped().form_group() //
+                .wrap(Html.label("monthly_benefits", "Monthly Benefits")) //
+                .wrap(Html.input("monthly_benefits").id_from_name().pull(person).text()));
+
+        formInner.add(Html.W().h3().wrap("Tax Witholding"));
+
+        formInner.add(Html.wrapped().form_group() //
+                .wrap(Html.label("tax_withholding", "Tax Withholding")) //
+                .wrap(Html.input("tax_withholding").id_from_name().pull(person).text()));
+
         formInner.add(Html.wrapped().form_group() //
                 .wrap(Html.input("submit").id_from_name().value("Update").submit()));
-        page.add(Html.form("post", PERSON_EDIT.href()).inner(formInner));
+        page.add(Html.form("post", PERSON_EDIT_COMMIT.href()).inner(formInner));
         return finish_pump(page);
     }
-    
+
     public static void injectContact(Block formInner, Person person) {
         formInner.add(Html.wrapped().form_group() //
                 .wrap(Html.label("name", "Name")) //
@@ -136,10 +176,6 @@ public class People extends SessionPage {
         formInner.add(Html.wrapped().form_group() //
                 .wrap(Html.label("email", "E-mail")) //
                 .wrap(Html.input("email").id_from_name().pull(person).text()));
-
-        formInner.add(Html.wrapped().form_group() //
-                .wrap(Html.label("phone", "Phone")) //
-                .wrap(Html.input("phone").id_from_name().pull(person).text()));
 
         formInner.add(Html.wrapped().form_group() //
                 .wrap(Html.label("address_1", "Address")) //
@@ -160,7 +196,6 @@ public class People extends SessionPage {
                 .wrap(Html.label("country", "Country")) //
                 .wrap(Html.input("country").id_from_name().pull(person).text()));
 
-    
     }
 
     public Object commit() {
