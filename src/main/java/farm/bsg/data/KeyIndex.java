@@ -15,49 +15,45 @@ public class KeyIndex implements KeyValuePairLogger {
     private final String                       field;
     private final boolean                      unique;
 
-    public KeyIndex(String field, boolean unique) {
+    public KeyIndex(final String field, final boolean unique) {
         this.index = new HashMap<String, Set<String>>();
         this.field = field;
         this.unique = unique;
     }
 
-    private Set<String> getSet(String indexValue) {
-        Set<String> set = index.get(indexValue);
-        if (set == null) {
-            set = new HashSet<>();
-            index.put(indexValue, set);
-        }
-        return set;
+    public synchronized HashSet<String> getIndexKeys() {
+        return new HashSet<>(this.index.keySet());
     }
 
-    public synchronized Set<String> getKeys(String value) {
-        Set<String> keys = index.get(value);
+    public synchronized Map<String, String> getInverseMap() {
+        final HashMap<String, String> map = new HashMap<String, String>();
+        for (final Map.Entry<String, String> entry : map.entrySet()) {
+            map.put(entry.getValue(), entry.getKey());
+        }
+        return map;
+    }
+
+    public synchronized Set<String> getKeys(final String value) {
+        final Set<String> keys = this.index.get(value);
         if (keys == null) {
             return Collections.emptySet();
         }
         return new HashSet<>(keys);
     }
 
-    public synchronized HashSet<String> getIndexKeys() {
-        return new HashSet<>(index.keySet());
-    }
-
-    public synchronized Map<String, String> getInverseMap() {
-        HashMap<String, String> map = new HashMap<String, String>();
-        for (Map.Entry<String, String> entry : map.entrySet()) {
-            map.put(entry.getValue(), entry.getKey());
+    private Set<String> getSet(final String indexValue) {
+        Set<String> set = this.index.get(indexValue);
+        if (set == null) {
+            set = new HashSet<>();
+            this.index.put(indexValue, set);
         }
-        return map;
-    }
-
-    public synchronized int size() {
-        return index.size();
+        return set;
     }
 
     @Override
-    public synchronized void put(String key, Value oldValue, Value newValue) {
-        String oldIndexValue = Value.getField(oldValue, field);
-        String newIndexValue = Value.getField(newValue, field);
+    public synchronized void put(final String key, final Value oldValue, final Value newValue) {
+        final String oldIndexValue = Value.getField(oldValue, this.field);
+        final String newIndexValue = Value.getField(newValue, this.field);
 
         // no-op
         if (Value.stringEqualsWithNullChecks(oldIndexValue, newIndexValue)) {
@@ -66,10 +62,10 @@ public class KeyIndex implements KeyValuePairLogger {
 
         // remove from old index
         if (oldIndexValue != null) {
-            Set<String> set = getSet(oldIndexValue);
+            final Set<String> set = getSet(oldIndexValue);
             set.remove(key);
             if (set.size() == 0) {
-                index.remove(oldIndexValue);
+                this.index.remove(oldIndexValue);
             }
         }
 
@@ -79,15 +75,19 @@ public class KeyIndex implements KeyValuePairLogger {
         }
     }
 
+    public synchronized int size() {
+        return this.index.size();
+    }
+
     @Override
-    public synchronized void validate(String key, Value oldValue, Value newValue, PutResult result) {
-        if (unique) {
-            String newIndexValue = Value.getField(newValue, field);
-            if (index.containsKey(newIndexValue)) {
-                String oldIndexValue = Value.getField(oldValue, field);
+    public synchronized void validate(final String key, final Value oldValue, final Value newValue, final PutResult result) {
+        if (this.unique) {
+            final String newIndexValue = Value.getField(newValue, this.field);
+            if (this.index.containsKey(newIndexValue)) {
+                final String oldIndexValue = Value.getField(oldValue, this.field);
                 if (Value.stringEqualsWithNullChecks(oldIndexValue, newIndexValue)) {
                 } else {
-                    result.addFieldFailure(field, "not_unique");
+                    result.addFieldFailure(this.field, "not_unique");
                 }
             }
         }

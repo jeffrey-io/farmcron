@@ -14,6 +14,12 @@ public class WakeInputFile extends RawObject {
             Field.BYTESB64("contents") // -
     ).dirty("farm.bsg.models.PublicSiteBuilder");
 
+    public static void link(final CounterCodeGen c) {
+        c.section("Data: Wake Input File");
+        c.counter("compile_wake", "wake files are being compiled");
+        c.counter("wake_file_written_blob_cache", "a file was generated and put in the blob cache");
+    }
+
     public WakeInputFile() {
         super(SCHEMA);
     }
@@ -22,14 +28,8 @@ public class WakeInputFile extends RawObject {
     protected void invalidateCache() {
     }
 
-    public static void link(CounterCodeGen c) {
-        c.section("Data: Wake Input File");
-        c.counter("compile_wake", "wake files are being compiled");
-        c.counter("wake_file_written_blob_cache", "a file was generated and put in the blob cache");
-    }
-
     public boolean isImage() {
-        String contentType = get("content_type");
+        final String contentType = get("content_type");
         if ("image/jpeg".equals(contentType)) {
             return true;
         }

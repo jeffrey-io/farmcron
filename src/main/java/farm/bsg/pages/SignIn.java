@@ -12,6 +12,7 @@ import farm.bsg.html.Input;
 import farm.bsg.ops.CounterCodeGen;
 import farm.bsg.route.MultiTenantRouter;
 import farm.bsg.route.RoutingTable;
+import farm.bsg.route.SessionRequest;
 import farm.bsg.route.SimpleURI;
 
 public class SignIn {
@@ -21,14 +22,69 @@ public class SignIn {
     private static final String USERNAME_INPUT = Pattern.quote("$USERNAME_INPUT$");
     private static final String PASSWORD_INPUT = Pattern.quote("$PASSWORD_INPUT$");
 
-    private final String        template;
+    public static SimpleURI     SIGNIN         = new SimpleURI("/admin/sign-in");
 
-    public SignIn(String template) {
+    public static SimpleURI     SIGNIN_EXECUTE = new SimpleURI("/admin/sign-in;execute");
+
+    public static void link(final CounterCodeGen c) {
+        c.section("Page: Sign-In");
+    }
+
+    public static void link(final RoutingTable routing, final MultiTenantRouter router) throws Exception {
+        final String template = Server.getTextFile("sign-in.html");
+        get(SIGNIN.href().value, (req, res) -> {
+
+            try {
+                final String host = req.headers("Host");
+                final ProductEngine engine = router.findByDomain(req.headers("Host"));
+                if (engine == null) {
+                    return "Host '" + host + "' not found";
+                }
+
+                final String username = req.queryParams("username");
+                boolean invalid = false;
+                final String invalidRaw = req.queryParams("invalid");
+                if (invalidRaw != null && invalidRaw.length() > 0) {
+                    invalid = true;
+                }
+                return new SignIn(template).signin(engine.siteproperties_get().get("product_name"), username, invalid);
+            } catch (final Exception err) {
+                err.printStackTrace();
+                throw err;
+            }
+        });
+        post(SIGNIN_EXECUTE.href().value, (req, res) -> {
+            try {
+                final String host = req.headers("Host");
+                final ProductEngine engine = router.findByDomain(req.headers("Host"));
+                if (engine == null) {
+                    return "Host '" + host + "' not found";
+                }
+                final String username = req.queryParams("username");
+                final String password = req.queryParams("password");
+                final AuthResult authResult = engine.auth.authenticateByUsernameAndPassword(username, password);
+                final String prefix = (router.isSecure() ? "https://" : "http://") + host;
+                if (authResult.allowed) {
+                    res.cookie(SessionRequest.AUTH_COOKIE_NAME, authResult.cookie);
+                    res.redirect(prefix + Dashboard.DASHBOARD.href().value);
+                } else {
+                    res.redirect(prefix + SIGNIN.href("username", username, "invalid", "T").value);
+                }
+            } catch (final Exception err) {
+                err.printStackTrace();
+            }
+            return null;
+        });
+    }
+
+    private final String template;
+
+    public SignIn(final String template) {
         this.template = template;
     }
 
-    public String signin(String product_name, String username, boolean invalid) {
-        String result = template;
+    public String signin(String product_name, final String username, final boolean invalid) {
+        String result = this.template;
         String error = "";
         if (invalid) {
             error = "<div class=\"alert alert-danger\" role=\"alert\">Your attempt to sign into the system has <strong>failed</strong>. This is either due to your password being incorrect, or you do not exist. We sure hope you do exist, so please try again.</div>";
@@ -42,59 +98,5 @@ public class SignIn {
         result = result.replaceAll(USERNAME_INPUT, new Input("username").text().id("username").clazz("form-control").placeholder("login...").required().autofocus(username == null).value(username).toHtml());
         result = result.replaceAll(PASSWORD_INPUT, new Input("password").password().id("password").clazz("form-control").placeholder("password...").required().autofocus(username != null).toHtml());
         return result;
-    }
-
-    public static void link(RoutingTable routing, MultiTenantRouter router) throws Exception {
-        final String template = Server.getTextFile("sign-in.html");
-        get(SIGNIN.href().value, (req, res) -> {
-
-            try {
-                String host = req.headers("Host");
-                ProductEngine engine = router.findByDomain(req.headers("Host"));
-                if (engine == null) {
-                    return "Host '" + host + "' not found";
-                }
-
-                String username = req.queryParams("username");
-                boolean invalid = false;
-                String invalidRaw = req.queryParams("invalid");
-                if (invalidRaw != null && invalidRaw.length() > 0) {
-                    invalid = true;
-                }
-                return new SignIn(template).signin(engine.siteproperties_get().get("product_name"), username, invalid);
-            } catch (Exception err) {
-                err.printStackTrace();
-                throw err;
-            }
-        });
-        post(SIGNIN_EXECUTE.href().value, (req, res) -> {
-            try {
-                String host = req.headers("Host");
-                ProductEngine engine = router.findByDomain(req.headers("Host"));
-                if (engine == null) {
-                    return "Host '" + host + "' not found";
-                }
-                String username = req.queryParams("username");
-                String password = req.queryParams("password");
-                AuthResult authResult = engine.auth.authenticateByUsernameAndPassword(username, password);
-                String prefix = (router.isSecure() ? "https://" : "http://") + host;
-                if (authResult.allowed) {
-                    res.cookie("xs", authResult.cookie);
-                    res.redirect(prefix + Dashboard.DASHBOARD.href().value);
-                } else {
-                    res.redirect(prefix + SIGNIN.href("username", username, "invalid", "T").value);
-                }
-            } catch (Exception err) {
-                err.printStackTrace();
-            }
-            return null;
-        });
-    }
-
-    public static SimpleURI SIGNIN         = new SimpleURI("/admin/sign-in");
-    public static SimpleURI SIGNIN_EXECUTE = new SimpleURI("/admin/sign-in;execute");
-
-    public static void link(CounterCodeGen c) {
-        c.section("Page: Sign-In");
     }
 }

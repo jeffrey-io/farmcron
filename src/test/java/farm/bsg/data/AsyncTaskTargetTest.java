@@ -12,14 +12,14 @@ public class AsyncTaskTargetTest {
 
     @Test
     public void validateExecutorSideStep() {
-        CountDownLatch gate = new CountDownLatch(1);
-        MockAsyncTaskTarget target = new MockAsyncTaskTarget();
-        ExecutorService executor = Executors.newCachedThreadPool();
+        final CountDownLatch gate = new CountDownLatch(1);
+        final MockAsyncTaskTarget target = new MockAsyncTaskTarget();
+        final ExecutorService executor = Executors.newCachedThreadPool();
         AsyncTaskTarget.execute(executor, target, () -> {
             try {
                 gate.await(60000, TimeUnit.MILLISECONDS);
                 return true;
-            } catch (InterruptedException ie) {
+            } catch (final InterruptedException ie) {
                 Assert.fail();
                 return false;
             }

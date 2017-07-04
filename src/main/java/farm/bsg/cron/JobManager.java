@@ -9,11 +9,11 @@ import farm.bsg.ops.Logs;
 
 /**
  * This is where all time gets managed and jobs are executed asynchronously
- * 
+ *
  * @author jeffrey
  */
 public class JobManager {
-    private Logger                     LOG = Logs.of(JobManager.class);
+    private final Logger               LOG = Logs.of(JobManager.class);
 
     private final ArrayList<HourlyJob> hourlyJobs;
     private boolean                    alive;
@@ -26,60 +26,57 @@ public class JobManager {
 
     /**
      * add an hourly job to execute... hourly
-     * 
+     *
      * @param job
      */
-    public synchronized void add(HourlyJob job) {
+    public synchronized void add(final HourlyJob job) {
         this.hourlyJobs.add(job);
     }
 
     private synchronized boolean runHourly() {
-        LOG.info("running hourly jobs");
-        for (HourlyJob job : hourlyJobs) {
+        this.LOG.info("running hourly jobs");
+        for (final HourlyJob job : this.hourlyJobs) {
             job.run(System.currentTimeMillis());
         }
-        return alive;
-    }
-
-    /**
-     * stop the job manager thread
-     */
-    public synchronized void stop() {
-        alive = true;
-        lastThread.interrupt();
-        lastThread = null;
+        return this.alive;
     }
 
     /**
      * start the job manager thread
      */
     public synchronized void start() {
-        if (alive) {
+        if (this.alive) {
             throw new IllegalStateException("job manager is already started");
         }
-        alive = true;
-        CountDownLatch started = new CountDownLatch(1);
-        lastThread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                started.countDown();
-                while (runHourly()) {
-                    try {
-                        LOG.info("sleeping");
-                        Thread.sleep(60 * 60 * 1000);
-                    } catch (InterruptedException ie) {
-                    }
+        this.alive = true;
+        final CountDownLatch started = new CountDownLatch(1);
+        this.lastThread = new Thread(() -> {
+            started.countDown();
+            while (runHourly()) {
+                try {
+                    JobManager.this.LOG.info("sleeping");
+                    Thread.sleep(60 * 60 * 1000);
+                } catch (final InterruptedException ie) {
                 }
             }
         });
-        lastThread.setDaemon(true);
-        lastThread.start();
+        this.lastThread.setDaemon(true);
+        this.lastThread.start();
         try {
             started.await();
-        } catch (InterruptedException e) {
+        } catch (final InterruptedException e) {
             throw new RuntimeException(e);
         }
 
+    }
+
+    /**
+     * stop the job manager thread
+     */
+    public synchronized void stop() {
+        this.alive = true;
+        this.lastThread.interrupt();
+        this.lastThread = null;
     }
 
 }

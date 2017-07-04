@@ -42,9 +42,9 @@ public class TagsFilteredSource extends Source {
             if (value == null) {
                 value = new HashMap<>();
                 value.put("tag", tag);
-                index.add(tag);
+                this.index.add(tag);
                 value.put("count", 0);
-                ArrayList<String> myticks = new ArrayList<String>();
+                final ArrayList<String> myticks = new ArrayList<String>();
                 value.put("ticks", myticks);
                 ticks.put(tag, myticks);
                 counts.put(tag, value);
@@ -63,20 +63,20 @@ public class TagsFilteredSource extends Source {
     @Override
     public String get(final String key) {
         if ("body".equalsIgnoreCase(key)) {
-            return compiledBody;
+            return this.compiledBody;
         }
-        return source.get(key);
+        return this.source.get(key);
     }
 
     @Override
     public void populateDomain(final Set<String> domain) {
-        source.populateDomain(domain);
+        this.source.populateDomain(domain);
     }
 
     @Override
     public void walkComplex(final BiConsumer<String, Object> injectComplex) {
-        source.walkComplex(injectComplex);
-        injectComplex.accept("tags", tags);
-        injectComplex.accept("index-by-tags", index);
+        this.source.walkComplex(injectComplex);
+        injectComplex.accept("tags", this.tags);
+        injectComplex.accept("index-by-tags", this.index);
     }
 }

@@ -19,16 +19,16 @@ public class Product extends RawObject {
             Field.STRING("image_hash") // -
     ).dirty("farm.bsg.models.PublicSiteBuilder");
 
+    public static void link(final CounterCodeGen c) {
+        c.section("Data: Product");
+    }
+
     public Product() {
         super(SCHEMA);
     }
 
     @Override
     protected void invalidateCache() {
-    }
-
-    public static void link(CounterCodeGen c) {
-        c.section("Data: Product");
     }
 
 }

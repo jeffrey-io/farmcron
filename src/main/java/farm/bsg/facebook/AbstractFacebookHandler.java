@@ -9,14 +9,6 @@ import farm.bsg.route.text.TextMessage;
 
 public class AbstractFacebookHandler {
 
-    private final MultiTenantRouter router;
-    private final RoutingTable      routing;
-
-    public AbstractFacebookHandler(MultiTenantRouter router, RoutingTable routing) {
-        this.router = router;
-        this.routing = routing;
-    }
-
     public static class FacebookResponse {
         public String httpBodyResponse;
 
@@ -24,23 +16,32 @@ public class AbstractFacebookHandler {
             this.httpBodyResponse = "";
         }
 
-        public FacebookResponse(String httpBodyResponse) {
+        public FacebookResponse(final String httpBodyResponse) {
             this.httpBodyResponse = httpBodyResponse;
         }
     }
 
-    private void dispatch(ProductEngine engine, TextMessage text) {
-        TextMessage response = routing.handleText(engine, text);
+    private final MultiTenantRouter router;
+
+    private final RoutingTable      routing;
+
+    public AbstractFacebookHandler(final MultiTenantRouter router, final RoutingTable routing) {
+        this.router = router;
+        this.routing = routing;
+    }
+
+    private void dispatch(final ProductEngine engine, final TextMessage text) {
+        final TextMessage response = this.routing.handleText(engine, text);
         BsgCounters.I.fb_attempt_response.bump();
 
-        String fbToken = engine.siteproperties_get().get("fb_page_token");
+        final String fbToken = engine.siteproperties_get().get("fb_page_token");
         if (fbToken != null) {
             BsgCounters.I.fb_send_out_on_wire.bump();
-            MessengerSend sender = new MessengerSend(fbToken);
+            final MessengerSend sender = new MessengerSend(fbToken);
             try {
                 sender.send(response.to, response.message);
                 BsgCounters.I.fb_send_ok.bump();
-            } catch (Exception err) {
+            } catch (final Exception err) {
                 BsgCounters.I.fb_send_failed_send.bump();
             }
         } else {
@@ -48,20 +49,20 @@ public class AbstractFacebookHandler {
         }
     }
 
-    public FacebookResponse facebookResponse(String host, String body, RequestResponseWrapper req) {
+    public FacebookResponse facebookResponse(final String host, final String body, final RequestResponseWrapper req) {
         try {
-            ProductEngine engine = router.findByDomain(host);
+            final ProductEngine engine = this.router.findByDomain(host);
             if (engine == null) {
                 BsgCounters.I.fb_has_invalid_host.bump();
                 return null;
             }
 
             // maybe look up the engine here
-            String mode = req.getParam("hub.mode");
+            final String mode = req.getParam("hub.mode");
             if ("subscribe".equals(mode)) {
                 BsgCounters.I.fb_subscribe_begin.bump();
-                String challenge = req.getParam("hub.challenge");
-                String token = req.getParam("hub.verify_token");
+                final String challenge = req.getParam("hub.challenge");
+                final String token = req.getParam("hub.verify_token");
                 if ("linked".equals(token)) {
                     BsgCounters.I.fb_token_given_correct.bump();
                     return new FacebookResponse(challenge);
@@ -71,17 +72,17 @@ public class AbstractFacebookHandler {
             }
 
             BsgCounters.I.fb_message.bump();
-            MessengerWebHookMessageRequest request = new MessengerWebHookMessageRequest(body);
+            final MessengerWebHookMessageRequest request = new MessengerWebHookMessageRequest(body);
             if (request.valid) {
                 BsgCounters.I.fb_message_valid.bump();
-                for (TextMessage message : request.texts) {
+                for (final TextMessage message : request.texts) {
                     dispatch(engine, message);
                 }
             } else {
                 BsgCounters.I.fb_message_invalid.bump();
             }
             // status.lastFacebookMessage.set(body);
-        } catch (Exception err) {
+        } catch (final Exception err) {
             err.printStackTrace();
         }
         return new FacebookResponse();

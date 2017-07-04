@@ -23,7 +23,7 @@ public class SortByOrderStage extends Stage {
     @Override
     public Collection<Source> sources() {
         final ArrayList<Source> sources = new ArrayList<>();
-        sources.addAll(priorStage.sources());
+        sources.addAll(this.priorStage.sources());
         Collections.sort(sources, Comparator.comparingLong((item) -> item.order()));
         return sources;
     }

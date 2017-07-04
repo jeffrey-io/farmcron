@@ -12,16 +12,25 @@ public class Nav extends HtmlPump {
         this.extended_class = null;
     }
 
-    public Nav with(HtmlPump pump) {
-        this.pumps.add(pump);
+    public Nav pills() {
+        this.extended_class = "nav-pills";
         return this;
     }
 
-    public Nav with_if(boolean condition, HtmlPump pump) {
-        if (condition) {
-            this.pumps.add(pump);
+    @Override
+    public void pump(final StringBuilder html) {
+        html.append("<ul class=\"nav");
+        if (this.extended_class != null) {
+            html.append(" ").append(this.extended_class);
         }
-        return this;
+
+        html.append("\">");
+        for (final HtmlPump pump : this.pumps) {
+            html.append("<li class=\"nav-item\">");
+            pump.pump(html);
+            html.append("</li>");
+        }
+        html.append("</ul>");
     }
 
     public Nav tabs() {
@@ -29,25 +38,16 @@ public class Nav extends HtmlPump {
         return this;
     }
 
-    public Nav pills() {
-        this.extended_class = "nav-pills";
+    public Nav with(final HtmlPump pump) {
+        this.pumps.add(pump);
         return this;
     }
 
-    @Override
-    public void pump(StringBuilder html) {
-        html.append("<ul class=\"nav");
-        if (extended_class != null) {
-            html.append(" ").append(extended_class);
+    public Nav with_if(final boolean condition, final HtmlPump pump) {
+        if (condition) {
+            this.pumps.add(pump);
         }
-
-        html.append("\">");
-        for (HtmlPump pump : pumps) {
-            html.append("<li class=\"nav-item\">");
-            pump.pump(html);
-            html.append("</li>");
-        }
-        html.append("</ul>");
+        return this;
     }
 
 }

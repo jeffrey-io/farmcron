@@ -10,21 +10,12 @@ public class BreadCrumbs extends HtmlPump {
         this.pumps = new ArrayList<>();
     }
 
-    public BreadCrumbs with(HtmlPump pump) {
-        this.pumps.add(pump);
-        return this;
-    }
-
-    public BreadCrumbs with(String crumb) {
-        return with(new Text(crumb));
-    }
-
     @Override
-    public void pump(StringBuilder html) {
+    public void pump(final StringBuilder html) {
         html.append("<ol class=\"breadcrumb\">");
-        int n = pumps.size();
+        final int n = this.pumps.size();
         for (int k = 0; k < n; k++) {
-            HtmlPump pump = pumps.get(k);
+            final HtmlPump pump = this.pumps.get(k);
             if (k + 1 < n) {
                 html.append("<li class=\"breadcrumb-item\">");
             } else {
@@ -34,6 +25,15 @@ public class BreadCrumbs extends HtmlPump {
             html.append("</li>");
         }
         html.append("</ol>");
+    }
+
+    public BreadCrumbs with(final HtmlPump pump) {
+        this.pumps.add(pump);
+        return this;
+    }
+
+    public BreadCrumbs with(final String crumb) {
+        return with(new Text(crumb));
     }
 
 }

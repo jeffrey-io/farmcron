@@ -3,7 +3,7 @@ package farm.bsg.data.codegen;
 import java.util.ArrayList;
 
 public class Helpers {
-    public static void write(ArrayList<String> lines) {
+    public static void write(final ArrayList<String> lines) {
         lines.add("");
         lines.add("  private ArrayList<Value> fetch_all(String prefix) {");
         lines.add("    ArrayList<Value> values = new ArrayList<>();");

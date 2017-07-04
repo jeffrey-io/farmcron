@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import farm.bsg.data.ObjectSchema;
 
 public class Lookups {
-    public static void write(ArrayList<String> lines, String name, ObjectSchema object) {
+    public static void write(final ArrayList<String> lines, final String name, final ObjectSchema object) {
         if (object.isSingleton()) {
             lines.add("");
             lines.add("  public " + name + " " + name.toLowerCase() + "_get() {");

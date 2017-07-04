@@ -12,34 +12,29 @@ public class BitMaskInput extends HtmlPump {
     private final SingleCharacterBitmaskProvider provider;
     private String                               value = null;
 
-    public BitMaskInput(String name, SingleCharacterBitmaskProvider provider) {
+    public BitMaskInput(final String name, final SingleCharacterBitmaskProvider provider) {
         this.name = name;
         this.provider = provider;
     }
 
-    public BitMaskInput value(String value) {
-        this.value = value;
-        return this;
+    public BitMaskInput pull(final RawObject o) {
+        return pull(o, this.name);
     }
 
-    public BitMaskInput pull(RawObject o) {
-        return pull(o, name);
-    }
-
-    public BitMaskInput pull(RawObject o, String key) {
-        String value = o.get(key);
+    public BitMaskInput pull(final RawObject o, final String key) {
+        final String value = o.get(key);
         this.value = value;
         return this;
     }
 
     @Override
-    public void pump(StringBuilder html) {
-        Table table = Html.table("Label", "Is Selected");
+    public void pump(final StringBuilder html) {
+        final Table table = Html.table("Label", "Is Selected");
 
-        Set<String> valuesPresent = provider.valuesOf(value);
+        final Set<String> valuesPresent = this.provider.valuesOf(this.value);
 
-        for (Entry<String, String> entry : provider.asMap().entrySet()) {
-            String id = name + "_" + entry.getValue();
+        for (final Entry<String, String> entry : this.provider.asMap().entrySet()) {
+            final String id = this.name + "_" + entry.getValue();
             String checked = null;
             if (valuesPresent.contains(entry.getValue())) {
                 checked = "true";
@@ -49,5 +44,10 @@ public class BitMaskInput extends HtmlPump {
                     new Input(id).id_from_name().checkbox().value(checked));
         }
         table.pump(html);
+    }
+
+    public BitMaskInput value(final String value) {
+        this.value = value;
+        return this;
     }
 }

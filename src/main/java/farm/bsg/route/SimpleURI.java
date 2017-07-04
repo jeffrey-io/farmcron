@@ -14,15 +14,15 @@ public class SimpleURI extends ControlledURI {
 
     private final String uri;
 
-    public SimpleURI(String uri) {
+    public SimpleURI(final String uri) {
         this.uri = uri;
     }
 
     @Override
-    public FinishedHref href(Map<String, String> map) {
+    public FinishedHref href(final Map<String, String> map) {
         if (map.size() > 0) {
-            ArrayList<NameValuePair> pairs = new ArrayList<>();
-            for (Entry<String, String> entry : map.entrySet()) {
+            final ArrayList<NameValuePair> pairs = new ArrayList<>();
+            for (final Entry<String, String> entry : map.entrySet()) {
                 pairs.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
             }
             return new FinishedHref(this.uri + "?" + URLEncodedUtils.format(pairs, Charsets.UTF_8));
@@ -33,6 +33,11 @@ public class SimpleURI extends ControlledURI {
 
     @Override
     public String toRoutingPattern() {
-        return uri;
+        return this.uri;
+    }
+    
+    @Override
+    public String toString() {
+        return "Simple:" + toRoutingPattern();
     }
 }

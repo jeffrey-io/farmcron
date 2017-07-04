@@ -22,72 +22,72 @@ public class MockRoutingTable extends RoutingTable {
     }
 
     @Override
-    public void get(ControlledURI path, SessionRoute route) {
-        this.gets.put(path.toRoutingPattern(), route);
+    public void customer_get(final ControlledURI path, final CustomerRoute route) {
+        this.customer_get.put(path.toRoutingPattern(), route);
     }
 
     @Override
-    public void post(ControlledURI path, SessionRoute route) {
+    public void customer_post(final ControlledURI path, final CustomerRoute route) {
+        this.customer_post.put(path.toRoutingPattern(), route);
+    }
+
+    @Override
+    public void get(final ControlledURI path, final SessionRoute route) {
+        this.gets.put(path.toRoutingPattern(), route);
+    }
+
+    public Object GET(final MockRequestBuilder builder) {
+        if (this.gets.containsKey(builder.uri)) {
+            return this.gets.get(builder.uri).handle(builder.asSessionRequest());
+        }
+        if (this.public_get.containsKey(builder.uri)) {
+            return this.public_get.get(builder.uri).handle(builder.asAnonymousRequest());
+        }
+        if (this.customer_get.containsKey(builder.uri)) {
+            return this.customer_get.get(builder.uri).handle(builder.asCustomerRequest());
+        }
+        if (this.notFound != null) {
+            return this.notFound.handle(builder.asAnonymousRequest());
+        }
+        return null;
+    }
+
+    @Override
+    public void post(final ControlledURI path, final SessionRoute route) {
         this.posts.put(path.toRoutingPattern(), route);
+    }
+
+    public Object POST(final MockRequestBuilder builder) {
+        if (this.posts.containsKey(builder.uri)) {
+            return this.posts.get(builder.uri).handle(builder.asSessionRequest());
+        }
+        if (this.public_post.containsKey(builder.uri)) {
+            return this.public_post.get(builder.uri).handle(builder.asAnonymousRequest());
+        }
+        if (this.customer_post.containsKey(builder.uri)) {
+            return this.customer_post.get(builder.uri).handle(builder.asCustomerRequest());
+        }
+        return null;
+    }
+
+    @Override
+    public void public_get(final ControlledURI path, final AnonymousRoute route) {
+        this.public_get.put(path.toRoutingPattern(), route);
+    }
+
+    @Override
+    public void public_post(final ControlledURI path, final AnonymousRoute route) {
+        this.public_post.put(path.toRoutingPattern(), route);
+    }
+
+    @Override
+    public void set_404(final AnonymousRoute route) {
+        this.notFound = route;
     }
 
     @Override
     public void setupTexting() {
 
-    }
-
-    @Override
-    public void public_get(ControlledURI path, AnonymousRoute route) {
-        public_get.put(path.toRoutingPattern(), route);
-    }
-
-    @Override
-    public void public_post(ControlledURI path, AnonymousRoute route) {
-        public_post.put(path.toRoutingPattern(), route);
-    }
-
-    @Override
-    public void set_404(AnonymousRoute route) {
-        notFound = route;
-    }
-
-    @Override
-    public void customer_get(ControlledURI path, CustomerRoute route) {
-        customer_get.put(path.toRoutingPattern(), route);
-    }
-
-    @Override
-    public void customer_post(ControlledURI path, CustomerRoute route) {
-        customer_post.put(path.toRoutingPattern(), route);
-    }
-
-    public Object GET(MockRequestBuilder builder) {
-        if (gets.containsKey(builder.uri)) {
-            return gets.get(builder.uri).handle(builder.asSessionRequest());
-        }
-        if (public_get.containsKey(builder.uri)) {
-            return public_get.get(builder.uri).handle(builder.asAnonymousRequest());
-        }
-        if (customer_get.containsKey(builder.uri)) {
-            return customer_get.get(builder.uri).handle(builder.asCustomerRequest());
-        }
-        if (notFound != null) {
-            return notFound.handle(builder.asAnonymousRequest());
-        }
-        return null;
-    }
-
-    public Object POST(MockRequestBuilder builder) {
-        if (posts.containsKey(builder.uri)) {
-            return posts.get(builder.uri).handle(builder.asSessionRequest());
-        }
-        if (public_post.containsKey(builder.uri)) {
-            return public_post.get(builder.uri).handle(builder.asAnonymousRequest());
-        }
-        if (customer_post.containsKey(builder.uri)) {
-            return customer_post.get(builder.uri).handle(builder.asCustomerRequest());
-        }
-        return null;
     }
 
 }

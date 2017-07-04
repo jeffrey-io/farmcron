@@ -9,18 +9,27 @@ import farm.bsg.data.Type;
 import farm.bsg.data.contracts.ProjectionProvider;
 
 public class Projections {
-    public static void write(ArrayList<String> lines, String name, ObjectSchema object) {
+    private static boolean hasProjection(final Type type) {
+        try {
+            final Method method = type.getClass().getMethod("project", ProjectionProvider.class, String.class);
+            return method != null;
+        } catch (final Exception err) {
+            return false;
+        }
+    }
 
-        TreeSet<String> projections = new TreeSet<>();
-        for (Type type : object.getTypes()) {
-            for (String mutation : type.getProjections()) {
+    public static void write(final ArrayList<String> lines, final String name, final ObjectSchema object) {
+
+        final TreeSet<String> projections = new TreeSet<>();
+        for (final Type type : object.getTypes()) {
+            for (final String mutation : type.getProjections()) {
                 projections.add(mutation);
             }
         }
 
-        for (String projection : projections) {
-            ArrayList<Type> types = new ArrayList<>();
-            for (Type type : object.getTypes()) {
+        for (final String projection : projections) {
+            final ArrayList<Type> types = new ArrayList<>();
+            for (final Type type : object.getTypes()) {
                 if (type.getProjections().contains(projection)) {
                     types.add(type);
                 }
@@ -32,7 +41,7 @@ public class Projections {
             lines.add("    ");
             lines.add("    public " + name + "Projection_" + projection + "(ProjectionProvider pp) {");
             lines.add("      this.data = new HashMap<String, String>();");
-            for (Type type : types) {
+            for (final Type type : types) {
                 if (!hasProjection(type)) {
                     throw new RuntimeException("Type '" + type.getClass().getName() + "' has no static project method");
                 }
@@ -54,14 +63,5 @@ public class Projections {
             lines.add("");
         }
 
-    }
-
-    private static boolean hasProjection(Type type) {
-        try {
-            Method method = type.getClass().getMethod("project", ProjectionProvider.class, String.class);
-            return method != null;
-        } catch (Exception err) {
-            return false;
-        }
     }
 }

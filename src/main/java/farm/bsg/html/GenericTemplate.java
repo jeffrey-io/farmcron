@@ -3,31 +3,17 @@ package farm.bsg.html;
 import java.util.ArrayList;
 
 public class GenericTemplate {
-    private final ArrayList<Fragment> fragments;
-
-    private enum FragmentType {
-        STRING(false), NAVBAR(true), BODY(true), TITLE(true);
-
-        public final boolean isVariable;
-        public final String  splitOn;
-
-        private FragmentType(boolean isVariable) {
-            this.isVariable = isVariable;
-            this.splitOn = "$" + this.toString().toUpperCase() + "$";
-        }
-    }
-
     private class Fragment {
-        private FragmentType type;
-        private final String data;
+        private final FragmentType type;
+        private final String       data;
 
-        private Fragment(FragmentType type, String data) {
+        private Fragment(final FragmentType type, final String data) {
             this.type = type;
             this.data = data;
         }
 
-        public String eval(String title, String navbar, String body) {
-            switch (type) {
+        public String eval(final String title, final String navbar, final String body) {
+            switch (this.type) {
                 case BODY:
                     return body;
                 case NAVBAR:
@@ -40,19 +26,41 @@ public class GenericTemplate {
         }
     }
 
-    public GenericTemplate(String template) {
+    private enum FragmentType {
+        STRING(false), NAVBAR(true), BODY(true), TITLE(true);
+
+        public final boolean isVariable;
+        public final String  splitOn;
+
+        private FragmentType(final boolean isVariable) {
+            this.isVariable = isVariable;
+            this.splitOn = "$" + this.toString().toUpperCase() + "$";
+        }
+    }
+
+    private final ArrayList<Fragment> fragments;
+
+    public GenericTemplate(final String template) {
         this.fragments = new ArrayList<>();
         splitOn(template, this.fragments);
 
     }
 
-    private void splitOn(String data, ArrayList<Fragment> output) {
+    public String html(final String title, final String navbar, final String body) {
+        final StringBuilder result = new StringBuilder();
+        for (final Fragment fragment : this.fragments) {
+            result.append(fragment.eval(title, navbar, body));
+        }
+        return result.toString();
+    }
+
+    private void splitOn(final String data, final ArrayList<Fragment> output) {
         if (data.length() == 0) {
             return;
         }
-        for (FragmentType type : FragmentType.values()) {
+        for (final FragmentType type : FragmentType.values()) {
             if (type.isVariable) {
-                int index = data.indexOf(type.splitOn);
+                final int index = data.indexOf(type.splitOn);
                 if (index >= 0) {
                     splitOn(data.substring(0, index), output);
                     output.add(new Fragment(type, null));
@@ -62,13 +70,5 @@ public class GenericTemplate {
             }
         }
         output.add(new Fragment(FragmentType.STRING, data));
-    }
-
-    public String html(String title, String navbar, String body) {
-        StringBuilder result = new StringBuilder();
-        for (Fragment fragment : fragments) {
-            result.append(fragment.eval(title, navbar, body));
-        }
-        return result.toString();
     }
 }

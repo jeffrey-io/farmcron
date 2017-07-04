@@ -11,23 +11,23 @@ public class LogDatabase implements ILoggerFactory {
         this.lines = new ArrayList<>();
     }
 
-    public synchronized void write(String level, String line) {
-        lines.add(line);
-    }
-
-    @Override
-    public org.slf4j.Logger getLogger(String name) {
-        return new StreamLogger(name, this);
-    }
-
-    public void witnessThrowable(Throwable throwable) {
-
-    }
-
-    public synchronized void dump(StringBuilder sb) {
-        for (String line : lines) {
+    public synchronized void dump(final StringBuilder sb) {
+        for (final String line : this.lines) {
             sb.append(line);
             sb.append("\n");
         }
+    }
+
+    @Override
+    public org.slf4j.Logger getLogger(final String name) {
+        return new StreamLogger(name, this);
+    }
+
+    public void witnessThrowable(final Throwable throwable) {
+
+    }
+
+    public synchronized void write(final String level, final String line) {
+        this.lines.add(line);
     }
 }

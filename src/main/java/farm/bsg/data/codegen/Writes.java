@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import farm.bsg.data.ObjectSchema;
 
 public class Writes {
-    public static void write(ArrayList<String> lines, String name, ObjectSchema object) {
+    public static void write(final ArrayList<String> lines, final String name, final ObjectSchema object) {
         String suffixArgs = ", false";
         if (object.isEphemeral()) {
             suffixArgs = ", true";

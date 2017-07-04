@@ -14,33 +14,33 @@ public class MultiPrefixLogger implements KeyValuePairLogger {
         this.loggers = new HashMap<>();
     }
 
-    public <T extends KeyValuePairLogger> T add(String prefix, T logger) {
-        ArrayList<KeyValuePairLogger> prefixLoggers = loggers.get(prefix);
+    public <T extends KeyValuePairLogger> T add(final String prefix, final T logger) {
+        ArrayList<KeyValuePairLogger> prefixLoggers = this.loggers.get(prefix);
         if (prefixLoggers == null) {
             prefixLoggers = new ArrayList<>();
-            loggers.put(prefix, prefixLoggers);
+            this.loggers.put(prefix, prefixLoggers);
         }
         prefixLoggers.add(logger);
         return logger;
     }
 
     @Override
-    public void validate(String key, Value oldValue, Value newValue, PutResult result) {
-        for (Entry<String, ArrayList<KeyValuePairLogger>> entry : loggers.entrySet()) {
+    public void put(final String key, final Value oldValue, final Value newValue) {
+        for (final Entry<String, ArrayList<KeyValuePairLogger>> entry : this.loggers.entrySet()) {
             if (key.startsWith(entry.getKey())) {
-                for (KeyValuePairLogger logger : entry.getValue()) {
-                    logger.validate(key, oldValue, newValue, result);
+                for (final KeyValuePairLogger logger : entry.getValue()) {
+                    logger.put(key, oldValue, newValue);
                 }
             }
         }
     }
 
     @Override
-    public void put(String key, Value oldValue, Value newValue) {
-        for (Entry<String, ArrayList<KeyValuePairLogger>> entry : loggers.entrySet()) {
+    public void validate(final String key, final Value oldValue, final Value newValue, final PutResult result) {
+        for (final Entry<String, ArrayList<KeyValuePairLogger>> entry : this.loggers.entrySet()) {
             if (key.startsWith(entry.getKey())) {
-                for (KeyValuePairLogger logger : entry.getValue()) {
-                    logger.put(key, oldValue, newValue);
+                for (final KeyValuePairLogger logger : entry.getValue()) {
+                    logger.validate(key, oldValue, newValue, result);
                 }
             }
         }

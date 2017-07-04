@@ -6,7 +6,7 @@ import org.junit.Test;
 public class SitePropertiesTest {
     @Test
     public void Coverage() {
-        SiteProperties site = new SiteProperties();
+        final SiteProperties site = new SiteProperties();
         Assert.assertNotNull(site.toJson());
     }
 

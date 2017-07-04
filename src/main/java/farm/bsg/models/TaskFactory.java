@@ -30,11 +30,11 @@ public class TaskFactory extends RawObject {
     protected void invalidateCache() {
     }
 
-    public boolean ready(long now) {
-        DateTime consideration = new DateTime(now);
-        Set<Integer> monthsAvailale = TypeMonthFilter.ordinalsOf(get("month_filter"));
+    public boolean ready(final long now) {
+        final DateTime consideration = new DateTime(now);
+        final Set<Integer> monthsAvailale = TypeMonthFilter.ordinalsOf(get("month_filter"));
         if (monthsAvailale.contains(consideration.getMonthOfYear())) {
-            Set<Integer> daysAvailable = TypeDayFilter.ordinalsOf(get("day_filter"));
+            final Set<Integer> daysAvailable = TypeDayFilter.ordinalsOf(get("day_filter"));
             return daysAvailable.contains(consideration.getDayOfWeek());
         }
         return false;

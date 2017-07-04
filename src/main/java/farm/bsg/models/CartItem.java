@@ -13,16 +13,16 @@ public class CartItem extends RawObject {
             Field.NUMBER("quantity"), Field.STRING("customizations").makeIndex(false) //
     );
 
+    public static void link(final CounterCodeGen c) {
+        c.section("Data: CartItem");
+    }
+
     public CartItem() {
         super(SCHEMA);
     }
 
     @Override
     protected void invalidateCache() {
-    }
-
-    public static void link(CounterCodeGen c) {
-        c.section("Data: CartItem");
     }
 
 }

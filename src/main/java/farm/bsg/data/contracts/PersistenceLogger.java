@@ -4,7 +4,7 @@ import farm.bsg.data.Value;
 
 /**
  * Assumes we have a mechanism
- * 
+ *
  * @author jeffrey
  */
 public interface PersistenceLogger {

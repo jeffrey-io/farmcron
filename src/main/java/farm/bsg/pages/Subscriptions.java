@@ -21,20 +21,6 @@ import farm.bsg.route.SimpleURI;
 import farm.bsg.route.text.EnglishKeywordNormalizer;
 
 public class Subscriptions extends SessionPage {
-    public Subscriptions(SessionRequest session) {
-        super(session, SUBSCRIPTIONS);
-    }
-
-    public static List<Subscription> getSubscriptions(QueryEngine engine) {
-        return engine.select_subscription().to_list().done();
-    }
-
-    public Subscription pullSubscription() {
-        Subscription event = query().subscription_by_id(session.getParam("id"), true);
-        event.importValuesFromReqeust(session, "");
-        return event;
-    }
-
     public static enum Action {
         Subscribe, Unsubscribe, None
     }
@@ -45,18 +31,36 @@ public class Subscriptions extends SessionPage {
 
         public final Subscription winner;
 
-        public Result(Action action, String response, Subscription winner) {
+        public Result(final Action action, final String response, final Subscription winner) {
             this.action = action;
             this.response = response;
             this.winner = winner;
         }
     }
 
-    public static Result evaluate(QueryEngine engine, String text) {
-        String normalizedText = EnglishKeywordNormalizer.normalize(text);
-        for (Subscription subscription : getSubscriptions(engine)) {
-            String sub = EnglishKeywordNormalizer.normalize(subscription.get("subscribe_keyword"));
-            String unsub = EnglishKeywordNormalizer.normalize(subscription.get("unsubscribe_keyword"));
+    public static SimpleURI SUBSCRIPTIONS                  = new SimpleURI("/admin/subscriptions");
+
+    public static SimpleURI SUBSCRIPTIONS_NEW              = new SimpleURI("/admin/subscriptions;create");
+
+    public static SimpleURI SUBSCRIPTIONS_EDIT             = new SimpleURI("/admin/subscriptions;edit");
+
+    public static SimpleURI SUBSCRIPTIONS_VIEW             = new SimpleURI("/admin/subscriptions;view");
+
+    public static SimpleURI SUBSCRIPTIONS_ADD_SUBSCRIBER   = new SimpleURI("/admin/subscriptions;subscriber;add");
+
+    public static SimpleURI SUBSCRIPTIONS_REMOVE_SUBCRIBER = new SimpleURI("/admin/subscriptions;subscriber;remove");
+
+    public static SimpleURI SUBSCRIPTIONS_PUBLISH          = new SimpleURI("/admin/subscriptions;publish");
+
+    public static SimpleURI SUBSCRIPTIONS_TEST             = new SimpleURI("/admin/subscriptions;test");
+
+    public static SimpleURI SUBSCRIPTIONS_COMMIT_EDIT      = new SimpleURI("/admin/subscriptions;commit");
+
+    public static Result evaluate(final QueryEngine engine, final String text) {
+        final String normalizedText = EnglishKeywordNormalizer.normalize(text);
+        for (final Subscription subscription : getSubscriptions(engine)) {
+            final String sub = EnglishKeywordNormalizer.normalize(subscription.get("subscribe_keyword"));
+            final String unsub = EnglishKeywordNormalizer.normalize(subscription.get("unsubscribe_keyword"));
             if (normalizedText.equals(sub)) {
                 return new Result(Action.Subscribe, subscription.get("subscribe_message"), subscription);
             }
@@ -67,174 +71,88 @@ public class Subscriptions extends SessionPage {
         return null;
     }
 
-    public String list() {
-        person().mustHave(Permission.SubscriptionView);
-        Block page = Html.block();
-        page.add(Html.wrapped().h3().wrap("All Subscriptions"));
-
-        Table table = new Table("Name", "Actions");
-        List<Subscription> subs = Subscriptions.getSubscriptions(query());
-        for (Subscription sub : subs) {
-            HtmlPump actions = Html.block() //
-                    .add_if(person().has(Permission.SubscriptionWrite), Html.link(SUBSCRIPTIONS_EDIT.href("id", sub.getId()), "edit").btn_secondary()) //
-                    .add(Html.link(SUBSCRIPTIONS_VIEW.href("id", sub.getId()), "view").btn_secondary());
-            table.row(//
-                    sub.get("name"), //
-                    actions);
-        }
-        page.add(table);
-        page.add_if(person().has(Permission.SubscriptionWrite), Html.link(SUBSCRIPTIONS_NEW.href(), "Create New Subscription").btn_primary());
-        page.add(Html.link(SUBSCRIPTIONS_TEST.href(), "Test Robot").btn_secondary());
-        return finish_pump(page);
+    public static List<Subscription> getSubscriptions(final QueryEngine engine) {
+        return engine.select_subscription().to_list().done();
     }
 
-    public String test() {
-        person().mustHave(Permission.SubscriptionView);
-        Block page = Html.block();
-        page.add(Html.wrapped().h3().wrap("Test Robot"));
+    public static void link(final CounterCodeGen c) {
+        c.section("Page: Subscriptions");
+    }
 
-        Block formInner = Html.block();
-        formInner.add(Html.wrapped().form_group() //
-                .wrap(Html.label("message", "message")) //
-                .wrap(Html.input("message").id_from_name().text()));
-        formInner.add(Html.wrapped().form_group() //
-                .wrap(Html.input("submit").id_from_name().value("Test").submit()));
-        page.add(Html.form("post", SUBSCRIPTIONS_TEST.href()).inner(formInner));
+    public static void link(final RoutingTable routing) {
+        routing.navbar(SUBSCRIPTIONS, "Subscriptions", Permission.SubscriptionView);
 
-        String message = session.getParam("message");
-        if (message != null) {
-            Result result = Subscriptions.evaluate(query(), message);
-
+        routing.text((engine, message) -> {
+            final Result result = Subscriptions.evaluate(engine, message.message);
+            // failed to route
             if (result == null) {
-                page.add(Html.wrapped().strong().wrap("The robot did not understand."));
-            } else {
-                page.add(Html.wrapped().strong().wrap("Output: " + result.action + " ; subscription=" + result.winner.get("name")));
+                return null;
             }
-        }
-        return finish_pump(page);
+
+            final String id = result.winner.getId() + "/" + message.source + ";" + message.from;
+            if (result.action == Action.Subscribe) {
+                final Subscriber sub = new Subscriber();
+                sub.set("id", id);
+                sub.set("from", message.from);
+                sub.set("source", message.source);
+                sub.set("destination", message.to);
+                sub.set("subscription", result.winner.getId());
+                sub.set("debug", message.debug);
+                engine.put(sub);
+            }
+            if (result.action == Action.Unsubscribe) {
+                final Subscriber sub = engine.subscriber_by_id(id, false);
+                if (sub != null) {
+                    engine.del(sub);
+                }
+            }
+            return message.generateResponse(result.response);
+        });
+
+        routing.get(SUBSCRIPTIONS, (session) -> new Subscriptions(session).list());
+        routing.post(SUBSCRIPTIONS_ADD_SUBSCRIBER, (session) -> new Subscriptions(session).add());
+        routing.get_or_post(SUBSCRIPTIONS_REMOVE_SUBCRIBER, (session) -> new Subscriptions(session).remove());
+        routing.post(SUBSCRIPTIONS_PUBLISH, (session) -> new Subscriptions(session).publish());
+
+        routing.get(SUBSCRIPTIONS_NEW, (session) -> {
+            session.redirect(SUBSCRIPTIONS_EDIT.href("id", UUID.randomUUID().toString()));
+            return null;
+        });
+        routing.get_or_post(SUBSCRIPTIONS_EDIT, (session) -> new Subscriptions(session).edit());
+        routing.get_or_post(SUBSCRIPTIONS_TEST, (session) -> new Subscriptions(session).test());
+        routing.get(SUBSCRIPTIONS_VIEW, (session) -> new Subscriptions(session).view());
+        routing.post(SUBSCRIPTIONS_COMMIT_EDIT, (session) -> new Subscriptions(session).commit());
     }
 
-    public String view() {
-        person().mustHave(Permission.SubscriptionView);
-        Subscription sub = pullSubscription();
-
-        Block page = Html.block();
-        page.add(Html.wrapped().h2().wrap(sub.get("name")));
-
-        page.add(Html.wrapped().h4().wrap("Acquisition"));
-        if (sub.isOpen()) {
-            page.add(Html.W().p().wrap("This subscription is open to the public via the robot."));
-            Table commands = new Table("Robot Command", "Robot Response");
-            commands.row(sub.get("subscribe_keyword"), sub.get("subscribe_message"));
-            commands.row(sub.get("unsubscribe_keyword"), sub.get("unsubscribe_message"));
-            page.add(commands);
-        } else {
-            page.add(Html.W().p().wrap("This subscription is not open to public via the robot, and only site admins can add subscribers."));
-        }
-
-        page.add(Html.wrapped().h4().wrap("Trigger"));
-        Event event = sub.getEvent();
-        if (event.automatic) {
-            page.add(Html.block().add("This subscription is ").add(Html.W().strong().wrap("automatic")).add(". It will fire on '").add(event.name()).add("' events; which means it will fire when ").add(event.description));
-        } else {
-            page.add(Html.block().add("This subscription is ").add(Html.W().strong().wrap("manual")).add(". It will fire only when a site admin publishes"));
-
-            Block formInner = Html.block();
-            formInner.add(Html.input("subscription").value(sub.getId()));
-            formInner.add(Html.wrapped().form_group() //
-                    .wrap(Html.label("short_message", "Short Message (SMS, Facebook)")) //
-                    .wrap(Html.input("short_message").id_from_name().text()));
-            formInner.add(Html.wrapped().form_group() //
-                    .wrap(Html.input("submit").id_from_name().value("Publish").submit()));
-            page.add(Html.form("post", SUBSCRIPTIONS_PUBLISH.href()).inner(formInner));
-        }
-
-        page.add(Html.wrapped().h4().wrap("Subscribers"));
-        List<Subscriber> subscribers = query().select_subscriber().scope(sub.getId()).to_list().done();
-        if (subscribers.size() > 0) {
-            Table table = new Table("source", "from", "action");
-            for (Subscriber subscriber : subscribers) {
-                String href = SUBSCRIPTIONS_REMOVE_SUBCRIBER.href("subscription", sub.getId(), "from", subscriber.get("from"), "source", subscriber.get("source")).value;
-                String actions = "<a class=\"btn btn-secondary\" href=\"" + href + "\">delete</a>";
-                table.row( //
-                        subscriber.get("source"), //
-                        subscriber.get("from"), actions); //
-            }
-            page.add(table);
-        }
-
-        if (person().has(Permission.SubscriptionWrite)) {
-            Block formInner = Html.block();
-            formInner.add(Html.input("subscription").value(sub.getId()));
-            formInner.add(Html.input("source").value("SMS"));
-            formInner.add(Html.wrapped().form_group() //
-                    .wrap(Html.label("from", "Phone Number")) //
-                    .wrap(Html.input("from").id_from_name().text()));
-            formInner.add(Html.wrapped().form_group() //
-                    .wrap(Html.input("submit").id_from_name().value("Update").submit()));
-            page.add(Html.wrapped().h4().wrap("Add SMS Subscriber"));
-            page.add(Html.form("post", SUBSCRIPTIONS_ADD_SUBSCRIBER.href()).inner(formInner));
-        }
-        return finish_pump(page);
-    }
-
-    private String getConstructedId() {
-        String subscription = session.getParam("subscription");
-        String source = session.getParam("source");
-        String from = session.getParam("from");
-        if ("".equals(from)) {
-            from = null;
-        }
-        if ("".equals(source)) {
-            source = null;
-        }
-        return subscription + "/" + source + ";" + from;
+    public Subscriptions(final SessionRequest session) {
+        super(session, SUBSCRIPTIONS);
     }
 
     public String add() {
         person().mustHave(Permission.SubscriptionView);
         person().mustHave(Permission.SubscriptionWrite);
-        Subscriber subscriber = new Subscriber();
+        final Subscriber subscriber = new Subscriber();
         subscriber.set("id", getConstructedId());
-        subscriber.importValuesFromReqeust(session, "");
+        subscriber.importValuesFromReqeust(this.session, "");
         query().put(subscriber);
-        redirect(SUBSCRIPTIONS_VIEW.href("id", session.getParam("subscription")));
+        redirect(SUBSCRIPTIONS_VIEW.href("id", this.session.getParam("subscription")));
         return null;
     }
 
-    public String publish() {
-        person().mustHave(Permission.SubscriptionView);
-        person().mustHave(Permission.SubscriptionPublish);
-        Subscription sub = query().subscription_by_id(session.getParam("subscription"), false);
-        if (sub == null) {
-            return "invalid sub";
-        }
-        String shortMessage = session.getParam("short_message");
-        if ("".equals(shortMessage) || shortMessage == null) {
-            return "no publish payload";
-        }
-        EventPayload payload = new EventPayload(shortMessage);
-        int count = engine.eventBus.publish(sub, payload);
-        return "Published:" + count;
-    }
-
-    public String remove() {
+    public String commit() {
         person().mustHave(Permission.SubscriptionView);
         person().mustHave(Permission.SubscriptionWrite);
-
-        Subscriber subscriber = query().subscriber_by_id(getConstructedId(), false);
-        if (subscriber != null) {
-            query().del(subscriber);
-        }
-        redirect(SUBSCRIPTIONS_VIEW.href("id", session.getParam("subscription")));
+        final Subscription sub = pullSubscription();
+        query().put(sub);
+        redirect(SUBSCRIPTIONS.href());
         return null;
     }
 
     private String edit() {
         person().mustHave(Permission.SubscriptionView);
         person().mustHave(Permission.SubscriptionWrite);
-        Subscription sub = pullSubscription();
-        Block formInner = Html.block();
+        final Subscription sub = pullSubscription();
+        final Block formInner = Html.block();
         formInner.add(Html.input("id").pull(sub));
 
         formInner.add(Html.wrapped().form_group() //
@@ -268,78 +186,168 @@ public class Subscriptions extends SessionPage {
         formInner.add(Html.wrapped().form_group() //
                 .wrap(Html.input("submit").id_from_name().value("Save").submit()));
 
-        Block page = Html.block();
+        final Block page = Html.block();
         page.add(Html.wrapped().h4().wrap("Editing of Subscription"));
         page.add(Html.form("post", SUBSCRIPTIONS_COMMIT_EDIT.href()).inner(formInner));
         return finish_pump(page);
     }
 
-    public String commit() {
+    private String getConstructedId() {
+        final String subscription = this.session.getParam("subscription");
+        String source = this.session.getParam("source");
+        String from = this.session.getParam("from");
+        if ("".equals(from)) {
+            from = null;
+        }
+        if ("".equals(source)) {
+            source = null;
+        }
+        return subscription + "/" + source + ";" + from;
+    }
+
+    public String list() {
+        person().mustHave(Permission.SubscriptionView);
+        final Block page = Html.block();
+        page.add(Html.wrapped().h3().wrap("All Subscriptions"));
+
+        final Table table = new Table("Name", "Actions");
+        final List<Subscription> subs = Subscriptions.getSubscriptions(query());
+        for (final Subscription sub : subs) {
+            final HtmlPump actions = Html.block() //
+                    .add_if(person().has(Permission.SubscriptionWrite), Html.link(SUBSCRIPTIONS_EDIT.href("id", sub.getId()), "edit").btn_secondary()) //
+                    .add(Html.link(SUBSCRIPTIONS_VIEW.href("id", sub.getId()), "view").btn_secondary());
+            table.row(//
+                    sub.get("name"), //
+                    actions);
+        }
+        page.add(table);
+        page.add_if(person().has(Permission.SubscriptionWrite), Html.link(SUBSCRIPTIONS_NEW.href(), "Create New Subscription").btn_primary());
+        page.add(Html.link(SUBSCRIPTIONS_TEST.href(), "Test Robot").btn_secondary());
+        return finish_pump(page);
+    }
+
+    public String publish() {
+        person().mustHave(Permission.SubscriptionView);
+        person().mustHave(Permission.SubscriptionPublish);
+        final Subscription sub = query().subscription_by_id(this.session.getParam("subscription"), false);
+        if (sub == null) {
+            return "invalid sub";
+        }
+        final String shortMessage = this.session.getParam("short_message");
+        if ("".equals(shortMessage) || shortMessage == null) {
+            return "no publish payload";
+        }
+        final EventPayload payload = new EventPayload(shortMessage);
+        final int count = this.engine.eventBus.publish(sub, payload);
+        return "Published:" + count;
+    }
+
+    public Subscription pullSubscription() {
+        final Subscription event = query().subscription_by_id(this.session.getParam("id"), true);
+        event.importValuesFromReqeust(this.session, "");
+        return event;
+    }
+
+    public String remove() {
         person().mustHave(Permission.SubscriptionView);
         person().mustHave(Permission.SubscriptionWrite);
-        Subscription sub = pullSubscription();
-        query().put(sub);
-        redirect(SUBSCRIPTIONS.href());
+
+        final Subscriber subscriber = query().subscriber_by_id(getConstructedId(), false);
+        if (subscriber != null) {
+            query().del(subscriber);
+        }
+        redirect(SUBSCRIPTIONS_VIEW.href("id", this.session.getParam("subscription")));
         return null;
     }
 
-    public static void link(RoutingTable routing) {
-        routing.navbar(SUBSCRIPTIONS, "Subscriptions", Permission.SubscriptionView);
+    public String test() {
+        person().mustHave(Permission.SubscriptionView);
+        final Block page = Html.block();
+        page.add(Html.wrapped().h3().wrap("Test Robot"));
 
-        routing.text((engine, message) -> {
-            Result result = Subscriptions.evaluate(engine, message.message);
-            // failed to route
+        final Block formInner = Html.block();
+        formInner.add(Html.wrapped().form_group() //
+                .wrap(Html.label("message", "message")) //
+                .wrap(Html.input("message").id_from_name().text()));
+        formInner.add(Html.wrapped().form_group() //
+                .wrap(Html.input("submit").id_from_name().value("Test").submit()));
+        page.add(Html.form("post", SUBSCRIPTIONS_TEST.href()).inner(formInner));
+
+        final String message = this.session.getParam("message");
+        if (message != null) {
+            final Result result = Subscriptions.evaluate(query(), message);
+
             if (result == null) {
-                return null;
+                page.add(Html.wrapped().strong().wrap("The robot did not understand."));
+            } else {
+                page.add(Html.wrapped().strong().wrap("Output: " + result.action + " ; subscription=" + result.winner.get("name")));
             }
-
-            String id = result.winner.getId() + "/" + message.source + ";" + message.from;
-            if (result.action == Action.Subscribe) {
-                Subscriber sub = new Subscriber();
-                sub.set("id", id);
-                sub.set("from", message.from);
-                sub.set("source", message.source);
-                sub.set("destination", message.to);
-                sub.set("subscription", result.winner.getId());
-                sub.set("debug", message.debug);
-                engine.put(sub);
-            }
-            if (result.action == Action.Unsubscribe) {
-                Subscriber sub = engine.subscriber_by_id(id, false);
-                if (sub != null) {
-                    engine.del(sub);
-                }
-            }
-            return message.generateResponse(result.response);
-        });
-
-        routing.get(SUBSCRIPTIONS, (session) -> new Subscriptions(session).list());
-        routing.post(SUBSCRIPTIONS_ADD_SUBSCRIBER, (session) -> new Subscriptions(session).add());
-        routing.get_or_post(SUBSCRIPTIONS_REMOVE_SUBCRIBER, (session) -> new Subscriptions(session).remove());
-        routing.post(SUBSCRIPTIONS_PUBLISH, (session) -> new Subscriptions(session).publish());
-
-        routing.get(SUBSCRIPTIONS_NEW, (session) -> {
-            session.redirect(SUBSCRIPTIONS_EDIT.href("id", UUID.randomUUID().toString()));
-            return null;
-        });
-        routing.get_or_post(SUBSCRIPTIONS_EDIT, (session) -> new Subscriptions(session).edit());
-        routing.get_or_post(SUBSCRIPTIONS_TEST, (session) -> new Subscriptions(session).test());
-        routing.get(SUBSCRIPTIONS_VIEW, (session) -> new Subscriptions(session).view());
-        routing.post(SUBSCRIPTIONS_COMMIT_EDIT, (session) -> new Subscriptions(session).commit());
+        }
+        return finish_pump(page);
     }
 
-    public static SimpleURI SUBSCRIPTIONS                  = new SimpleURI("/admin/subscriptions");
-    public static SimpleURI SUBSCRIPTIONS_NEW              = new SimpleURI("/admin/subscriptions;create");
-    public static SimpleURI SUBSCRIPTIONS_EDIT             = new SimpleURI("/admin/subscriptions;edit");
-    public static SimpleURI SUBSCRIPTIONS_VIEW             = new SimpleURI("/admin/subscriptions;view");
-    public static SimpleURI SUBSCRIPTIONS_ADD_SUBSCRIBER   = new SimpleURI("/admin/subscriptions;subscriber;add");
-    public static SimpleURI SUBSCRIPTIONS_REMOVE_SUBCRIBER = new SimpleURI("/admin/subscriptions;subscriber;remove");
-    public static SimpleURI SUBSCRIPTIONS_PUBLISH          = new SimpleURI("/admin/subscriptions;publish");
-    public static SimpleURI SUBSCRIPTIONS_TEST             = new SimpleURI("/admin/subscriptions;test");
-    public static SimpleURI SUBSCRIPTIONS_COMMIT_EDIT      = new SimpleURI("/admin/subscriptions;commit");
+    public String view() {
+        person().mustHave(Permission.SubscriptionView);
+        final Subscription sub = pullSubscription();
 
-    public static void link(CounterCodeGen c) {
-        c.section("Page: Subscriptions");
+        final Block page = Html.block();
+        page.add(Html.wrapped().h2().wrap(sub.get("name")));
+
+        page.add(Html.wrapped().h4().wrap("Acquisition"));
+        if (sub.isOpen()) {
+            page.add(Html.W().p().wrap("This subscription is open to the public via the robot."));
+            final Table commands = new Table("Robot Command", "Robot Response");
+            commands.row(sub.get("subscribe_keyword"), sub.get("subscribe_message"));
+            commands.row(sub.get("unsubscribe_keyword"), sub.get("unsubscribe_message"));
+            page.add(commands);
+        } else {
+            page.add(Html.W().p().wrap("This subscription is not open to public via the robot, and only site admins can add subscribers."));
+        }
+
+        page.add(Html.wrapped().h4().wrap("Trigger"));
+        final Event event = sub.getEvent();
+        if (event.automatic) {
+            page.add(Html.block().add("This subscription is ").add(Html.W().strong().wrap("automatic")).add(". It will fire on '").add(event.name()).add("' events; which means it will fire when ").add(event.description));
+        } else {
+            page.add(Html.block().add("This subscription is ").add(Html.W().strong().wrap("manual")).add(". It will fire only when a site admin publishes"));
+
+            final Block formInner = Html.block();
+            formInner.add(Html.input("subscription").value(sub.getId()));
+            formInner.add(Html.wrapped().form_group() //
+                    .wrap(Html.label("short_message", "Short Message (SMS, Facebook)")) //
+                    .wrap(Html.input("short_message").id_from_name().text()));
+            formInner.add(Html.wrapped().form_group() //
+                    .wrap(Html.input("submit").id_from_name().value("Publish").submit()));
+            page.add(Html.form("post", SUBSCRIPTIONS_PUBLISH.href()).inner(formInner));
+        }
+
+        page.add(Html.wrapped().h4().wrap("Subscribers"));
+        final List<Subscriber> subscribers = query().select_subscriber().scope(sub.getId()).to_list().done();
+        if (subscribers.size() > 0) {
+            final Table table = new Table("source", "from", "action");
+            for (final Subscriber subscriber : subscribers) {
+                final String href = SUBSCRIPTIONS_REMOVE_SUBCRIBER.href("subscription", sub.getId(), "from", subscriber.get("from"), "source", subscriber.get("source")).value;
+                final String actions = "<a class=\"btn btn-secondary\" href=\"" + href + "\">delete</a>";
+                table.row( //
+                        subscriber.get("source"), //
+                        subscriber.get("from"), actions); //
+            }
+            page.add(table);
+        }
+
+        if (person().has(Permission.SubscriptionWrite)) {
+            final Block formInner = Html.block();
+            formInner.add(Html.input("subscription").value(sub.getId()));
+            formInner.add(Html.input("source").value("SMS"));
+            formInner.add(Html.wrapped().form_group() //
+                    .wrap(Html.label("from", "Phone Number")) //
+                    .wrap(Html.input("from").id_from_name().text()));
+            formInner.add(Html.wrapped().form_group() //
+                    .wrap(Html.input("submit").id_from_name().value("Update").submit()));
+            page.add(Html.wrapped().h4().wrap("Add SMS Subscriber"));
+            page.add(Html.form("post", SUBSCRIPTIONS_ADD_SUBSCRIBER.href()).inner(formInner));
+        }
+        return finish_pump(page);
     }
 
 }

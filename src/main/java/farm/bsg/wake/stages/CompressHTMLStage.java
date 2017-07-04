@@ -2,7 +2,7 @@ package farm.bsg.wake.stages;
 
 /**
  * This helps clean up the final HTML final, so it is optimized for machines and not humans.
- * 
+ *
  * @author jeffrey
  */
 public class CompressHTMLStage extends BodyFinalizerStage {

@@ -28,23 +28,62 @@ import farm.bsg.route.SessionRequest;
 import farm.bsg.route.SimpleURI;
 
 public class TaskFactoryManagement extends SessionPage {
-    public TaskFactoryManagement(SessionRequest session) {
-        super(session, TASKS_FACTORY);
+    public static class TaskFactoryMonitor implements HourlyJob {
+
+        private final ProductEngine engine;
+
+        public TaskFactoryMonitor(final ProductEngine engine) {
+            this.engine = engine;
+        }
+
+        @Override
+        public void run(final long now) {
+            BsgCounters.I.task_factory_monitor_run.bump();
+            advance(this.engine, now);
+        }
     }
 
-    public HtmlPump tabs(SimpleURI current) {
-        Link tabList = Html.link(TASKS_FACTORY.href(), "Factories").nav_link().active_if_href_is(current.href());
-        Link tabCreate = Html.link(TASKS_FACTORY_CREATE.href(), "Create").nav_link().active_if_href_is(current.href());
-        return Html.nav().pills().with(tabList).with_if(person().has(Permission.EditTaskFactory), tabCreate);
+    public static SimpleURI TASKS_FACTORY        = new SimpleURI("/admin/tasks-factory");
+
+    public static SimpleURI TASKS_FACTORY_CREATE = new SimpleURI("/admin/tasks-factory;create");
+
+    public static SimpleURI TASKS_FACTORY_EDIT   = new SimpleURI("/admin/tasks-factory;edit");
+
+    public static SimpleURI TASKS_FACTORY_COMMIT = new SimpleURI("/admin/tasks-factory;commit");
+
+    public static void advance(final ProductEngine engine, final long now) {
+        final List<TaskFactory> factories = engine.select_taskfactory().to_list().done();
+        for (final TaskFactory factory : factories) {
+            Task currentTask = null;
+            final String currentTaskId = factory.get("current_task");
+            if (currentTaskId != null) {
+                currentTask = engine.task_by_id(currentTaskId, false);
+            }
+            final int daysAfter = factory.getAsInt("frequency");
+            if (factory.ready(now)) {
+                if (Task.isClosedAndReadyForTransition(currentTask, now, daysAfter)) {
+                    final Task task = new Task();
+                    task.generateAndSetId();
+                    task.copyFrom(factory, "name", "description", "priority");
+                    task.setState("created");
+                    task.setDue(now, factory.getAsInt("slack"));
+                    factory.set("current_task", task.getId());
+                    engine.put(factory);
+                    engine.put(task);
+                    final EventPayload payload = new EventPayload("'" + task.get("name") + "' has been scheduled automatically.");
+                    engine.eventBus.trigger(Event.TaskCreation, payload);
+                }
+            }
+        }
     }
 
-    public static HtmlPump getProgress(TaskFactory factory, Task task, long now) {
+    public static HtmlPump getProgress(final TaskFactory factory, final Task task, final long now) {
         if (task != null) {
-            String state = task.get("state");
+            final String state = task.get("state");
             if ("closed".equals(state)) {
-                int daysAfter = factory.getAsInt("frequency");
+                final int daysAfter = factory.getAsInt("frequency");
                 for (int k = 0; k <= daysAfter; k++) {
-                    long futureNow = new DateTime(now).plusDays(k).getMillis();
+                    final long futureNow = new DateTime(now).plusDays(k).getMillis();
                     if (factory.ready(futureNow) && Task.isClosedAndReadyForTransition(task, futureNow, daysAfter)) {
                         return Html.block().add("ready in " + k + " days:" + RawObject.isoTimestamp(futureNow));
                     }
@@ -58,26 +97,37 @@ public class TaskFactoryManagement extends SessionPage {
         }
     }
 
-    public String list() {
-        person().mustHave(Permission.SeeTaskFactoryTab);
-        Block block = Html.block();
-        block.add(tabs(TASKS_FACTORY));
+    public static void link(final CounterCodeGen c) {
+        c.section("Page: Task Factory");
 
-        Table table = new Table("Name", "Progress", "Actions");
-        List<TaskFactory> factories = query().select_taskfactory().to_list().done();
-        for (TaskFactory factory : factories) {
-            Task currentTask = null;
-            String currentTaskId = factory.get("current_task");
-            if (currentTaskId != null) {
-                currentTask = query().task_by_id(currentTaskId, false);
+        c.counter("task_factory_monitor_run", "How many runs of the task factory have there been");
+    }
+
+    public static void link(final RoutingTable routing) {
+        routing.navbar(TASKS_FACTORY, "Task Factory", Permission.SeeTaskFactoryTab);
+
+        routing.get(TASKS_FACTORY, (sr) -> new TaskFactoryManagement(sr).list());
+        routing.get(TASKS_FACTORY_CREATE, (sr) -> new TaskFactoryManagement(sr).create());
+        routing.get(TASKS_FACTORY_EDIT, (sr) -> new TaskFactoryManagement(sr).update());
+        routing.post(TASKS_FACTORY_COMMIT, (sr) -> new TaskFactoryManagement(sr).commit());
+    }
+
+    public TaskFactoryManagement(final SessionRequest session) {
+        super(session, TASKS_FACTORY);
+    }
+
+    public String commit() {
+        person().mustHave(Permission.EditTaskFactory);
+        final TaskFactory factory = query().taskfactory_by_id(this.session.getParam("id"), true);
+        if (this.engine.projection_taskfactory_edit_of(this.session).apply(factory).success()) {
+            if (factory.get("name") == null) {
+                query().del(factory);
+            } else {
+                query().put(factory);
             }
-            Block actions = Html.block().add_if(person().has(Permission.EditTaskFactory), Html.link(TASKS_FACTORY_EDIT.href("id", factory.getId()), "{update}").btn_primary());
-            HtmlPump progress = getProgress(factory, currentTask, System.currentTimeMillis());
-            HtmlPump name = Html.block().add(factory.get("name")).add(Tasks.priorityRender(factory.getAsInt("priority")));
-            table.row(name, progress, actions);
         }
-        block.add(table);
-        return finish_pump(block);
+        redirect(TASKS_FACTORY.href());
+        return null;
     }
 
     public String create() {
@@ -85,14 +135,9 @@ public class TaskFactoryManagement extends SessionPage {
         return createUpdateForm("Create Factory", UUID.randomUUID().toString(), "create", TASKS_FACTORY_CREATE);
     }
 
-    public String update() {
-        person().mustHave(Permission.EditTaskFactory);
-        return createUpdateForm("Update Factory", session.getParam("id"), "update", TASKS_FACTORY_EDIT);
-    }
-
-    private String createUpdateForm(String title, String id, String commitLabel, SimpleURI caller) {
-        TaskFactory factory = query().taskfactory_by_id(id, true);
-        Block formInner = Html.block();
+    private String createUpdateForm(final String title, final String id, final String commitLabel, final SimpleURI caller) {
+        final TaskFactory factory = query().taskfactory_by_id(id, true);
+        final Block formInner = Html.block();
         formInner.add(Html.input("id").pull(factory));
 
         formInner.add(Html.wrapped().form_group() //
@@ -135,85 +180,43 @@ public class TaskFactoryManagement extends SessionPage {
         formInner.add(Html.wrapped().form_group() //
                 .wrap(Html.input("submit").id_from_name().value(commitLabel).submit()));
 
-        Block page = Html.block();
+        final Block page = Html.block();
         page.add(tabs(caller));
         page.add(Html.wrapped().h4().wrap(title));
         page.add(Html.form("post", TASKS_FACTORY_COMMIT.href()).inner(formInner));
         return finish_pump(page);
     }
 
-    public String commit() {
-        person().mustHave(Permission.EditTaskFactory);
-        TaskFactory factory = query().taskfactory_by_id(session.getParam("id"), true);
-        if (engine.projection_taskfactory_edit_of(session).apply(factory).success()) {
-            if (factory.get("name") == null) {
-                query().del(factory);
-            } else {
-                query().put(factory);
-            }
-        }
-        redirect(TASKS_FACTORY.href());
-        return null;
-    }
+    public String list() {
+        person().mustHave(Permission.SeeTaskFactoryTab);
+        final Block block = Html.block();
+        block.add(tabs(TASKS_FACTORY));
 
-    public static void link(RoutingTable routing) {
-        routing.navbar(TASKS_FACTORY, "Task Factory", Permission.SeeTaskFactoryTab);
-
-        routing.get(TASKS_FACTORY, (sr) -> new TaskFactoryManagement(sr).list());
-        routing.get(TASKS_FACTORY_CREATE, (sr) -> new TaskFactoryManagement(sr).create());
-        routing.get(TASKS_FACTORY_EDIT, (sr) -> new TaskFactoryManagement(sr).update());
-        routing.post(TASKS_FACTORY_COMMIT, (sr) -> new TaskFactoryManagement(sr).commit());
-    }
-
-    public static void advance(ProductEngine engine, long now) {
-        List<TaskFactory> factories = engine.select_taskfactory().to_list().done();
-        for (TaskFactory factory : factories) {
+        final Table table = new Table("Name", "Progress", "Actions");
+        final List<TaskFactory> factories = query().select_taskfactory().to_list().done();
+        for (final TaskFactory factory : factories) {
             Task currentTask = null;
-            String currentTaskId = factory.get("current_task");
+            final String currentTaskId = factory.get("current_task");
             if (currentTaskId != null) {
-                currentTask = engine.task_by_id(currentTaskId, false);
+                currentTask = query().task_by_id(currentTaskId, false);
             }
-            int daysAfter = factory.getAsInt("frequency");
-            if (factory.ready(now)) {
-                if (Task.isClosedAndReadyForTransition(currentTask, now, daysAfter)) {
-                    Task task = new Task();
-                    task.generateAndSetId();
-                    task.copyFrom(factory, "name", "description", "priority");
-                    task.setState("created");
-                    task.setDue(now, factory.getAsInt("slack"));
-                    factory.set("current_task", task.getId());
-                    engine.put(factory);
-                    engine.put(task);
-                    EventPayload payload = new EventPayload("'" + task.get("name") + "' has been scheduled automatically.");
-                    engine.eventBus.trigger(Event.TaskCreation, payload);
-                }
-            }
+            final Block actions = Html.block().add_if(person().has(Permission.EditTaskFactory), Html.link(TASKS_FACTORY_EDIT.href("id", factory.getId()), "{update}").btn_primary());
+            final HtmlPump progress = getProgress(factory, currentTask, System.currentTimeMillis());
+            final HtmlPump name = Html.block().add(factory.get("name")).add(Tasks.priorityRender(factory.getAsInt("priority")));
+            table.row(name, progress, actions);
         }
+        block.add(table);
+        return finish_pump(block);
     }
 
-    public static class TaskFactoryMonitor implements HourlyJob {
-
-        private final ProductEngine engine;
-
-        public TaskFactoryMonitor(ProductEngine engine) {
-            this.engine = engine;
-        }
-
-        @Override
-        public void run(long now) {
-            BsgCounters.I.task_factory_monitor_run.bump();
-            advance(engine, now);
-        }
+    public HtmlPump tabs(final SimpleURI current) {
+        final Link tabList = Html.link(TASKS_FACTORY.href(), "Factories").nav_link().active_if_href_is(current.href());
+        final Link tabCreate = Html.link(TASKS_FACTORY_CREATE.href(), "Create").nav_link().active_if_href_is(current.href());
+        return Html.nav().pills().with(tabList).with_if(person().has(Permission.EditTaskFactory), tabCreate);
     }
 
-    public static SimpleURI TASKS_FACTORY        = new SimpleURI("/admin/tasks-factory");
-    public static SimpleURI TASKS_FACTORY_CREATE = new SimpleURI("/admin/tasks-factory;create");
-    public static SimpleURI TASKS_FACTORY_EDIT   = new SimpleURI("/admin/tasks-factory;edit");
-    public static SimpleURI TASKS_FACTORY_COMMIT = new SimpleURI("/admin/tasks-factory;commit");
-
-    public static void link(CounterCodeGen c) {
-        c.section("Page: Task Factory");
-
-        c.counter("task_factory_monitor_run", "How many runs of the task factory have there been");
+    public String update() {
+        person().mustHave(Permission.EditTaskFactory);
+        return createUpdateForm("Update Factory", this.session.getParam("id"), "update", TASKS_FACTORY_EDIT);
     }
 }

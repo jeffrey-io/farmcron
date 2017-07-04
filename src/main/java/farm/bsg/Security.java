@@ -7,63 +7,6 @@ import java.util.Set;
 
 public class Security {
 
-    private static final HashMap<String, Set<Permission>> TOKEN_TO_PERMISSION_TABLE = buildTable();
-
-    private static HashMap<String, Set<Permission>> buildTable() {
-        HashMap<String, Set<Permission>> table = new HashMap<String, Set<Permission>>();
-
-        for (Permission p : Permission.values()) {
-            table.put(p.token, Collections.singleton(p));
-        }
-        for (Roles r : Roles.values()) {
-            HashSet<Permission> set = new HashSet<>();
-
-            for (Permission p : Permission.values()) {
-                for (Roles belongs : p.roles) {
-                    if (belongs == r) {
-                        set.add(p);
-                        break;
-                    }
-                }
-            }
-
-            table.put(r.token, set);
-        }
-
-        return table;
-    }
-
-    public static Set<Permission> parse(String tokens) {
-        if (tokens == null) {
-            return Collections.emptySet();
-        }
-        HashSet<Permission> allowed = new HashSet<>();
-        HashSet<Permission> deny = new HashSet<>();
-        String[] parts = tokens.split(",");
-        for (String part : parts) {
-            Set<Permission> target = allowed;
-            part = part.toLowerCase().trim();
-            if (part.startsWith("-")) {
-                part = part.substring(1).trim();
-                target = deny;
-            }
-            Set<Permission> resolved = TOKEN_TO_PERMISSION_TABLE.get(part);
-            if (resolved != null) {
-                for (Permission p : resolved) {
-                    target.add(p);
-                }
-            }
-        }
-
-        for (Permission toRemove : deny) {
-            if (allowed.contains(toRemove)) {
-                allowed.remove(toRemove);
-            }
-        }
-
-        return allowed;
-    }
-
     public enum Permission {
         Public("public", Roles.GOD, Roles.OWNER, Roles.UNPAID_EMPLOYEE, Roles.PAID_EMPLOYEE), // everyone can see or do this
 
@@ -96,6 +39,9 @@ public class Security {
         // For managing peoples
         PeopleManagement("people_manager", Roles.GOD, Roles.OWNER, Roles.MANAGER), //
 
+        // For managing customers
+        CustomerManager("people_manager", Roles.GOD, Roles.OWNER, Roles.MANAGER), //
+
         // For managing the site properties and the public site
         WebMaster("webmaster", Roles.GOD, Roles.OWNER), //
 
@@ -104,7 +50,7 @@ public class Security {
         private final String  token;
         private final Roles[] roles;
 
-        private Permission(String token, Roles... roles) {
+        private Permission(final String token, final Roles... roles) {
             this.token = token;
             this.roles = roles;
         }
@@ -123,8 +69,65 @@ public class Security {
 
         private final String token;
 
-        private Roles(String token) {
+        private Roles(final String token) {
             this.token = token;
         }
+    }
+
+    private static final HashMap<String, Set<Permission>> TOKEN_TO_PERMISSION_TABLE = buildTable();
+
+    private static HashMap<String, Set<Permission>> buildTable() {
+        final HashMap<String, Set<Permission>> table = new HashMap<String, Set<Permission>>();
+
+        for (final Permission p : Permission.values()) {
+            table.put(p.token, Collections.singleton(p));
+        }
+        for (final Roles r : Roles.values()) {
+            final HashSet<Permission> set = new HashSet<>();
+
+            for (final Permission p : Permission.values()) {
+                for (final Roles belongs : p.roles) {
+                    if (belongs == r) {
+                        set.add(p);
+                        break;
+                    }
+                }
+            }
+
+            table.put(r.token, set);
+        }
+
+        return table;
+    }
+
+    public static Set<Permission> parse(final String tokens) {
+        if (tokens == null) {
+            return Collections.emptySet();
+        }
+        final HashSet<Permission> allowed = new HashSet<>();
+        final HashSet<Permission> deny = new HashSet<>();
+        final String[] parts = tokens.split(",");
+        for (String part : parts) {
+            Set<Permission> target = allowed;
+            part = part.toLowerCase().trim();
+            if (part.startsWith("-")) {
+                part = part.substring(1).trim();
+                target = deny;
+            }
+            final Set<Permission> resolved = TOKEN_TO_PERMISSION_TABLE.get(part);
+            if (resolved != null) {
+                for (final Permission p : resolved) {
+                    target.add(p);
+                }
+            }
+        }
+
+        for (final Permission toRemove : deny) {
+            if (allowed.contains(toRemove)) {
+                allowed.remove(toRemove);
+            }
+        }
+
+        return allowed;
     }
 }

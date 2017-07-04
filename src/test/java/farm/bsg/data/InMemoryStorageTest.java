@@ -8,18 +8,8 @@ import org.junit.Test;
 public class InMemoryStorageTest {
 
     @Test
-    public void testGetAndPut() {
-        InMemoryStorage storage = new InMemoryStorage();
-        Assert.assertEquals(null, storage.get("k"));
-        storage.put("k", new Value("\"v\""));
-        Assert.assertEquals("\"v\"", storage.get("k").toString());
-        storage.put("k", null);
-        Assert.assertEquals(null, storage.get("k"));
-    }
-
-    @Test
     public void getPutAndScan() {
-        InMemoryStorage storage = new InMemoryStorage();
+        final InMemoryStorage storage = new InMemoryStorage();
         storage.put("x/1", new Value("\"a\""));
         storage.put("x/2", new Value("\"b\""));
         storage.put("x/z/3", new Value("\"c\""));
@@ -34,5 +24,15 @@ public class InMemoryStorageTest {
         map = storage.scan("x/z/");
         Assert.assertEquals(1, map.size());
         Assert.assertEquals("\"c\"", map.get("x/z/3").toString());
+    }
+
+    @Test
+    public void testGetAndPut() {
+        final InMemoryStorage storage = new InMemoryStorage();
+        Assert.assertEquals(null, storage.get("k"));
+        storage.put("k", new Value("\"v\""));
+        Assert.assertEquals("\"v\"", storage.get("k").toString());
+        storage.put("k", null);
+        Assert.assertEquals(null, storage.get("k"));
     }
 }

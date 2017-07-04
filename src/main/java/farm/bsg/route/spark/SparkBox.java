@@ -16,51 +16,51 @@ import spark.Request;
 import spark.Response;
 
 public class SparkBox implements RequestResponseWrapper {
-    private final Request               request;
-    private final Response              response;
-    private final boolean               secure;
-    private HashMap<String, String[]>   body;
-    private HashMap<String, BinaryFile> files;
+    private final Request                     request;
+    private final Response                    response;
+    private final boolean                     secure;
+    private final HashMap<String, String[]>   body;
+    private final HashMap<String, BinaryFile> files;
 
-    public SparkBox(Request request, Response response, boolean secure) {
+    public SparkBox(final Request request, final Response response, final boolean secure) {
         this.request = request;
         this.response = response;
         this.secure = secure;
         this.body = new HashMap<>();
         this.files = new HashMap<>();
 
-        String contentType = request.headers("Content-Type");
+        final String contentType = request.headers("Content-Type");
         if (contentType != null && contentType.toLowerCase().contains("multipart/form-data")) {
-            HashMap<String, List<String>> assemble = new HashMap<>();
-            DiskFileItemFactory factory = new DiskFileItemFactory();
-            ServletFileUpload fileUpload = new ServletFileUpload(factory);
+            final HashMap<String, List<String>> assemble = new HashMap<>();
+            final DiskFileItemFactory factory = new DiskFileItemFactory();
+            final ServletFileUpload fileUpload = new ServletFileUpload(factory);
             try {
-                for (FileItem item : fileUpload.parseRequest(request.raw())) {
+                for (final FileItem item : fileUpload.parseRequest(request.raw())) {
                     if (item.getFieldName() == null) {
                         continue;
                     }
-                    boolean isFile = item.getName() != null;
+                    final boolean isFile = item.getName() != null;
                     if (isFile) {
-                        files.put(item.getFieldName(), new BinaryFile(item.getName(), item.getContentType(), item.get()));
+                        this.files.put(item.getFieldName(), new BinaryFile(item.getName(), item.getContentType(), item.get()));
                     } else {
                         List<String> members = assemble.get(item.getFieldName());
                         if (members == null) {
                             members = new ArrayList<>();
                             assemble.put(item.getFieldName(), members);
                         }
-                        String str = item.getString();
+                        final String str = item.getString();
                         if (str.length() > 0) {
                             members.add(str);
                         }
                     }
                 }
-                for (Entry<String, List<String>> entry : assemble.entrySet()) {
-                    int sz = entry.getValue().size();
+                for (final Entry<String, List<String>> entry : assemble.entrySet()) {
+                    final int sz = entry.getValue().size();
                     if (sz > 0) {
-                        body.put(entry.getKey(), entry.getValue().toArray(new String[sz]));
+                        this.body.put(entry.getKey(), entry.getValue().toArray(new String[sz]));
                     }
                 }
-            } catch (Exception err) {
+            } catch (final Exception err) {
                 err.printStackTrace();
             }
         }
@@ -68,8 +68,13 @@ public class SparkBox implements RequestResponseWrapper {
     }
 
     @Override
-    public BinaryFile getFile(String key) {
-        BinaryFile file = files.get(key);
+    public String getCookie(final String key) {
+        return this.request.cookie(key);
+    }
+
+    @Override
+    public BinaryFile getFile(final String key) {
+        final BinaryFile file = this.files.get(key);
         if (file == null) {
             return null;
         }
@@ -80,57 +85,52 @@ public class SparkBox implements RequestResponseWrapper {
     }
 
     @Override
-    public String getURI() {
-        return request.uri();
-    }
-
-    @Override
-    public String getParam(String key) {
-        if (body.containsKey(key)) {
-            return body.get(key)[0];
+    public String getParam(final String key) {
+        if (this.body.containsKey(key)) {
+            return this.body.get(key)[0];
         }
         if ("$$referer".equals(key)) {
-            return request.headers("Referer");
+            return this.request.headers("Referer");
         }
-        return request.queryParams(key);
+        return this.request.queryParams(key);
     }
 
     @Override
-    public boolean hasNonNullQueryParam(String key) {
-        if (body.containsKey(key)) {
+    public String[] getParamList(final String key) {
+        if (this.body.containsKey(key)) {
+            return this.body.get(key);
+        }
+        return this.request.queryParamsValues(key);
+    }
+
+    @Override
+    public String getURI() {
+        return this.request.uri();
+    }
+
+    @Override
+    public boolean hasNonNullQueryParam(final String key) {
+        if (this.body.containsKey(key)) {
             return true;
         }
-        return request.queryParams().contains(key);
+        return this.request.queryParams().contains(key);
     }
 
     @Override
-    public void setCookie(String key, String value) {
-        response.cookie(key, value, 60 * 60 * 24 * 7);
-    }
-
-    @Override
-    public void redirect(FinishedHref href) {
-        StringBuilder sb = new StringBuilder();
-        if (secure) {
+    public void redirect(final FinishedHref href) {
+        final StringBuilder sb = new StringBuilder();
+        if (this.secure) {
             sb.append("https://");
         } else {
             sb.append("http://");
         }
-        sb.append(request.headers("Host"));
+        sb.append(this.request.headers("Host"));
         sb.append(href.value);
-        response.redirect(sb.toString());
+        this.response.redirect(sb.toString());
     }
 
     @Override
-    public String getCookie(String key) {
-        return request.cookie(key);
-    }
-
-    @Override
-    public String[] getParamList(String key) {
-        if (body.containsKey(key)) {
-            return body.get(key);
-        }
-        return request.queryParamsValues(key);
+    public void setCookie(final String key, final String value) {
+        this.response.cookie(key, value);
     }
 }

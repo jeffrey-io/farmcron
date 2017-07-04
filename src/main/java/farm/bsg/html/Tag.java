@@ -11,23 +11,13 @@ public class Tag extends HtmlPump {
         this.pill = false;
     }
 
-    public Tag primary() {
-        this.suffix = "primary";
+    public Tag content(final HtmlPump pump) {
+        this.content = pump;
         return this;
     }
 
-    public Tag success() {
-        this.suffix = "success";
-        return this;
-    }
-
-    public Tag info() {
-        this.suffix = "info";
-        return this;
-    }
-
-    public Tag warning() {
-        this.suffix = "warning";
+    public Tag content(final String html) {
+        this.content = new Text(html);
         return this;
     }
 
@@ -36,30 +26,40 @@ public class Tag extends HtmlPump {
         return this;
     }
 
+    public Tag info() {
+        this.suffix = "info";
+        return this;
+    }
+
     public Tag pill() {
         this.pill = true;
         return this;
     }
 
-    public Tag content(HtmlPump pump) {
-        this.content = pump;
-        return this;
-    }
-
-    public Tag content(String html) {
-        this.content = new Text(html);
+    public Tag primary() {
+        this.suffix = "primary";
         return this;
     }
 
     @Override
-    public void pump(StringBuilder html) {
+    public void pump(final StringBuilder html) {
         html.append("<span class=\"tag ");
-        if (pill) {
+        if (this.pill) {
             html.append("tag-pill ");
         }
-        html.append("tag-").append(suffix).append("\">");
-        content.pump(html);
+        html.append("tag-").append(this.suffix).append("\">");
+        this.content.pump(html);
         html.append("</span>");
+    }
+
+    public Tag success() {
+        this.suffix = "success";
+        return this;
+    }
+
+    public Tag warning() {
+        this.suffix = "warning";
+        return this;
     }
 
 }

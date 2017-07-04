@@ -5,19 +5,18 @@ import farm.bsg.data.contracts.ProjectionProvider;
 
 public class TypeString extends Type {
 
-    private String  defaultValue;
-
-    private boolean emptyIsNull = false;
-    private boolean alwaysTrim  = false;
-
-    public TypeString(String name) {
-        super(name);
-        this.defaultValue = null;
+    public static String project(final ProjectionProvider provider, final String key) {
+        return provider.first(key);
     }
 
-    public TypeString emptyStringSameAsNull() {
-        this.emptyIsNull = true;
-        return this;
+    private String  defaultValue;
+    private boolean emptyIsNull = false;
+
+    private boolean alwaysTrim  = false;
+
+    public TypeString(final String name) {
+        super(name);
+        this.defaultValue = null;
     }
 
     public TypeString alwaysTrim() {
@@ -26,41 +25,42 @@ public class TypeString extends Type {
     }
 
     @Override
-    public String type() {
-        return "string";
+    public String defaultValue() {
+        return this.defaultValue;
+    }
+
+    public TypeString emptyStringSameAsNull() {
+        this.emptyIsNull = true;
+        return this;
     }
 
     @Override
-    public String normalize(String valueRaw) {
+    public String normalize(final String valueRaw) {
         String value = valueRaw;
         if (value == null) {
             return value;
         }
-        if (alwaysTrim) {
+        if (this.alwaysTrim) {
             value = value.trim();
         }
-        if (emptyIsNull && "".equals(value)) {
+        if (this.emptyIsNull && "".equals(value)) {
             return null;
         }
         return value;
     }
 
     @Override
-    public boolean validate(String value) {
-        return true;
-    }
-
-    public TypeString withDefault(String newDefaultValue) {
-        this.defaultValue = newDefaultValue;
-        return this;
+    public String type() {
+        return "string";
     }
 
     @Override
-    public String defaultValue() {
-        return defaultValue;
+    public boolean validate(final String value) {
+        return true;
     }
 
-    public static String project(ProjectionProvider provider, String key) {
-        return provider.first(key);
+    public TypeString withDefault(final String newDefaultValue) {
+        this.defaultValue = newDefaultValue;
+        return this;
     }
 }

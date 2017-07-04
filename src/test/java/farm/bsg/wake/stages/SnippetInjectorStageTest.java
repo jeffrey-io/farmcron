@@ -13,18 +13,18 @@ public class SnippetInjectorStageTest extends TestingBase {
 
     @Test
     public void testSnippetMerged() {
-        HashMapSource snippet = createVerySimpleSource();
+        final HashMapSource snippet = createVerySimpleSource();
         snippet.put("type", "snippet");
         snippet.put("name", "meme");
         snippet.put("body", "cowboy");
 
-        HashMapSource raw = createVerySimpleSource();
+        final HashMapSource raw = createVerySimpleSource();
         raw.put("me", "me");
 
-        Stage stages = stageOf(snippet, raw);
-        SnippetInjectorStage snippets = new SnippetInjectorStage(stages);
+        final Stage stages = stageOf(snippet, raw);
+        final SnippetInjectorStage snippets = new SnippetInjectorStage(stages);
 
-        Source merged = getExactlyOne(snippets);
+        final Source merged = getExactlyOne(snippets);
         assertEvaluate("me", merged, "me");
         assertEvaluate("meme", merged, "cowboy");
     }

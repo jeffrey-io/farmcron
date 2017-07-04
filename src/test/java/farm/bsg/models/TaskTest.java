@@ -5,11 +5,23 @@ import org.junit.Test;
 
 public class TaskTest {
     @Test
-    public void stateMachineAndTimeline() {
-        Task task = new Task();
+    public void dueDate() {
+        final Task task = new Task();
         task.setState("created");
         task.set("created", "2017-06-22T02:40Z");
-        long now = 1498099238370L;
+        final long now = 1498099238370L;
+        task.setDue(now, 4);
+        Assert.assertEquals("2017-06-26T07:00Z", task.get("due_date"));
+        task.setDue(now, 1);
+        Assert.assertEquals("2017-06-23T07:00Z", task.get("due_date"));
+    }
+
+    @Test
+    public void stateMachineAndTimeline() {
+        final Task task = new Task();
+        task.setState("created");
+        task.set("created", "2017-06-22T02:40Z");
+        final long now = 1498099238370L;
 
         Assert.assertTrue(task.canStart());
         Assert.assertTrue(task.canClose());
@@ -42,17 +54,5 @@ public class TaskTest {
         Assert.assertFalse(task.isClosedAndReadyForTransition(now + 1000 * 60 * 60 * 5, 2));
 
         Assert.assertTrue(task.isClosedAndReadyForTransition(now + 1000 * 60 * 60 * 30, 2));
-    }
-
-    @Test
-    public void dueDate() {
-        Task task = new Task();
-        task.setState("created");
-        task.set("created", "2017-06-22T02:40Z");
-        long now = 1498099238370L;
-        task.setDue(now, 4);
-        Assert.assertEquals("2017-06-26T07:00Z", task.get("due_date"));
-        task.setDue(now, 1);
-        Assert.assertEquals("2017-06-23T07:00Z", task.get("due_date"));
     }
 }

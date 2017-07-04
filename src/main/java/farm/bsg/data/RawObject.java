@@ -22,44 +22,32 @@ import farm.bsg.data.contracts.ReadOnlyType;
 import farm.bsg.route.RequestResponseWrapper;
 
 public abstract class RawObject {
+    private static DateFormat iso() {
+        final TimeZone tz = TimeZone.getTimeZone("UTC");
+        final DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm'Z'"); // Quoted "Z" to indicate UTC, no timezone offset
+        df.setTimeZone(tz);
+        return df;
+    }
+
+    public static String isoTimestamp() {
+        return iso().format(new Date());
+    }
+
+    public static String isoTimestamp(final long now) {
+        return iso().format(new Date(now));
+    }
+
     private final HashMap<String, String> data;
+
     private final ObjectSchema            schema;
 
-    public RawObject(ObjectSchema schema) {
+    public RawObject(final ObjectSchema schema) {
         this.schema = schema;
         this.data = new HashMap<>();
     }
 
-    public ObjectSchema getSchema() {
-        return schema;
-    }
-
-    public String getPrefix() {
-        return schema.getPrefix();
-    }
-
-    public void generateAndSetId() {
-        set("id", UUID.randomUUID().toString());
-    }
-
-    public Map<String, String> asMap() {
-        return Collections.unmodifiableMap(data);
-    }
-
-    public synchronized String getId() {
-        return data.get("id");
-    }
-
-    public String getStorageKey() {
-        return getPrefix() + getId();
-    }
-
-    public List<Type> getTypes() {
-        return schema.getTypes();
-    }
-
-    public boolean areAnyNull(String... keys) {
-        for (String key : keys) {
+    public boolean areAnyNull(final String... keys) {
+        for (final String key : keys) {
             if (isNullOrEmpty(key)) {
                 return true;
             }
@@ -67,40 +55,24 @@ public abstract class RawObject {
         return false;
     }
 
-    protected abstract void invalidateCache();
-
-    public synchronized <T> boolean set(String name, T value) {
-        if (value == null) {
-            this.data.remove(name);
-            return true;
-        }
-        StringBuilder sb = new StringBuilder();
-        sb.append(value);
-        String strValue = sb.toString();
-        ReadOnlyType type = schema.get(name);
-        if (type == null) {
-            this.data.put(name, strValue);
-            invalidateCache();
-            return true;
-        }
-        strValue = type.normalize(strValue);
-        if (strValue == null) {
-            this.data.remove(name);
-            invalidateCache();
-            return true;
-        }
-        if (type.validate(strValue)) {
-            this.data.put(name, strValue);
-            invalidateCache();
-            return true;
-        }
-        return false;
+    public Map<String, String> asMap() {
+        return Collections.unmodifiableMap(this.data);
     }
 
-    public synchronized String get(String name) {
-        String value = this.data.get(name);
+    public void copyFrom(final RawObject other, final String... keys) {
+        for (final String key : keys) {
+            set(key, other.get(key));
+        }
+    }
+
+    public void generateAndSetId() {
+        set("id", UUID.randomUUID().toString());
+    }
+
+    public synchronized String get(final String name) {
+        final String value = this.data.get(name);
         if (value == null) {
-            ReadOnlyType ty = schema.get(name);
+            final ReadOnlyType ty = this.schema.get(name);
             if (ty != null) {
                 return ty.defaultValue();
             }
@@ -108,50 +80,7 @@ public abstract class RawObject {
         return value;
     }
 
-    public boolean isNullOrEmpty(String name) {
-        String value = get(name);
-        if (value == null) {
-            return true;
-        }
-        return value.equals("");
-    }
-
-    public Set<String> getTokenList(String name) {
-        String value = get(name);
-        if (value == null) {
-            return Collections.emptySet();
-        }
-        value = value.trim().toLowerCase();
-        if ("".equals(value)) {
-            return Collections.emptySet();
-        }
-        HashSet<String> tokens = new HashSet<>();
-        for (String token : value.split(",")) {
-            token = token.trim();
-            if (token.length() > 0) {
-                tokens.add(token);
-            }
-        }
-        return tokens;
-    }
-
-    public double getAsDouble(String name) {
-        String value = get(name);
-        if (value == null) {
-            return 0.0;
-        }
-        if ("".equals(value)) {
-            return 0.0;
-        }
-
-        try {
-            return Double.parseDouble(value);
-        } catch (NumberFormatException nfe) {
-            return 0.0;
-        }
-    }
-
-    public boolean getAsBoolean(String name) {
+    public boolean getAsBoolean(final String name) {
         String value = get(name);
         if (value == null) {
             return false;
@@ -172,7 +101,23 @@ public abstract class RawObject {
         return false;
     }
 
-    public int getAsInt(String name) {
+    public double getAsDouble(final String name) {
+        final String value = get(name);
+        if (value == null) {
+            return 0.0;
+        }
+        if ("".equals(value)) {
+            return 0.0;
+        }
+
+        try {
+            return Double.parseDouble(value);
+        } catch (final NumberFormatException nfe) {
+            return 0.0;
+        }
+    }
+
+    public int getAsInt(final String name) {
         String value = this.data.get(name);
         if (value == null) {
             return 0;
@@ -184,38 +129,23 @@ public abstract class RawObject {
         return Integer.parseInt(value);
     }
 
-    public void injectValue(Value value) {
-        if (value != null) {
-            value.injectInto(this);
-        }
+    public synchronized String getId() {
+        return this.data.get("id");
     }
 
-    public String toJson() {
-        return Jackson.toJsonString(data);
+    public String getPrefix() {
+        return this.schema.getPrefix();
     }
 
-    private static DateFormat iso() {
-        TimeZone tz = TimeZone.getTimeZone("UTC");
-        DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm'Z'"); // Quoted "Z" to indicate UTC, no timezone offset
-        df.setTimeZone(tz);
-        return df;
+    public ObjectSchema getSchema() {
+        return this.schema;
     }
 
-    public void copyFrom(RawObject other, String... keys) {
-        for (String key : keys) {
-            set(key, other.get(key));
-        }
+    public String getStorageKey() {
+        return getPrefix() + getId();
     }
 
-    public static String isoTimestamp() {
-        return iso().format(new Date());
-    }
-
-    public static String isoTimestamp(long now) {
-        return iso().format(new Date(now));
-    }
-
-    public DateTime getTimestamp(String field) {
+    public DateTime getTimestamp(final String field) {
         String value = get(field);
         if (value == null) {
             return null;
@@ -225,46 +155,117 @@ public abstract class RawObject {
             return null;
         }
         try {
-            Date date = iso().parse(value);
+            final Date date = iso().parse(value);
             return new DateTime(date.getTime());
-        } catch (ParseException e) {
+        } catch (final ParseException e) {
             return null;
         }
     }
 
-    public void importValuesFromReqeust(RequestResponseWrapper wrapper, String prefix) {
-        for (Type ty : getTypes()) {
+    public Set<String> getTokenList(final String name) {
+        String value = get(name);
+        if (value == null) {
+            return Collections.emptySet();
+        }
+        value = value.trim().toLowerCase();
+        if ("".equals(value)) {
+            return Collections.emptySet();
+        }
+        final HashSet<String> tokens = new HashSet<>();
+        for (String token : value.split(",")) {
+            token = token.trim();
+            if (token.length() > 0) {
+                tokens.add(token);
+            }
+        }
+        return tokens;
+    }
+
+    public List<Type> getTypes() {
+        return this.schema.getTypes();
+    }
+
+    public void importValuesFromMap(final Map<String, String> map) {
+        for (final Entry<String, String> entry : map.entrySet()) {
+            set(entry.getKey(), entry.getValue());
+        }
+    }
+
+    public void importValuesFromReqeust(final RequestResponseWrapper wrapper, final String prefix) {
+        for (final Type ty : getTypes()) {
             // if a reset value was set, then let's use that first. This allows us to handle the case when a checkbox is unset.
-            String reset = wrapper.getParam(prefix + "__reset_" + ty.name());
+            final String reset = wrapper.getParam(prefix + "__reset_" + ty.name());
             if (reset != null) {
                 set(ty.name(), reset);
             }
 
-            String param = wrapper.getParam(prefix + ty.name());
+            final String param = wrapper.getParam(prefix + ty.name());
             if (param != null) {
                 set(ty.name(), param);
             }
         }
     }
 
-    public void importValuesFromMap(Map<String, String> map) {
-        for (Entry<String, String> entry : map.entrySet()) {
-            set(entry.getKey(), entry.getValue());
+    public void injectValue(final Value value) {
+        if (value != null) {
+            value.injectInto(this);
         }
     }
 
-    public PutResult validateAndApplyProjection(Map<String, String> projection) {
-        PutResult result = new PutResult();
+    protected abstract void invalidateCache();
+
+    public boolean isNullOrEmpty(final String name) {
+        final String value = get(name);
+        if (value == null) {
+            return true;
+        }
+        return value.equals("");
+    }
+
+    public synchronized <T> boolean set(final String name, final T value) {
+        if (value == null) {
+            this.data.remove(name);
+            return true;
+        }
+        final StringBuilder sb = new StringBuilder();
+        sb.append(value);
+        String strValue = sb.toString();
+        final ReadOnlyType type = this.schema.get(name);
+        if (type == null) {
+            this.data.put(name, strValue);
+            invalidateCache();
+            return true;
+        }
+        strValue = type.normalize(strValue);
+        if (strValue == null) {
+            this.data.remove(name);
+            invalidateCache();
+            return true;
+        }
+        if (type.validate(strValue)) {
+            this.data.put(name, strValue);
+            invalidateCache();
+            return true;
+        }
+        return false;
+    }
+
+    public String toJson() {
+        return Jackson.toJsonString(this.data);
+    }
+
+    public PutResult validateAndApplyProjection(final Map<String, String> projection) {
+        final PutResult result = new PutResult();
 
         // validate the project
-        for (Entry<String, String> entry : projection.entrySet()) {
-            ReadOnlyType ty = schema.get(entry.getKey());
+        for (final Entry<String, String> entry : projection.entrySet()) {
+            final ReadOnlyType ty = this.schema.get(entry.getKey());
             if (ty == null) {
                 result.addFieldFailure(entry.getKey(), "is_not_valid_name");
                 result.setTooMuchData();
                 continue;
             }
-            String value = entry.getValue();
+            final String value = entry.getValue();
 
             // the value is null which means not provided
             if (value == null) {
@@ -283,15 +284,15 @@ public abstract class RawObject {
         }
 
         // apply the data
-        for (Entry<String, String> entry : projection.entrySet()) {
-            ReadOnlyType ty = schema.get(entry.getKey());
+        for (final Entry<String, String> entry : projection.entrySet()) {
+            final ReadOnlyType ty = this.schema.get(entry.getKey());
             String value = entry.getValue();
             if (value != null) {
                 value = ty.normalize(value);
                 if (value == null) {
-                    data.remove(ty.name());
+                    this.data.remove(ty.name());
                 } else {
-                    data.put(ty.name(), value);
+                    this.data.put(ty.name(), value);
                 }
             }
         }

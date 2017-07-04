@@ -2,7 +2,7 @@ package farm.bsg.cron;
 
 /**
  * A job that runs hourly
- * 
+ *
  * @author jeffrey
  */
 @FunctionalInterface

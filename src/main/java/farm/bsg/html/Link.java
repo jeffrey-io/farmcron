@@ -3,44 +3,43 @@ package farm.bsg.html;
 import farm.bsg.route.FinishedHref;
 
 public class Link extends HtmlPump {
-    private String   href;
-    private HtmlPump label;
-    private String   clazz;
-    private boolean  active;
+    private final String   href;
+    private final HtmlPump label;
+    private String         clazz;
+    private boolean        active;
 
-    public Link(String href, HtmlPump label) {
+    public Link(final String href, final HtmlPump label) {
         this.href = href;
         this.label = label;
         this.active = false;
     }
 
-    public Link clazz(String clazz) {
-        this.clazz = clazz;
-        return this;
-    }
-
-    public Link active(boolean active) {
+    public Link active(final boolean active) {
         this.active = active;
         return this;
     }
 
+    public Link active_if_href_is(final FinishedHref currenfHref) {
+        this.active = this.href.equals(currenfHref.value);
+        return this;
+    }
+
     @Deprecated
-    public Link active_if_href_is(String currenfHref) {
-        this.active = href.equals(currenfHref);
+    public Link active_if_href_is(final String currenfHref) {
+        this.active = this.href.equals(currenfHref);
         return this;
     }
 
-    public Link active_if_href_is(FinishedHref currenfHref) {
-        this.active = href.equals(currenfHref.value);
-        return this;
+    public Link btn_danger() {
+        return clazz("btn btn-danger");
     }
 
-    public Link card_link() {
-        return clazz("card-link");
+    public Link btn_info() {
+        return clazz("btn btn-info");
     }
 
-    public Link nav_link() {
-        return clazz("nav-link");
+    public Link btn_link() {
+        return clazz("btn btn-link");
     }
 
     public Link btn_primary() {
@@ -55,37 +54,38 @@ public class Link extends HtmlPump {
         return clazz("btn btn-success");
     }
 
-    public Link btn_info() {
-        return clazz("btn btn-info");
-    }
-
     public Link btn_warning() {
         return clazz("btn btn-warning");
     }
 
-    public Link btn_danger() {
-        return clazz("btn btn-danger");
+    public Link card_link() {
+        return clazz("card-link");
     }
 
-    public Link btn_link() {
-        return clazz("btn btn-link");
+    public Link clazz(final String clazz) {
+        this.clazz = clazz;
+        return this;
+    }
+
+    public Link nav_link() {
+        return clazz("nav-link");
     }
 
     @Override
-    public void pump(StringBuilder html) {
+    public void pump(final StringBuilder html) {
         html.append("<a");
-        if (clazz != null) {
-            html.append(" class=\"").append(clazz);
-            if (active) {
+        if (this.clazz != null) {
+            html.append(" class=\"").append(this.clazz);
+            if (this.active) {
                 html.append(" active");
             }
             html.append("\"");
         }
-        if (href != null) {
-            html.append(" href=\"").append(href).append("\"");
+        if (this.href != null) {
+            html.append(" href=\"").append(this.href).append("\"");
         }
         html.append(">");
-        label.pump(html);
+        this.label.pump(html);
         html.append("</a>");
     }
 

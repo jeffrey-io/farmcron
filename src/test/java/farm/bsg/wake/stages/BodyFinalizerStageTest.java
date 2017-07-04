@@ -10,13 +10,13 @@ public class BodyFinalizerStageTest extends TestingBase {
 
     @Test
     public void testMutator() {
-        HashMapSource snippet = createVerySimpleSource();
+        final HashMapSource snippet = createVerySimpleSource();
         snippet.put("body", "cowboy");
         snippet.put("x", "xyz");
-        BodyFinalizerStage fstage = new BodyFinalizerStage(stageOf(snippet), (body) -> {
+        final BodyFinalizerStage fstage = new BodyFinalizerStage(stageOf(snippet), (body) -> {
             return "|" + body + "|";
         });
-        Source done = getExactlyOne(fstage);
+        final Source done = getExactlyOne(fstage);
         assertEvaluate("body", done, "|cowboy|");
         assertEvaluate("x", done, "xyz");
     }

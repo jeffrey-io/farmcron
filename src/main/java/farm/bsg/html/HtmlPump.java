@@ -5,7 +5,7 @@ public abstract class HtmlPump {
     public abstract void pump(StringBuilder html);
 
     public String toHtml() {
-        StringBuilder sb = new StringBuilder();
+        final StringBuilder sb = new StringBuilder();
         pump(sb);
         return sb.toString();
     }

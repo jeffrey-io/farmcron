@@ -13,16 +13,16 @@ public class SnippetMapSourceTest extends TestingBase {
 
     @Test
     public void testInjectionAndPrecedender() {
-        HashMapSource real = createVerySimpleSource();
+        final HashMapSource real = createVerySimpleSource();
         real.put("keep", "me");
         real.put("hide", "real");
-        HashMap<String, String> over = new HashMap<>();
-        HashMap<String, String> under = new HashMap<>();
+        final HashMap<String, String> over = new HashMap<>();
+        final HashMap<String, String> under = new HashMap<>();
         over.put("hide", "over");
         under.put("hide", "under");
         over.put("over", "1");
         under.put("under", "2");
-        SnippetMapSource withSnippets = new SnippetMapSource(real, over, under);
+        final SnippetMapSource withSnippets = new SnippetMapSource(real, over, under);
         assertEvaluate("keep", withSnippets, "me");
         assertEvaluate("hide", withSnippets, "over");
         assertEvaluate("over", withSnippets, "1");

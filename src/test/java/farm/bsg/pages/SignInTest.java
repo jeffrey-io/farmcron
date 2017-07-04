@@ -9,6 +9,6 @@ public class SignInTest extends PageTesting {
 
     @Test
     public void Coverage() throws Exception {
-        PageBootstrap bootstrap = go();
+        final PageBootstrap bootstrap = go();
     }
 }

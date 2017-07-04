@@ -13,8 +13,8 @@ public class BangedSourceTest extends TestingBase {
 
     @Test
     public void testBangParsing() throws Exception {
-        Reader reader = readerize("#!key=value\nbody");
-        BangedSource source = new BangedSource("filename.txt", reader);
+        final Reader reader = readerize("#!key=value\nbody");
+        final BangedSource source = new BangedSource("filename.txt", reader);
         assertEvaluate("key", source, "value");
         assertEvaluate("body", source, "body\n");
         assertEvaluate("name", source, "filename");
@@ -24,8 +24,8 @@ public class BangedSourceTest extends TestingBase {
 
     @Test
     public void testOverrideDefaultNameAndUrlPossible() throws Exception {
-        Reader reader = readerize("#!key=value\nbody\n#!name=fooness\n#!url=some-faux-folder");
-        BangedSource source = new BangedSource("filename.txt", reader);
+        final Reader reader = readerize("#!key=value\nbody\n#!name=fooness\n#!url=some-faux-folder");
+        final BangedSource source = new BangedSource("filename.txt", reader);
         assertEvaluate("key", source, "value");
         assertEvaluate("body", source, "body\n");
         assertEvaluate("name", source, "fooness");

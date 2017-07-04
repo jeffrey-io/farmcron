@@ -7,7 +7,7 @@ import java.util.Map.Entry;
 import farm.bsg.data.contracts.KeyValueStorage;
 
 /**
- * 
+ *
  * @author jeffrey
  */
 public class InMemoryStorage implements KeyValueStorage {
@@ -18,28 +18,28 @@ public class InMemoryStorage implements KeyValueStorage {
     }
 
     @Override
-    public synchronized Value get(String key) {
-        return storage.get(key);
+    public synchronized Value get(final String key) {
+        return this.storage.get(key);
     }
 
     @Override
-    public synchronized Map<String, Value> scan(String prefix) {
-        HashMap<String, Value> results = new HashMap<>();
-        for (Entry<String, Value> entry : storage.entrySet()) {
-            if (entry.getKey().startsWith(prefix)) {
-                results.put(entry.getKey(), entry.getValue());
-            }
-        }
-        return results;
-    }
-
-    @Override
-    public synchronized boolean put(String key, Value value) {
+    public synchronized boolean put(final String key, final Value value) {
         if (value == null) {
             this.storage.remove(key);
         } else {
             this.storage.put(key, value);
         }
         return true;
+    }
+
+    @Override
+    public synchronized Map<String, Value> scan(final String prefix) {
+        final HashMap<String, Value> results = new HashMap<>();
+        for (final Entry<String, Value> entry : this.storage.entrySet()) {
+            if (entry.getKey().startsWith(prefix)) {
+                results.put(entry.getKey(), entry.getValue());
+            }
+        }
+        return results;
     }
 }

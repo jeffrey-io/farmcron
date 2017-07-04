@@ -5,7 +5,7 @@ import java.util.function.BiConsumer;
 
 /**
  * Touch the body of a source, and mutate it.
- * 
+ *
  * @author jeffrey
  */
 public class BodyFinalizerSource extends Source {
@@ -25,20 +25,20 @@ public class BodyFinalizerSource extends Source {
 
     @Override
     public String get(final String key) {
-        String result = source.get(key);
+        String result = this.source.get(key);
         if (key.equals("body")) {
-            result = mutator.mutate(result);
+            result = this.mutator.mutate(result);
         }
         return result;
     }
 
     @Override
     public void populateDomain(final Set<String> domain) {
-        source.populateDomain(domain);
+        this.source.populateDomain(domain);
     }
 
     @Override
     public void walkComplex(final BiConsumer<String, Object> injectComplex) {
-        source.walkComplex(injectComplex);
+        this.source.walkComplex(injectComplex);
     }
 }

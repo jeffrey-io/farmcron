@@ -15,42 +15,47 @@ public class MockAsyncTaskTarget implements AsyncTaskTarget {
 
     public MockAsyncTaskTarget() {
         this.begin_called = 0;
-        complete_called = 0;
-        lastSuccess = false;
+        this.complete_called = 0;
+        this.lastSuccess = false;
+    }
+
+    public void assertLastSuccess(final boolean expected) {
+        Assert.assertEquals(expected, this.lastSuccess);
+    }
+
+    public synchronized void assertStatus(final int begin, final int complete) {
+        Assert.assertEquals(begin, this.begin_called);
+        Assert.assertEquals(complete, this.complete_called);
     }
 
     @Override
     public synchronized void begin() {
-        begin_called++;
+        this.begin_called++;
     }
 
     @Override
-    public synchronized void complete(boolean success) {
-        complete_called++;
-        lastSuccess = success;
-        if (completeLatch != null) {
-            completeLatch.countDown();
-            completeLatch = null;
+    public synchronized void complete(final boolean success) {
+        this.complete_called++;
+        this.lastSuccess = success;
+        if (this.completeLatch != null) {
+            this.completeLatch.countDown();
+            this.completeLatch = null;
         }
     }
 
-    public void assertLastSuccess(boolean expected) {
-        Assert.assertEquals(expected, lastSuccess);
+    private synchronized int getBegin() {
+        return this.begin_called;
     }
 
     public synchronized void installCompleteLatch() {
-        if (completeLatch == null) {
-            completeLatch = new CountDownLatch(1);
+        if (this.completeLatch == null) {
+            this.completeLatch = new CountDownLatch(1);
             return;
         }
         Assert.fail();
     }
 
-    private synchronized int getBegin() {
-        return begin_called;
-    }
-
-    public void pollBegin(int expected) {
+    public void pollBegin(final int expected) {
         try {
             int timeout = 1000;
             while (expected != getBegin() && timeout > 0) {
@@ -58,25 +63,20 @@ public class MockAsyncTaskTarget implements AsyncTaskTarget {
                 Thread.sleep(5);
             }
             Assert.assertEquals(expected, getBegin());
-        } catch (InterruptedException ie) {
+        } catch (final InterruptedException ie) {
             Assert.fail();
         }
     }
 
-    public synchronized void assertStatus(int begin, int complete) {
-        Assert.assertEquals(begin, begin_called);
-        Assert.assertEquals(complete, complete_called);
-    }
-
     private synchronized void removeCompleteLatch() {
-        completeLatch = null;
+        this.completeLatch = null;
     }
 
     public void waitForCompleteLatch() {
         try {
-            Assert.assertTrue(completeLatch.await(60000, TimeUnit.MILLISECONDS));
+            Assert.assertTrue(this.completeLatch.await(60000, TimeUnit.MILLISECONDS));
             removeCompleteLatch();
-        } catch (InterruptedException ie) {
+        } catch (final InterruptedException ie) {
             Assert.fail();
         }
     }

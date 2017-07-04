@@ -5,23 +5,23 @@ import java.util.Comparator;
 public class LexographicalOrder<T extends RawObject> implements Comparator<T> {
 
     private final String[] keys;
-    private boolean        asc;
+    private final boolean  asc;
     private boolean        caseSensitive = true;
 
-    public LexographicalOrder(String[] keys, boolean asc, boolean caseSensitive) {
+    public LexographicalOrder(final String[] keys, final boolean asc, final boolean caseSensitive) {
         this.keys = keys;
         this.asc = asc;
         this.caseSensitive = caseSensitive;
     }
 
     @Override
-    public int compare(T a, T b) {
-        for (String key : keys) {
-            int result = Value.stringCompareWithNullChecks(a.get(key), b.get(key), caseSensitive);
+    public int compare(final T a, final T b) {
+        for (final String key : this.keys) {
+            final int result = Value.stringCompareWithNullChecks(a.get(key), b.get(key), this.caseSensitive);
             if (result == 0) {
                 continue;
             }
-            if (asc) {
+            if (this.asc) {
                 return result;
             } else {
                 return -result;

@@ -8,8 +8,14 @@ import farm.bsg.ops.CounterCodeGen;
 public class Cart extends RawObject {
 
     public static ObjectSchema SCHEMA = ObjectSchema.persisted("cart/", //
-            Field.STRING("user").alwaysTrim().emptyStringSameAsNull().makeIndex(false) //
+            Field.STRING("customer").alwaysTrim().emptyStringSameAsNull().makeIndex(false), //
+            Field.STRING("task").makeIndex(false), //
+            Field.STRING("state") // "" --> "wait" (waiting for task) --> "fulfilled" (fulfilled)
     );
+
+    public static void link(final CounterCodeGen c) {
+        c.section("Data: Cart");
+    }
 
     public Cart() {
         super(SCHEMA);
@@ -19,7 +25,4 @@ public class Cart extends RawObject {
     protected void invalidateCache() {
     }
 
-    public static void link(CounterCodeGen c) {
-        c.section("Data: Cart");
-    }
 }

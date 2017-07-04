@@ -29,18 +29,18 @@ public class MarkdownFilteredSource extends Source {
         this.markdown = new Markdown4jProcessor();
         this.source = source;
         this.markdownKeys = new HashSet<>();
-        markdownKeys.add("body");
+        this.markdownKeys.add("body");
         for (final String key : keys) {
-            markdownKeys.add(key);
+            this.markdownKeys.add(key);
         }
     }
 
     @Override
     public String get(final String key) {
-        if (markdownKeys.contains(key)) {
+        if (this.markdownKeys.contains(key)) {
             try {
-                final String prior = source.get(key);
-                String next = markdown.process(prior);
+                final String prior = this.source.get(key);
+                String next = this.markdown.process(prior);
                 // TODO: dig deep into markdown and fix this stupid thing, or rip out markdown4j since it is really old
                 next = next.replaceAll(Pattern.quote("http: //"), "http://");
                 next = next.replaceAll(Pattern.quote("https: //"), "https://");
@@ -49,16 +49,16 @@ public class MarkdownFilteredSource extends Source {
                 throw new RuntimeException(impossible);
             }
         }
-        return source.get(key);
+        return this.source.get(key);
     }
 
     @Override
     public void populateDomain(final Set<String> domain) {
-        source.populateDomain(domain);
+        this.source.populateDomain(domain);
     }
 
     @Override
     public void walkComplex(final BiConsumer<String, Object> injectComplex) {
-        source.walkComplex(injectComplex);
+        this.source.walkComplex(injectComplex);
     }
 }

@@ -4,65 +4,65 @@ import farm.bsg.data.contracts.ProjectionProvider;
 
 /**
  * This makes it easy to bridge into a given request response and have a single object of concern
- * 
+ *
  * @author jeffrey
  */
 public class DelegateRequest implements RequestResponseWrapper, ProjectionProvider {
 
     protected final RequestResponseWrapper delegate;
 
-    public DelegateRequest(RequestResponseWrapper delegate) {
+    public DelegateRequest(final RequestResponseWrapper delegate) {
         this.delegate = delegate;
     }
 
     @Override
-    public BinaryFile getFile(String key) {
-        return delegate.getFile(key);
+    public String first(final String key) {
+        return this.delegate.getParam(key);
+    }
+
+    @Override
+    public String getCookie(final String key) {
+        return this.delegate.getCookie(key);
+    }
+
+    @Override
+    public BinaryFile getFile(final String key) {
+        return this.delegate.getFile(key);
+    }
+
+    @Override
+    public String getParam(final String key) {
+        return this.delegate.getParam(key);
+    }
+
+    @Override
+    public String[] getParamList(final String key) {
+        return this.delegate.getParamList(key);
     }
 
     @Override
     public String getURI() {
-        return delegate.getURI();
+        return this.delegate.getURI();
     }
 
     @Override
-    public String getParam(String key) {
-        return delegate.getParam(key);
+    public boolean hasNonNullQueryParam(final String key) {
+        return this.delegate.hasNonNullQueryParam(key);
     }
 
     @Override
-    public boolean hasNonNullQueryParam(String key) {
-        return delegate.hasNonNullQueryParam(key);
+    public String[] multiple(final String key) {
+        return this.delegate.getParamList(key);
     }
 
     @Override
-    public void redirect(FinishedHref href) {
-        delegate.redirect(href);
+    public void redirect(final FinishedHref href) {
+        this.delegate.redirect(href);
     }
 
     @Override
-    public String getCookie(String key) {
-        return delegate.getCookie(key);
-    }
-
-    @Override
-    public String[] getParamList(String key) {
-        return delegate.getParamList(key);
-    }
-
-    @Override
-    public void setCookie(String key, String value) {
-        delegate.setCookie(key, value);
-    }
-
-    @Override
-    public String[] multiple(String key) {
-        return delegate.getParamList(key);
-    }
-
-    @Override
-    public String first(String key) {
-        return delegate.getParam(key);
+    public void setCookie(final String key, final String value) {
+        this.delegate.setCookie(key, value);
     }
 
 }

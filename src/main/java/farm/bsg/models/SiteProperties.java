@@ -26,18 +26,30 @@ public class SiteProperties extends RawObject {
 
             Field.NUMBER("product_imaging_thumbprint_size").withDefault(120), //
             Field.NUMBER("product_imaging_normal_size").withDefault(400), //
-            Field.STRING("description"));
+            Field.STRING("description"),
+            
+            Field.STRING("business_hours"), // need a good way to edits
+            Field.STRING("business_phone"), // 
+            Field.STRING("business_timezone"), // 
+            
+            
+            Field.STRING("fulfilment_strategy"),
+            Field.NUMBER("delivery_radius"), // need a good way to edits
+            Field.STRING("pickup_rule"), // (i) every tuesday at 2 pm for next 5 tuesdays; (ii) every business day at 4pm
 
-    public SiteProperties() {
-        super(SCHEMA);
-    }
+            Field.STRING("business_address1"), //
+            Field.STRING("business_address2"), //
+            Field.STRING("business_city"), //
+            Field.STRING("business_state"), //
+            Field.STRING("business_postal") //
+            );
 
-    public static void link(CounterCodeGen c) {
+    public static void link(final CounterCodeGen c) {
         c.section("Data: SiteProperties");
     }
 
-    @Override
-    protected void invalidateCache() {
+    public SiteProperties() {
+        super(SCHEMA);
     }
 
     TwilioRestClient getTwilioRestClient() {
@@ -47,27 +59,31 @@ public class SiteProperties extends RawObject {
         return new TwilioRestClient.Builder(get("twilio_username"), get("twilio_password")).build();
     }
 
-    public boolean notifyAdmin(String message) {
+    @Override
+    protected void invalidateCache() {
+    }
+
+    public boolean notifyAdmin(final String message) {
         if (isNullOrEmpty("admin_phone")) {
             return false;
         }
         return sendTextMessage(get("admin_phone"), message);
     }
 
-    public boolean sendFacebookMessage(String userId, String message) {
+    public boolean sendFacebookMessage(final String userId, final String message) {
         try {
             if (isNullOrEmpty("fb_page_token")) {
                 return false;
             }
             return new MessengerSend(get("fb_page_token")).send(userId, message);
-        } catch (Throwable t) {
+        } catch (final Throwable t) {
             return false;
         }
     }
 
-    public boolean sendTextMessage(String to, String message) {
+    public boolean sendTextMessage(final String to, final String message) {
         try {
-            TwilioRestClient rest = getTwilioRestClient();
+            final TwilioRestClient rest = getTwilioRestClient();
             if (rest == null) {
                 return false;
             }
@@ -76,7 +92,7 @@ public class SiteProperties extends RawObject {
             }
             Message.creator(new PhoneNumber(to), new PhoneNumber(get("twilio_phone_number")), message).create(rest);
             return true;
-        } catch (Throwable t) {
+        } catch (final Throwable t) {
             t.printStackTrace();
             return false;
         }

@@ -10,8 +10,8 @@ public class PayrollTest extends PageTesting {
 
     @Test
     public void Coverage() throws Exception {
-        PageBootstrap bootstrap = go();
-        String html = bootstrap.GET("/payroll", params());
+        final PageBootstrap bootstrap = go();
+        final String html = bootstrap.GET("/payroll", params());
         Assert.assertNotNull(html);
     }
 }

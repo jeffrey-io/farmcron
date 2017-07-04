@@ -5,17 +5,8 @@ import org.junit.Test;
 public class DirtyBitIndexerTest {
 
     @Test
-    public void SimpleWorkflow() {
-        MockDirtyBitIndexer indexer = new MockDirtyBitIndexer();
-        indexer.put(null, null, null);
-        indexer.sendBegin();
-        indexer.sendComplete(true);
-        indexer.assertDirtyCalls(1);
-    }
-
-    @Test
     public void Dedupe() {
-        MockDirtyBitIndexer indexer = new MockDirtyBitIndexer();
+        final MockDirtyBitIndexer indexer = new MockDirtyBitIndexer();
         for (int k = 0; k < 1000; k++) {
             indexer.put(null, null, null);
         }
@@ -26,7 +17,7 @@ public class DirtyBitIndexerTest {
 
     @Test
     public void DedupeWithInflight() {
-        MockDirtyBitIndexer indexer = new MockDirtyBitIndexer();
+        final MockDirtyBitIndexer indexer = new MockDirtyBitIndexer();
         for (int k = 0; k < 1000; k++) {
             indexer.put(null, null, null);
         }
@@ -44,5 +35,14 @@ public class DirtyBitIndexerTest {
         indexer.sendBegin();
         indexer.sendComplete(true);
         indexer.assertDirtyCalls(3);
+    }
+
+    @Test
+    public void SimpleWorkflow() {
+        final MockDirtyBitIndexer indexer = new MockDirtyBitIndexer();
+        indexer.put(null, null, null);
+        indexer.sendBegin();
+        indexer.sendComplete(true);
+        indexer.assertDirtyCalls(1);
     }
 }

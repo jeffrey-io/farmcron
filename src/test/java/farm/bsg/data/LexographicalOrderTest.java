@@ -10,13 +10,13 @@ public class LexographicalOrderTest {
 
     @Test
     public void CompareString() {
-        ObjectSchema schema = ObjectSchema.persisted("x/", Field.STRING("key"));
-        RawObject a = new RawObject(schema) {
+        final ObjectSchema schema = ObjectSchema.persisted("x/", Field.STRING("key"));
+        final RawObject a = new RawObject(schema) {
             @Override
             protected void invalidateCache() {
             }
         };
-        RawObject b = new RawObject(schema) {
+        final RawObject b = new RawObject(schema) {
             @Override
             protected void invalidateCache() {
             }
@@ -24,7 +24,7 @@ public class LexographicalOrderTest {
         a.set("key", "a");
         b.set("key", "b");
 
-        ArrayList<RawObject> list = new ArrayList<>();
+        final ArrayList<RawObject> list = new ArrayList<>();
         list.add(b);
         list.add(a);
         Collections.sort(list, new LexographicalOrder<>(new String[] { "key" }, true, true));

@@ -34,14 +34,14 @@ public class CrossBuildIndexStage extends Stage {
             final HashMap<String, String> sourceRef = new HashMap<>();
             sourceRef.put("url", source.get("url"));
             sourceRef.put("title", source.get("title"));
-            urls.add(sourceRef);
+            this.urls.add(sourceRef);
         }
 
         for (final String keyword : docIndex) {
-            ArrayList<HashMap<String, String>> keywordList = index.get(keyword);
+            ArrayList<HashMap<String, String>> keywordList = this.index.get(keyword);
             if (keywordList == null) {
                 keywordList = new ArrayList<>();
-                index.put(keyword, keywordList);
+                this.index.put(keyword, keywordList);
             }
             final HashMap<String, String> item = new HashMap<>();
             item.put("url", source.get("url"));
@@ -54,7 +54,7 @@ public class CrossBuildIndexStage extends Stage {
     @Override
     public Collection<Source> sources() {
         final ArrayList<Source> sources = new ArrayList<>();
-        for (final Source source : prior.sources()) {
+        for (final Source source : this.prior.sources()) {
             source.walkComplex((key, o) -> {
                 if ("index-by-tags".equals(key)) {
                     if (o instanceof HashSet) {
@@ -64,16 +64,16 @@ public class CrossBuildIndexStage extends Stage {
             });
         }
         final ArrayList<Object> globalIndex = new ArrayList<>();
-        for (final String keyword : index.keySet()) {
+        for (final String keyword : this.index.keySet()) {
             final HashMap<String, Object> keywordSection = new HashMap<>();
             keywordSection.put("name", keyword);
-            keywordSection.put("ref", index.get(keyword));
+            keywordSection.put("ref", this.index.get(keyword));
             globalIndex.add(keywordSection);
         }
 
-        for (final Source source : prior.sources()) {
+        for (final Source source : this.prior.sources()) {
             final Source injectGlobalTagIndex = new ComplexMapInjectedSource(source, "global-tag-index", globalIndex);
-            final Source injectUrls = new ComplexMapInjectedSource(injectGlobalTagIndex, "global-url-index", urls);
+            final Source injectUrls = new ComplexMapInjectedSource(injectGlobalTagIndex, "global-url-index", this.urls);
             sources.add(injectUrls);
         }
         return sources;

@@ -17,28 +17,33 @@ public class MockRequestResponseWrapper implements RequestResponseWrapper {
     }
 
     @Override
-    public BinaryFile getFile(String key) {
-        return files.get(key);
+    public String getCookie(final String key) {
+        return this.cookies.get(key);
+    }
+
+    @Override
+    public BinaryFile getFile(final String key) {
+        return this.files.get(key);
+    }
+
+    @Override
+    public String getParam(final String key) {
+        return this.params.get(key);
+    }
+
+    @Override
+    public String[] getParamList(final String key) {
+        throw new RuntimeException();
     }
 
     @Override
     public String getURI() {
-        return uri;
+        return this.uri;
     }
 
     @Override
-    public String getParam(String key) {
-        return params.get(key);
-    }
-
-    @Override
-    public String getCookie(String key) {
-        return cookies.get(key);
-    }
-
-    @Override
-    public boolean hasNonNullQueryParam(String key) {
-        String result = getParam(key);
+    public boolean hasNonNullQueryParam(final String key) {
+        final String result = getParam(key);
         if (result == null) {
             return false;
         }
@@ -46,17 +51,12 @@ public class MockRequestResponseWrapper implements RequestResponseWrapper {
     }
 
     @Override
-    public void redirect(FinishedHref href) {
+    public void redirect(final FinishedHref href) {
         this.redirected = href;
     }
 
     @Override
-    public String[] getParamList(String key) {
-        throw new RuntimeException();
-    }
-
-    @Override
-    public void setCookie(String key, String value) {
+    public void setCookie(final String key, final String value) {
     }
 
 }

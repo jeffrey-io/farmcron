@@ -7,8 +7,8 @@ import farm.bsg.data.Type;
 
 public class StackQueryEngine {
 
-    public static void write(ArrayList<String> lines, String name, ObjectSchema object) {
-        String keyIndexPrefix = name.toLowerCase() + "_";
+    public static void write(final ArrayList<String> lines, final String name, final ObjectSchema object) {
+        final String keyIndexPrefix = name.toLowerCase() + "_";
         lines.add("");
         lines.add("  public " + name + "SetQuery select_" + name.toLowerCase() + "() {");
         lines.add("    return new " + name + "SetQuery();");
@@ -19,7 +19,7 @@ public class StackQueryEngine {
         lines.add("    private final ArrayList<" + name + "> list;");
         lines.add("");
         lines.add("    private " + name + "ListHolder(HashSet<String> keys, String scope) {");
-        String func = name.toLowerCase() + "s_of(";
+        final String func = name.toLowerCase() + "s_of(";
         lines.add("      if (keys == null) {");
         lines.add("        this.list = " + func + "fetch_all(\"" + object.getPrefix() + "\" + scope));");
         lines.add("      } else {");
@@ -156,7 +156,7 @@ public class StackQueryEngine {
         lines.add("      return this;");
         lines.add("    }");
 
-        for (Type type : object.getTypes()) {
+        for (final Type type : object.getTypes()) {
             if (type.isIndexed()) {
                 // fetch keys from a list of values
                 lines.add("");

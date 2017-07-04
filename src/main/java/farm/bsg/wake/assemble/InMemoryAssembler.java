@@ -77,14 +77,14 @@ public class InMemoryAssembler {
     private final String                  sitemapPrefix;
     private final StringBuilder           sitemap;
 
-    public InMemoryAssembler(final File mergePath, final Stage stage, String sitemapPrefix) {
+    public InMemoryAssembler(final File mergePath, final Stage stage, final String sitemapPrefix) {
         this.merge = new ArrayList<>();
         this.html = new HashMap<>();
         this.audit = new StringBuilder();
         this.audit.append("<table>");
         this.sitemap = new StringBuilder();
-        sitemap.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
-        sitemap.append("<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n");
+        this.sitemap.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+        this.sitemap.append("<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n");
 
         this.sitemapPrefix = sitemapPrefix;
         registerStage(stage);
@@ -92,7 +92,7 @@ public class InMemoryAssembler {
     }
 
     public void assemble(final PutTarget target) throws Exception {
-        for (final MergeStep step : merge) {
+        for (final MergeStep step : this.merge) {
             final FileInputStream input = new FileInputStream(step.source);
             try {
                 target.upload(step.key, step.md5, step.contentType, input, step.length);
@@ -100,15 +100,15 @@ public class InMemoryAssembler {
                 input.close();
             }
         }
-        for (final String url : html.keySet()) {
-            final byte[] value = html.get(url).getBytes("UTF-8");
+        for (final String url : this.html.keySet()) {
+            final byte[] value = this.html.get(url).getBytes("UTF-8");
             target.upload(url, DigestUtils.md5Hex(value), "text/html", new ByteArrayInputStream(value), value.length);
         }
-        final byte[] auditBytes = audit.toString().getBytes("UTF-8");
+        final byte[] auditBytes = this.audit.toString().getBytes("UTF-8");
         target.upload("__audit.html", DigestUtils.md5Hex(auditBytes), "text/html", new ByteArrayInputStream(auditBytes), auditBytes.length);
 
-        sitemap.append("</urlset>");
-        final byte[] sitemapBytes = sitemap.toString().getBytes("UTF-8");
+        this.sitemap.append("</urlset>");
+        final byte[] sitemapBytes = this.sitemap.toString().getBytes("UTF-8");
         target.upload("sitemap.xml", DigestUtils.md5Hex(sitemapBytes), "application/xml", new ByteArrayInputStream(sitemapBytes), sitemapBytes.length);
 
         final byte[] robotsBytes = "User-agent: *\nDisallow:\n".getBytes("UTF-8");
@@ -116,7 +116,7 @@ public class InMemoryAssembler {
     }
 
     public void put(final String url, final String body) {
-        html.put(url, body);
+        this.html.put(url, body);
     }
 
     private void registerMerge(final File mergePath, final File root) {
@@ -126,8 +126,8 @@ public class InMemoryAssembler {
                 registerMerge(toMerge, root);
             } else {
                 final String key = toMerge.getPath().substring(rootBase.length() + 1);
-                if (!html.containsKey(key)) {
-                    merge.add(new MergeStep(toMerge, key));
+                if (!this.html.containsKey(key)) {
+                    this.merge.add(new MergeStep(toMerge, key));
                 } else {
                     // TODO: here would be a good place to LOG
                 }
@@ -139,18 +139,18 @@ public class InMemoryAssembler {
         for (final Source source : stage.sources()) {
             final String url = source.get("url");
             final String body = source.get("body");
-            html.put(url, body);
+            this.html.put(url, body);
             if (!source.testBoolean("noindex")) {
-                sitemap.append(" <url>\n");
-                sitemap.append("  <loc>" + sitemapPrefix + url + "</loc>\n");
-                sitemap.append("  <changefreq>daily</changefreq>\n");
-                sitemap.append(" </url>\n");
+                this.sitemap.append(" <url>\n");
+                this.sitemap.append("  <loc>" + this.sitemapPrefix + url + "</loc>\n");
+                this.sitemap.append("  <changefreq>daily</changefreq>\n");
+                this.sitemap.append(" </url>\n");
             }
-            audit.append("<tr><td>" + url + "</td><td>" + source.get("title") + "</td><td>" + source.get("audit") + "<br/>");
+            this.audit.append("<tr><td>" + url + "</td><td>" + source.get("title") + "</td><td>" + source.get("audit") + "<br/>");
         }
     }
 
     public void validate(final BiConsumer<String, String> checker) {
-        html.forEach(checker);
+        this.html.forEach(checker);
     }
 }

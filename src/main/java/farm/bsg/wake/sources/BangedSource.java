@@ -33,15 +33,15 @@ public class BangedSource extends Source {
         final String ext = filename.substring(lastDotK + 1);
         final String name = filename.substring(0, lastDotK);
         this.values = new HashMap<>();
-        values.put("name", name);
-        values.put("url", name + ".html");
-        values.put("ext", ext);
+        this.values.put("name", name);
+        this.values.put("url", name + ".html");
+        this.values.put("ext", ext);
         final BufferedReader reader = new BufferedReader(input);
         try {
             final StringBuilder body = new StringBuilder();
-            currentLineNumber = 0;
+            this.currentLineNumber = 0;
             reader.lines().forEach((ln) -> {
-                currentLineNumber++;
+                this.currentLineNumber++;
                 if (ln.startsWith("#!")) {
                     indexBang(ln.substring(2).trim());
                 } else {
@@ -49,7 +49,7 @@ public class BangedSource extends Source {
                     body.append("\n");
                 }
             });
-            values.put("body", body.toString());
+            this.values.put("body", body.toString());
         } finally {
             reader.close();
         }
@@ -57,7 +57,7 @@ public class BangedSource extends Source {
 
     @Override
     public String get(final String key) {
-        return values.get(key);
+        return this.values.get(key);
     }
 
     /**
@@ -68,19 +68,19 @@ public class BangedSource extends Source {
     private void indexBang(final String assignmentRaw) {
         final int kEq = assignmentRaw.indexOf('=');
         if (kEq < 0) {
-            throw new SourceException("there should be an '=' in '" + assignmentRaw + "' on line " + currentLineNumber);
+            throw new SourceException("there should be an '=' in '" + assignmentRaw + "' on line " + this.currentLineNumber);
         }
         final String key = assignmentRaw.substring(0, kEq).trim().toLowerCase();
         if (key.length() == 0) {
-            throw new SourceException("there should be at least one character before the '=' in '" + assignmentRaw + "' on line " + currentLineNumber);
+            throw new SourceException("there should be at least one character before the '=' in '" + assignmentRaw + "' on line " + this.currentLineNumber);
         }
         final String val = assignmentRaw.substring(kEq + 1).trim();
-        values.put(key, val);
+        this.values.put(key, val);
     }
 
     @Override
     public void populateDomain(final Set<String> domain) {
-        domain.addAll(values.keySet());
+        domain.addAll(this.values.keySet());
     }
 
     @Override

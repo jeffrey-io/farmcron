@@ -7,13 +7,13 @@ import farm.bsg.data.Type;
 
 public class KeyFactory {
 
-    public static void write(ArrayList<String> lines, String name, ObjectSchema object) {
+    public static void write(final ArrayList<String> lines, final String name, final ObjectSchema object) {
         if (object.isSingleton()) {
             return;
         }
-        StringBuilder funcDef = new StringBuilder();
+        final StringBuilder funcDef = new StringBuilder();
         funcDef.append("  public String make_key_" + name.toLowerCase() + "(");
-        for (Type type : object.getTypes()) {
+        for (final Type type : object.getTypes()) {
             if (type.isScoped()) {
                 funcDef.append("String ").append(type.name()).append(", ");
             }
@@ -23,7 +23,7 @@ public class KeyFactory {
         lines.add(funcDef.toString());
         lines.add("    StringBuilder key = new StringBuilder();");
         lines.add("    key.append(\"" + object.getPrefix() + "\");");
-        for (Type type : object.getTypes()) {
+        for (final Type type : object.getTypes()) {
             if (type.isScoped()) {
                 lines.add("    key.append(" + type.name() + ");");
                 lines.add("    key.append(\"/\");");

@@ -6,7 +6,7 @@ import farm.bsg.data.ObjectSchema;
 
 public class TypeTransfer {
 
-    public static void write(ArrayList<String> lines, String name, ObjectSchema object) {
+    public static void write(final ArrayList<String> lines, final String name, final ObjectSchema object) {
         lines.add("");
         lines.add("  private " + name + " " + name.toLowerCase() + "_of(Value v) {");
         lines.add("    " + name + " item = new " + name + "();");

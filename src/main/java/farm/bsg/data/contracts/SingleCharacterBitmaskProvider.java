@@ -5,7 +5,7 @@ import java.util.Set;
 
 /**
  * defines the mapping for single character bit masks (i.e. 26 letters and 26 bits)
- * 
+ *
  * @author jeffrey
  *
  */

@@ -5,7 +5,7 @@ public class BinaryFile {
     public final String contentType;
     public final byte[] bytes;
 
-    public BinaryFile(String filename, String contentType, byte[] bytes) {
+    public BinaryFile(final String filename, final String contentType, final byte[] bytes) {
         this.filename = filename;
         this.contentType = contentType;
         this.bytes = bytes;
@@ -13,6 +13,6 @@ public class BinaryFile {
 
     @Override
     public String toString() {
-        return new StringBuilder().append("BinaryFile:").append(filename).append(" content-type:").append(contentType).toString();
+        return new StringBuilder().append("BinaryFile:").append(this.filename).append(" content-type:").append(this.contentType).toString();
     }
 }

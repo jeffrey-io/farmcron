@@ -4,7 +4,7 @@ import farm.bsg.Security.Permission;
 
 /**
  * Represents a text message on a source service (i.e. sms, facebook, etc...), who the message was meant for, who the messsage was from, the message contents, and then any debug information which would be useful to keep
- * 
+ *
  * @author jeffrey
  *
  */
@@ -16,11 +16,11 @@ public class TextMessage {
     public final String  debug;
     public final boolean origin;
 
-    public TextMessage(String source, String to, String from, String message, String debug) {
+    public TextMessage(final String source, final String to, final String from, final String message, final String debug) {
         this(source, to, from, message, debug, true);
     }
 
-    private TextMessage(String source, String to, String from, String message, String debug, boolean origin) {
+    private TextMessage(final String source, final String to, final String from, final String message, final String debug, final boolean origin) {
         this.source = source;
         this.to = to;
         this.from = from;
@@ -29,18 +29,18 @@ public class TextMessage {
         this.origin = origin;
     }
 
-    public boolean has(Permission permission) {
-        return false;
+    public TextMessage generateResponse(final String response) {
+        return new TextMessage(this.source, this.from, this.to, response, this.debug, false);
     }
 
     public String getNotificationUri() {
-        if (!origin) {
+        if (!this.origin) {
             throw new AssertionError("unable to generate notification uri from a non-origin message");
         }
-        return source + ":" + from;
+        return this.source + ":" + this.from;
     }
 
-    public TextMessage generateResponse(String response) {
-        return new TextMessage(this.source, this.from, this.to, response, this.debug, false);
+    public boolean has(final Permission permission) {
+        return false;
     }
 }

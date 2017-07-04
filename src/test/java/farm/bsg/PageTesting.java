@@ -8,8 +8,8 @@ public class PageTesting {
         return new PageBootstrap();
     }
 
-    public HashMap<String, String> params(String... kvp) {
-        HashMap<String, String> map = new HashMap<>();
+    public HashMap<String, String> params(final String... kvp) {
+        final HashMap<String, String> map = new HashMap<>();
         for (int k = 0; k + 1 < kvp.length; k++) {
             map.put(kvp[k], kvp[k + 1]);
         }

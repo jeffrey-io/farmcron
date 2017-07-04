@@ -5,22 +5,22 @@ import java.util.HashSet;
 
 public class CounterCodeGen {
 
-    private static enum LazyType {
-        Event, EventAlarm, Histogram
-    }
-
     private class LazyCounter {
         public final String   section;
         public final LazyType type;
         public final String   name;
         public final String   description;
 
-        public LazyCounter(String section, LazyType type, String name, String description) {
+        public LazyCounter(final String section, final LazyType type, final String name, final String description) {
             this.section = section;
             this.type = type;
             this.name = name.trim().toLowerCase().replaceAll(" ", "_");
             this.description = description;
         }
+    }
+
+    private static enum LazyType {
+        Event, EventAlarm, Histogram
     }
 
     private final ArrayList<LazyCounter> lazy;
@@ -32,39 +32,35 @@ public class CounterCodeGen {
         this.unique = new HashSet<>();
     }
 
-    public void section(String nextSection) {
-        this.nextSection = nextSection;
-    }
-
-    public void counter(String name, String description) {
-        if (unique.contains(name)) {
+    public void alarm(final String name, final String description) {
+        if (this.unique.contains(name)) {
             throw new RuntimeException(name + " is not unique");
         }
-        unique.add(name);
-        lazy.add(new LazyCounter(nextSection, LazyType.Event, name, description));
-        nextSection = null;
+        this.unique.add(name);
+        this.lazy.add(new LazyCounter(this.nextSection, LazyType.EventAlarm, name, description));
+        this.nextSection = null;
     }
 
-    public void histogram(String name, String description) {
-        if (unique.contains(name)) {
+    public void counter(final String name, final String description) {
+        if (this.unique.contains(name)) {
             throw new RuntimeException(name + " is not unique");
         }
-        unique.add(name);
-        lazy.add(new LazyCounter(nextSection, LazyType.Histogram, name, description));
-        nextSection = null;
+        this.unique.add(name);
+        this.lazy.add(new LazyCounter(this.nextSection, LazyType.Event, name, description));
+        this.nextSection = null;
     }
 
-    public void alarm(String name, String description) {
-        if (unique.contains(name)) {
+    public void histogram(final String name, final String description) {
+        if (this.unique.contains(name)) {
             throw new RuntimeException(name + " is not unique");
         }
-        unique.add(name);
-        lazy.add(new LazyCounter(nextSection, LazyType.EventAlarm, name, description));
-        nextSection = null;
+        this.unique.add(name);
+        this.lazy.add(new LazyCounter(this.nextSection, LazyType.Histogram, name, description));
+        this.nextSection = null;
     }
 
-    public String java(String javaPackage, String className) {
-        StringBuilder sb = new StringBuilder();
+    public String java(final String javaPackage, final String className) {
+        final StringBuilder sb = new StringBuilder();
 
         sb.append("package farm.bsg;\n");
         sb.append("\n");
@@ -72,7 +68,7 @@ public class CounterCodeGen {
         sb.append("import farm.bsg.ops.CounterSource;\n");
         sb.append("\n");
         sb.append("public class " + className + " {\n");
-        for (LazyCounter counter : lazy) {
+        for (final LazyCounter counter : this.lazy) {
             if (counter.section != null) {
                 sb.append("\n");
                 sb.append("  // Section{" + counter.section.toUpperCase() + "}\n");
@@ -92,7 +88,7 @@ public class CounterCodeGen {
         sb.append("\n");
         sb.append("  public " + className + "(CounterSource src) {\n");
         sb.append("    this.source = src;\n");
-        for (LazyCounter counter : lazy) {
+        for (final LazyCounter counter : this.lazy) {
             if (counter.section != null) {
                 sb.append("\n");
                 sb.append("    src.setSection(\"" + counter.section + "\");\n");
@@ -114,6 +110,10 @@ public class CounterCodeGen {
         sb.append("}\n");
         return sb.toString();
 
+    }
+
+    public void section(final String nextSection) {
+        this.nextSection = nextSection;
     }
 
 }

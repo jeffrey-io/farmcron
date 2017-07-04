@@ -7,7 +7,7 @@ public class CheckTest {
 
     @Test
     public void Coverage() {
-        Check check = new Check();
+        final Check check = new Check();
         Assert.assertNotNull(check.toJson());
     }
 

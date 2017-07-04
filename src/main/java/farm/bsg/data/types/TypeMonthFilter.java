@@ -10,51 +10,6 @@ import farm.bsg.data.contracts.ProjectionProvider;
 import farm.bsg.data.contracts.SingleCharacterBitmaskProvider;
 
 public class TypeMonthFilter extends Type {
-    public static SingleCharacterBitmaskProvider PROVIDER = new SingleCharacterBitmaskProvider() {
-        @Override
-        public Map<String, String> asMap() {
-            LinkedHashMap<String, String> map = new LinkedHashMap<>();
-            for (Month month : Month.values()) {
-                map.put(month.name(), month.letter);
-            }
-            return map;
-        }
-
-        @Override
-        public Set<String> valuesOf(String data) {
-            HashSet<String> values = new HashSet<>();
-            // no data provided means no override, so set all
-            if (data == null || data.length() == 0) {
-                for (Month month : Month.values()) {
-                    values.add(month.letter);
-                }
-                return values;
-            }
-            Set<Month> daysSet = Month.decode(data);
-            for (Month month : daysSet) {
-                values.add(month.letter);
-            }
-            return values;
-        }
-    };
-
-    public static Set<Integer> ordinalsOf(String data) {
-        HashSet<Integer> values = new HashSet<>();
-        // no data provided means no override, so set all
-        if (data == null || data.length() == 0) {
-            for (Month month : Month.values()) {
-                values.add(month.ordinal);
-            }
-            return values;
-        }
-        Set<Month> daysSet = Month.decode(data);
-        for (Month month : daysSet) {
-            values.add(month.ordinal);
-        }
-        return values;
-
-    }
-
     public static enum Month {
         January(0x0001, 'j', 1), //
         February(0x0002, 'f', 2), //
@@ -69,19 +24,27 @@ public class TypeMonthFilter extends Type {
         November(0x0400, 'n', 11), //
         December(0x0800, 'd', 12);
 
-        public final int    bitmask;
-        public final String letter;
-        public final int    ordinal;
-
-        private Month(int bitmask, char letter, int ordinal) {
-            this.bitmask = bitmask;
-            this.letter = "" + letter;
-            this.ordinal = ordinal;
+        public static Set<Month> decode(final int value) {
+            final HashSet<Month> set = new HashSet<>();
+            for (final Month month : Month.values()) {
+                if ((month.bitmask & value) > 0) {
+                    set.add(month);
+                }
+            }
+            return set;
         }
 
-        public static int encode(String value) {
+        public static Set<Month> decode(final String value) {
+            try {
+                return decode(Integer.parseInt(value));
+            } catch (final NumberFormatException nfe) {
+                return decode(encode(value));
+            }
+        }
+
+        public static int encode(final String value) {
             int asInt = 0;
-            for (Month month : Month.values()) {
+            for (final Month month : Month.values()) {
                 if (value.contains(month.letter)) {
                     asInt += month.bitmask;
                 }
@@ -89,27 +52,86 @@ public class TypeMonthFilter extends Type {
             return asInt;
         }
 
-        public static Set<Month> decode(String value) {
-            try {
-                return decode(Integer.parseInt(value));
-            } catch (NumberFormatException nfe) {
-                return decode(encode(value));
-            }
-        }
+        public final int    bitmask;
 
-        public static Set<Month> decode(int value) {
-            HashSet<Month> set = new HashSet<>();
-            for (Month month : Month.values()) {
-                if ((month.bitmask & value) > 0) {
-                    set.add(month);
-                }
-            }
-            return set;
+        public final String letter;
+
+        public final int    ordinal;
+
+        private Month(final int bitmask, final char letter, final int ordinal) {
+            this.bitmask = bitmask;
+            this.letter = "" + letter;
+            this.ordinal = ordinal;
         }
     }
 
-    public TypeMonthFilter(String name) {
+    public static SingleCharacterBitmaskProvider PROVIDER = new SingleCharacterBitmaskProvider() {
+        @Override
+        public Map<String, String> asMap() {
+            final LinkedHashMap<String, String> map = new LinkedHashMap<>();
+            for (final Month month : Month.values()) {
+                map.put(month.name(), month.letter);
+            }
+            return map;
+        }
+
+        @Override
+        public Set<String> valuesOf(final String data) {
+            final HashSet<String> values = new HashSet<>();
+            // no data provided means no override, so set all
+            if (data == null || data.length() == 0) {
+                for (final Month month : Month.values()) {
+                    values.add(month.letter);
+                }
+                return values;
+            }
+            final Set<Month> daysSet = Month.decode(data);
+            for (final Month month : daysSet) {
+                values.add(month.letter);
+            }
+            return values;
+        }
+    };
+
+    public static Set<Integer> ordinalsOf(final String data) {
+        final HashSet<Integer> values = new HashSet<>();
+        // no data provided means no override, so set all
+        if (data == null || data.length() == 0) {
+            for (final Month month : Month.values()) {
+                values.add(month.ordinal);
+            }
+            return values;
+        }
+        final Set<Month> daysSet = Month.decode(data);
+        for (final Month month : daysSet) {
+            values.add(month.ordinal);
+        }
+        return values;
+
+    }
+
+    public static String project(final ProjectionProvider provider, final String key) {
+        final StringBuilder sb = new StringBuilder();
+        for (final Month month : Month.values()) {
+            if (provider.first(key + "_" + month.letter) != null) {
+                sb.append(month.letter);
+            }
+        }
+        final String joined = sb.toString();
+        if (joined.length() == 0) {
+            return null;
+        }
+        final int encoded = Month.encode(joined);
+        return Integer.toString(encoded);
+    }
+
+    public TypeMonthFilter(final String name) {
         super(name);
+    }
+
+    @Override
+    public String defaultValue() {
+        return null;
     }
 
     @Override
@@ -125,19 +147,9 @@ public class TypeMonthFilter extends Type {
         try {
             Integer.parseInt(value);
             return value;
-        } catch (NumberFormatException nfe) {
+        } catch (final NumberFormatException nfe) {
             return Integer.toString(Month.encode(value));
         }
-    }
-
-    @Override
-    public boolean validate(String value) {
-        return true;
-    }
-
-    @Override
-    public String defaultValue() {
-        return null;
     }
 
     @Override
@@ -145,18 +157,8 @@ public class TypeMonthFilter extends Type {
         return "month-filter";
     }
 
-    public static String project(ProjectionProvider provider, String key) {
-        StringBuilder sb = new StringBuilder();
-        for (Month month : Month.values()) {
-            if (provider.first(key + "_" + month.letter) != null) {
-                sb.append(month.letter);
-            }
-        }
-        String joined = sb.toString();
-        if (joined.length() == 0) {
-            return null;
-        }
-        int encoded = Month.encode(joined);
-        return Integer.toString(encoded);
+    @Override
+    public boolean validate(final String value) {
+        return true;
     }
 }

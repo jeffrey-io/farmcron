@@ -11,8 +11,8 @@ import spark.Route;
 public class Manifest implements Route {
 
     @Override
-    public Object handle(Request request, Response response) throws Exception {
-        HashMap<String, Object> root = new HashMap<>();
+    public Object handle(final Request request, final Response response) throws Exception {
+        final HashMap<String, Object> root = new HashMap<>();
         root.put("short_name", "BSG FarmCron");
         root.put("name", "BSG Farm Cron Tool");
         root.put("display", "fullscreen");

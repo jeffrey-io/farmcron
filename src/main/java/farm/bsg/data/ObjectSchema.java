@@ -8,98 +8,102 @@ import java.util.List;
 import farm.bsg.data.contracts.ReadOnlyType;
 
 public class ObjectSchema {
-    private final String                prefix;
-    private final List<Type>            typesInOrder;
-    private final HashMap<String, Type> schema;
-    private final List<String>          dirtyBitIndicesJavaTypes;
-    public final boolean                singleton;
-    public final boolean                ephemeral;
-
     public static class Properties {
         public final String  prefix;
         public final boolean singleton;
         public final boolean ephemeral;
 
-        public Properties(String prefix, boolean singleton, boolean ephemeral) {
+        public Properties(final String prefix, final boolean singleton, final boolean ephemeral) {
             this.prefix = prefix;
             this.singleton = singleton;
             this.ephemeral = ephemeral;
         }
     }
 
+    public static ObjectSchema ephemeral(final String prefix, final Type... types) {
+        return new ObjectSchema(new Properties(prefix, false, true), types);
+    }
+
     /**
      * Generate a schema that will be persisted
-     * 
+     *
      * @param prefix
      * @param types
      * @return
      */
-    public static ObjectSchema persisted(String prefix, Type... types) {
+    public static ObjectSchema persisted(final String prefix, final Type... types) {
         return new ObjectSchema(new Properties(prefix, false, false), types);
     }
 
-    public static ObjectSchema singleton(String key, Type... types) {
+    public static ObjectSchema singleton(final String key, final Type... types) {
         return new ObjectSchema(new Properties(key, true, false), types);
     }
 
-    public static ObjectSchema ephemeral(String prefix, Type... types) {
-        return new ObjectSchema(new Properties(prefix, false, true), types);
-    }
+    private final String                prefix;
+    private final List<Type>            typesInOrder;
 
-    private ObjectSchema(Properties properties, Type... types) {
+    private final HashMap<String, Type> schema;
+
+    private final List<String>          dirtyBitIndicesJavaTypes;
+
+    public final boolean                singleton;
+
+    public final boolean                ephemeral;
+
+    private ObjectSchema(final Properties properties, final Type... types) {
         this.prefix = properties.prefix;
         this.singleton = properties.singleton;
         this.ephemeral = properties.ephemeral;
 
         this.schema = new HashMap<String, Type>();
-        ArrayList<Type> orderedTypes = new ArrayList<>();
-        Type atomicRev = Field.STRING("__token");
+        final ArrayList<Type> orderedTypes = new ArrayList<>();
+        final Type atomicRev = Field.STRING("__token");
 
-        Type id = Field.UUID("id");
+        final Type id = Field.UUID("id");
         orderedTypes.add(id);
-        schema.put("id", id);
+        this.schema.put("id", id);
 
         orderedTypes.add(atomicRev);
-        schema.put("_rev", atomicRev);
+        this.schema.put("_rev", atomicRev);
 
-        for (Type t : types) {
+        for (final Type t : types) {
             if (t.name().startsWith("_")) {
                 throw new RuntimeException("Not allowed");
             }
             orderedTypes.add(t);
-            schema.put(t.name(), t);
+            this.schema.put(t.name(), t);
         }
         this.typesInOrder = Collections.unmodifiableList(orderedTypes);
         this.dirtyBitIndicesJavaTypes = new ArrayList<>();
     }
 
-    public boolean isSingleton() {
-        return singleton;
-    }
-
-    public boolean isEphemeral() {
-        return ephemeral;
-    }
-
-    public ObjectSchema dirty(String javaClass) {
+    public ObjectSchema dirty(final String javaClass) {
         this.dirtyBitIndicesJavaTypes.add(javaClass);
         return this;
     }
 
-    public String getPrefix() {
-        return prefix;
+    public ReadOnlyType get(final String name) {
+        return this.schema.get(name);
     }
 
     public List<String> getDirtyBitIndicesJavaTypes() {
-        return Collections.unmodifiableList(dirtyBitIndicesJavaTypes);
+        return Collections.unmodifiableList(this.dirtyBitIndicesJavaTypes);
+    }
+
+    public String getPrefix() {
+        return this.prefix;
     }
 
     public synchronized List<Type> getTypes() {
-        return typesInOrder;
+        return this.typesInOrder;
     }
 
-    public ReadOnlyType get(String name) {
-        return schema.get(name);
+    public boolean isEphemeral() {
+        return this.ephemeral;
+    }
+
+    public boolean isSingleton() {
+        return this.singleton;
     }
 
 }

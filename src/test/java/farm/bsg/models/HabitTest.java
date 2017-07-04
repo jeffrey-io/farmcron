@@ -6,7 +6,7 @@ import org.junit.Test;
 public class HabitTest {
     @Test
     public void Coverage() {
-        Habit habit = new Habit();
+        final Habit habit = new Habit();
         Assert.assertNotNull(habit.toJson());
     }
 

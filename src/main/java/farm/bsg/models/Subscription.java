@@ -20,20 +20,12 @@ public class Subscription extends RawObject {
             Field.STRING("event").makeIndex(false) //
     );
 
-    public Subscription() {
-        super(SCHEMA);
-    }
-
-    public boolean isInterest(EventBus.Event event) {
-        return event.code.equals(get("event"));
-    }
-
-    public static void link(CounterCodeGen c) {
+    public static void link(final CounterCodeGen c) {
         c.section("Data: Subscription");
     }
 
-    public boolean isOpen() {
-        return !isNullOrEmpty("subscribe_keyword") && !isNullOrEmpty("unsubscribe_keyword");
+    public Subscription() {
+        super(SCHEMA);
     }
 
     public EventBus.Event getEvent() {
@@ -42,6 +34,14 @@ public class Subscription extends RawObject {
 
     @Override
     protected void invalidateCache() {
+    }
+
+    public boolean isInterest(final EventBus.Event event) {
+        return event.code.equals(get("event"));
+    }
+
+    public boolean isOpen() {
+        return !isNullOrEmpty("subscribe_keyword") && !isNullOrEmpty("unsubscribe_keyword");
     }
 
 }

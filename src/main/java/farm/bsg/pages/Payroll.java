@@ -20,24 +20,40 @@ import farm.bsg.route.SimpleURI;
 
 public class Payroll extends SessionPage {
 
-    public Payroll(SessionRequest session) {
-        super(session, PAYROLL);
+    public static SimpleURI PAYROLL              = new SimpleURI("/admin/payroll");
+
+    public static SimpleURI PAYROLL_CASH_ADVANCE = new SimpleURI("/admin/payroll;cash-advance");
+
+    public static SimpleURI PAYROLL_WIZARD       = new SimpleURI("/admin/payroll;wizard");
+
+    public static SimpleURI PAYROLL_SUMMARY      = new SimpleURI("/admin/payroll;summary");
+
+    public static void link(final CounterCodeGen c) {
+        c.section("Page: Payroll");
     }
 
-    public static HtmlPump payrollTable(List<PayrollEntry> entries, boolean sessionEdit, boolean summary) {
-        Table table = Html.table("Date", "Hours", "Mileage", "Benefits", "Taxes", "Owed", "Actions");
+    public static void link(final RoutingTable routing) {
+        routing.navbar(PAYROLL, "Payroll", Permission.SeePayrollTab);
+        routing.get_or_post(PAYROLL, (session) -> new Payroll(session).payroll());
+        routing.get_or_post(PAYROLL_CASH_ADVANCE, (session) -> new Payroll(session).cash_advance());
+        routing.get_or_post(PAYROLL_WIZARD, (session) -> new Payroll(session).wizard());
+        routing.get_or_post(PAYROLL_SUMMARY, (session) -> new Payroll(session).summary());
+    }
+
+    public static HtmlPump payrollTable(final List<PayrollEntry> entries, final boolean sessionEdit, final boolean summary) {
+        final Table table = Html.table("Date", "Hours", "Mileage", "Benefits", "Taxes", "Owed", "Actions");
         double totalHours = 0.0;
         double totalMileage = 0.0;
         double totalBenefits = 0.0;
         double totalTaxes = 0.0;
         double totalOwed = 0.0;
-        for (PayrollEntry entry : entries) {
+        for (final PayrollEntry entry : entries) {
             HtmlPump actions = null;
             if (entry.isOutstanding() && sessionEdit) {
                 actions = Html.link(PAYROLL_WIZARD.href("id", entry.getId()), "revisit").btn_secondary();
             }
 
-            double hours = entry.getAsDouble("hours_worked") + entry.getAsDouble("sick_leave_used") + entry.getAsDouble("pto_used");
+            final double hours = entry.getAsDouble("hours_worked") + entry.getAsDouble("sick_leave_used") + entry.getAsDouble("pto_used");
             totalHours += hours;
             totalMileage += entry.getAsDouble("mileage");
             totalBenefits += entry.getAsDouble("benefits");
@@ -61,67 +77,14 @@ public class Payroll extends SessionPage {
         return table;
     }
 
-    public HtmlPump getReportPayrollLink(Person person) {
-        String fiscalDay = person().getCurrentDay();
-        String payrollIdRoot = person().getId() + ";" + fiscalDay;
-        String payrollId = payrollIdRoot;
-        String label = "Report";
-        int attempt = 1;
-        while (true) {
-            PayrollEntry entry = query().payrollentry_by_id(payrollId, false);
-            if (entry == null) {
-                return Html.link(PAYROLL_WIZARD.href("id", payrollId), label + " Payroll (" + fiscalDay + ")").btn_primary();
-            } else {
-                if (entry.isOutstanding()) {
-                    return Html.link(PAYROLL_WIZARD.href("id", payrollId), "Update Payroll (" + fiscalDay + ")").btn_primary();
-                } else {
-                    label = "Amend";
-                    payrollId = payrollIdRoot + "_" + attempt;
-                    attempt++;
-                }
-            }
-        }
-    }
-
-    public HtmlPump getClaimBenefitMonthLink(Person person, int dMonth) {
-        return Html.link(PAYROLL_CASH_ADVANCE.href("dmonth", Integer.toString(dMonth)), "Desire Benefits for " + person.getFutureMonth(dMonth)).btn_warning();
-    }
-
-    public String payroll() {
-        Block page = Html.block();
-
-        page.add(Html.wrapped().h5().wrap("Unpaid Work"));
-        List<PayrollEntry> unpaid = query().select_payrollentry() //
-                .where_unpaid_eq(person().getId()) //
-                .to_list() //
-                .inline_order_lexographically_asc_by("reported") //
-                .done();
-        page.add(payrollTable(unpaid, true, true));
-        page.add(Html.wrapped().h5().wrap("Actions"));
-        page.add(Html.wrapped().ul() //
-                .wrap(Html.wrapped().li().wrap(getReportPayrollLink(person()))) //
-                .wrap(Html.wrapped().li().wrap(Html.link(PAYROLL_SUMMARY.href(), "Summary of Checks Written").btn_info())).wrap_if(isMonthlyBenefitAvailable(1), Html.wrapped().li().wrap(getClaimBenefitMonthLink(person(), 1))) //
-        );
-        return finish_pump(page);
-    }
-
-    private PayrollEntry pullPayroll() {
-        PayrollEntry payroll = query().payrollentry_by_id(session.getParam("id"), true);
-        payroll.importValuesFromReqeust(session, "");
-        return payroll;
-    }
-
-    private boolean isMonthlyBenefitAvailable(int dMonth) {
-        String id = person().getId() + ";benefits_for_" + person().getFutureMonth(dMonth);
-        String key = "payroll/" + id;
-        Value v = query().storage.get(key);
-        return v == null;
+    public Payroll(final SessionRequest session) {
+        super(session, PAYROLL);
     }
 
     public String cash_advance() {
-        Block page = Html.block();
+        final Block page = Html.block();
         page.add(Html.wrapped().h5().wrap("Cash Advance"));
-        String dmonthRaw = session.getParam("dmonth");
+        final String dmonthRaw = this.session.getParam("dmonth");
         if (dmonthRaw == null) {
             page.add(Html.tag().danger().pill().content("no parameter 'dmonth' given"));
         }
@@ -131,36 +94,15 @@ public class Payroll extends SessionPage {
             } else {
                 page.add(Html.tag().warning().pill().content("already allocated..."));
             }
-        } catch (NumberFormatException nfe) {
+        } catch (final NumberFormatException nfe) {
             page.add(Html.tag().danger().pill().content("'dmonth' is not an integer"));
 
         }
         return finish_pump(page);
     }
 
-    private boolean lockMonthlyBenefits(int dMonth) {
-        if (dMonth < 0 || dMonth > 2) {
-            // TODO: look up site policy for how many months we can look ahead
-            return false;
-        }
-        String id = person().getId() + ";benefits_for_" + person().getFutureMonth(dMonth);
-        String key = "payroll/" + id;
-        Value v = query().storage.get(key);
-        if (v == null) {
-            PayrollEntry payroll = new PayrollEntry();
-            payroll.set("id", id);
-            if (payroll.executeBenefits(person(), dMonth)) {
-                if (payroll.getOwed() > 0) {
-                    query().put(payroll);
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
     public String commit() {
-        PayrollEntry payroll = pullAndCorrectPayroleForReporter();
+        final PayrollEntry payroll = pullAndCorrectPayroleForReporter();
 
         if (!payroll.isOutstanding()) {
             return "Not sure how this happened, but this record has been committed to a check... so that's awkward";
@@ -182,8 +124,80 @@ public class Payroll extends SessionPage {
         return null;
     }
 
+    public HtmlPump getClaimBenefitMonthLink(final Person person, final int dMonth) {
+        return Html.link(PAYROLL_CASH_ADVANCE.href("dmonth", Integer.toString(dMonth)), "Desire Benefits for " + person.getFutureMonth(dMonth)).btn_warning();
+    }
+
+    public HtmlPump getReportPayrollLink(final Person person) {
+        final String fiscalDay = person().getCurrentDay();
+        final String payrollIdRoot = person().getId() + ";" + fiscalDay;
+        String payrollId = payrollIdRoot;
+        String label = "Report";
+        int attempt = 1;
+        while (true) {
+            final PayrollEntry entry = query().payrollentry_by_id(payrollId, false);
+            if (entry == null) {
+                return Html.link(PAYROLL_WIZARD.href("id", payrollId), label + " Payroll (" + fiscalDay + ")").btn_primary();
+            } else {
+                if (entry.isOutstanding()) {
+                    return Html.link(PAYROLL_WIZARD.href("id", payrollId), "Update Payroll (" + fiscalDay + ")").btn_primary();
+                } else {
+                    label = "Amend";
+                    payrollId = payrollIdRoot + "_" + attempt;
+                    attempt++;
+                }
+            }
+        }
+    }
+
+    private boolean isMonthlyBenefitAvailable(final int dMonth) {
+        final String id = person().getId() + ";benefits_for_" + person().getFutureMonth(dMonth);
+        final String key = "payroll/" + id;
+        final Value v = query().storage.get(key);
+        return v == null;
+    }
+
+    private boolean lockMonthlyBenefits(final int dMonth) {
+        if (dMonth < 0 || dMonth > 2) {
+            // TODO: look up site policy for how many months we can look ahead
+            return false;
+        }
+        final String id = person().getId() + ";benefits_for_" + person().getFutureMonth(dMonth);
+        final String key = "payroll/" + id;
+        final Value v = query().storage.get(key);
+        if (v == null) {
+            final PayrollEntry payroll = new PayrollEntry();
+            payroll.set("id", id);
+            if (payroll.executeBenefits(person(), dMonth)) {
+                if (payroll.getOwed() > 0) {
+                    query().put(payroll);
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public String payroll() {
+        final Block page = Html.block();
+
+        page.add(Html.wrapped().h5().wrap("Unpaid Work"));
+        final List<PayrollEntry> unpaid = query().select_payrollentry() //
+                .where_unpaid_eq(person().getId()) //
+                .to_list() //
+                .inline_order_lexographically_asc_by("reported") //
+                .done();
+        page.add(payrollTable(unpaid, true, true));
+        page.add(Html.wrapped().h5().wrap("Actions"));
+        page.add(Html.wrapped().ul() //
+                .wrap(Html.wrapped().li().wrap(getReportPayrollLink(person()))) //
+                .wrap(Html.wrapped().li().wrap(Html.link(PAYROLL_SUMMARY.href(), "Summary of Checks Written").btn_info())).wrap_if(isMonthlyBenefitAvailable(1), Html.wrapped().li().wrap(getClaimBenefitMonthLink(person(), 1))) //
+        );
+        return finish_pump(page);
+    }
+
     public PayrollEntry pullAndCorrectPayroleForReporter() {
-        PayrollEntry payroll = pullPayroll();
+        final PayrollEntry payroll = pullPayroll();
         if (payroll.get("reported") == null) {
             payroll.set("reported", RawObject.isoTimestamp());
             payroll.set("fiscal_day", person().getCurrentDay());
@@ -192,8 +206,32 @@ public class Payroll extends SessionPage {
         return payroll;
     }
 
+    private PayrollEntry pullPayroll() {
+        final PayrollEntry payroll = query().payrollentry_by_id(this.session.getParam("id"), true);
+        payroll.importValuesFromReqeust(this.session, "");
+        return payroll;
+    }
+
+    public String summary() {
+        final List<Check> checks = query().select_check().where_ready_eq("yes").where_person_eq(this.session.getPerson().getId()).to_list().inline_order_lexographically_desc_by("generated").done();
+        final Table table = Table.start("Date", "Payment");
+
+        double paid = 0;
+
+        for (final Check check : checks) {
+            table.row(check.get("fiscal_day"), check.get("payment"));
+            paid += check.getAsDouble("payment");
+        }
+        final Block fragment = Html.block();
+        fragment.add(Html.W().h5().wrap("Checks Written"));
+        fragment.add(table);
+        fragment.add(Html.W().h5().wrap("Summary"));
+        fragment.add(Html.table("Key", "Value").row("Total Paid", paid));
+        return finish_pump(fragment);
+    }
+
     public String wizard() {
-        String stage = session.getParam("stage");
+        String stage = this.session.getParam("stage");
         if (stage == null) {
             stage = "start";
         }
@@ -202,10 +240,10 @@ public class Payroll extends SessionPage {
             return commit();
         }
 
-        Block page = Html.block();
+        final Block page = Html.block();
 
-        PayrollEntry payroll = pullAndCorrectPayroleForReporter();
-        Block formInner = Html.block();
+        final PayrollEntry payroll = pullAndCorrectPayroleForReporter();
+        final Block formInner = Html.block();
         formInner.add(Html.input("id").pull(payroll));
         formInner.add(Html.W().h3().wrap("Report Work").form_small_heading());
 
@@ -238,41 +276,6 @@ public class Payroll extends SessionPage {
                 .wrap(Html.input("stage").id("stage").value("done").submit().clazz("btn btn-primary")));
         page.add(Html.form("post", PAYROLL_WIZARD.href()).inner(formInner).clazz("form-small"));
         return finish_pump(page);
-    }
-
-    public String summary() {
-        List<Check> checks = query().select_check().where_ready_eq("yes").where_person_eq(session.getPerson().getId()).to_list().inline_order_lexographically_desc_by("generated").done();
-        Table table = Table.start("Date", "Payment");
-
-        double paid = 0;
-
-        for (Check check : checks) {
-            table.row(check.get("fiscal_day"), check.get("payment"));
-            paid += check.getAsDouble("payment");
-        }
-        Block fragment = Html.block();
-        fragment.add(Html.W().h5().wrap("Checks Written"));
-        fragment.add(table);
-        fragment.add(Html.W().h5().wrap("Summary"));
-        fragment.add(Html.table("Key", "Value").row("Total Paid", paid));
-        return finish_pump(fragment);
-    }
-
-    public static void link(RoutingTable routing) {
-        routing.navbar(PAYROLL, "Payroll", Permission.SeePayrollTab);
-        routing.get_or_post(PAYROLL, (session) -> new Payroll(session).payroll());
-        routing.get_or_post(PAYROLL_CASH_ADVANCE, (session) -> new Payroll(session).cash_advance());
-        routing.get_or_post(PAYROLL_WIZARD, (session) -> new Payroll(session).wizard());
-        routing.get_or_post(PAYROLL_SUMMARY, (session) -> new Payroll(session).summary());
-    }
-
-    public static SimpleURI PAYROLL              = new SimpleURI("/you;payroll");
-    public static SimpleURI PAYROLL_CASH_ADVANCE = new SimpleURI("/you;payroll;cash-advance");
-    public static SimpleURI PAYROLL_WIZARD       = new SimpleURI("/you;payroll;wizard");
-    public static SimpleURI PAYROLL_SUMMARY      = new SimpleURI("/you;payroll;summary");
-
-    public static void link(CounterCodeGen c) {
-        c.section("Page: Payroll");
     }
 
 }

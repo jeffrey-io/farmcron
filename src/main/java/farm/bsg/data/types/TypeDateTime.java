@@ -4,8 +4,22 @@ import farm.bsg.data.Type;
 import farm.bsg.data.contracts.ProjectionProvider;
 
 public class TypeDateTime extends Type {
-    public TypeDateTime(String name) {
+    public static String project(final ProjectionProvider provider, final String key) {
+        return provider.first(key);
+    }
+
+    public TypeDateTime(final String name) {
         super(name);
+    }
+
+    @Override
+    public String defaultValue() {
+        return null;
+    }
+
+    @Override
+    public String normalize(final String value) {
+        return value;
     }
 
     @Override
@@ -14,21 +28,7 @@ public class TypeDateTime extends Type {
     }
 
     @Override
-    public String normalize(String value) {
-        return value;
-    }
-
-    @Override
-    public boolean validate(String value) {
+    public boolean validate(final String value) {
         return true;
-    }
-
-    @Override
-    public String defaultValue() {
-        return null;
-    }
-
-    public static String project(ProjectionProvider provider, String key) {
-        return provider.first(key);
     }
 }

@@ -25,33 +25,18 @@ public class TestWorld {
         }
 
         @Override
-        public boolean put(String key, Value newValue) {
-            keysWrittenInOrder.add(key);
-            valuesWrittenByKey.put(key, newValue);
-            return true;
-        }
-
-        @Override
-        public void pump(KeyValueStoragePut storage) throws Exception {
-            for (Entry<String, Value> entry : valuesWrittenByKey.entrySet()) {
+        public void pump(final KeyValueStoragePut storage) throws Exception {
+            for (final Entry<String, Value> entry : this.valuesWrittenByKey.entrySet()) {
                 storage.put(entry.getKey(), entry.getValue());
             }
         }
-    }
 
-    public static TestLogger IN_MEMORY_PERSISTENCE_LOGGER() {
-        return new TestLogger();
-    }
-
-    public final ProductEngine engine;
-
-    private TestWorld(TestLogger logger) throws Exception {
-        JobManager jobManager = new JobManager();
-        this.engine = new ProductEngine(jobManager, logger, "$BODY$");
-    }
-
-    public static TestWorldBuilder start() {
-        return new TestWorldBuilder();
+        @Override
+        public boolean put(final String key, final Value newValue) {
+            this.keysWrittenInOrder.add(key);
+            this.valuesWrittenByKey.put(key, newValue);
+            return true;
+        }
     }
 
     public static class TestWorldBuilder {
@@ -61,9 +46,8 @@ public class TestWorld {
             this.logger = new TestLogger();
         }
 
-        public TestWorldBuilder write(String key, Value value) {
-            this.logger.put(key, value);
-            return this;
+        public TestWorld done() throws Exception {
+            return new TestWorld(this.logger);
         }
 
         public TestWorldBuilder withSampleData() {
@@ -72,8 +56,8 @@ public class TestWorld {
             return chain;
         }
 
-        public TestWorldBuilder withTestPerson(String login, String password, String grants) {
-            Person person = new Person();
+        public TestWorldBuilder withTestPerson(final String login, final String password, final String grants) {
+            final Person person = new Person();
             person.generateAndSetId();
             person.set("login", login);
             person.setPassword(password);
@@ -83,29 +67,45 @@ public class TestWorld {
             return write(person.getStorageKey(), new Value(person.toJson()));
         }
 
-        public TestWorld done() throws Exception {
-            return new TestWorld(this.logger);
+        public TestWorldBuilder write(final String key, final Value value) {
+            this.logger.put(key, value);
+            return this;
         }
     }
 
     public static class ValueBuilder {
-        private HashMap<String, String> data;
+        private final HashMap<String, String> data;
 
         public ValueBuilder() {
             this.data = new HashMap<>();
         }
 
-        public ValueBuilder with(String key, String value) {
+        public Value done() {
+            return new Value(Jackson.toJsonString(this.data));
+        }
+
+        public ValueBuilder with(final String key, final String value) {
             this.data.put(key, value);
             return this;
         }
+    }
 
-        public Value done() {
-            return new Value(Jackson.toJsonString(data));
-        }
+    public static TestLogger IN_MEMORY_PERSISTENCE_LOGGER() {
+        return new TestLogger();
+    }
+
+    public static TestWorldBuilder start() {
+        return new TestWorldBuilder();
     }
 
     public static ValueBuilder value_start() {
         return new ValueBuilder();
+    }
+
+    public final ProductEngine engine;
+
+    private TestWorld(final TestLogger logger) throws Exception {
+        final JobManager jobManager = new JobManager();
+        this.engine = new ProductEngine(jobManager, logger, "$BODY$");
     }
 }

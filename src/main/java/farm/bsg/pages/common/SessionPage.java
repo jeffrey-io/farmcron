@@ -11,33 +11,33 @@ public class SessionPage extends GenericPage {
     protected final SessionRequest session;
     protected String               currentTitle;
 
-    public SessionPage(SessionRequest session, SimpleURI uri) {
+    public SessionPage(final SessionRequest session, final SimpleURI uri) {
         super(session.engine, uri);
         this.session = session;
-        this.currentTitle = engine.navbar.title(uri.toRoutingPattern());
+        this.currentTitle = this.engine.navbar.title(uri.toRoutingPattern());
     }
 
-    public String finish_pump(HtmlPump pump) {
-        StringBuilder html = new StringBuilder();
+    public String finish_pump(final HtmlPump pump) {
+        final StringBuilder html = new StringBuilder();
         pump.pump(html);
-        String navbar = engine.navbar.html(href, session);
-        return engine.template.html(currentTitle, navbar, html.toString());
+        final String navbar = this.engine.navbar.html(this.href, this.session);
+        return this.engine.template.html(this.currentTitle, navbar, html.toString());
+    }
+
+    public boolean has(final Permission permission) {
+        return this.session.has(permission);
+    }
+
+    public void mustHave(final Permission permission) {
+
     }
 
     public Person person() {
-        return session.getPerson();
+        return this.session.getPerson();
     }
 
-    public void redirect(FinishedHref href) {
-        session.redirect(href);
-    }
-
-    public boolean has(Permission permission) {
-        return session.has(permission);
-    }
-
-    public void mustHave(Permission permission) {
-
+    public void redirect(final FinishedHref href) {
+        this.session.redirect(href);
     }
 
 }

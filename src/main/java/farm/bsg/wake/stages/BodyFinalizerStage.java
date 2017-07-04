@@ -9,7 +9,7 @@ import farm.bsg.wake.sources.Source;
 
 /**
  * This essentially allows a final stage to be done on the body of each source using a BodyMutator
- * 
+ *
  * @author jeffrey
  */
 public class BodyFinalizerStage extends Stage {
@@ -25,8 +25,8 @@ public class BodyFinalizerStage extends Stage {
     @Override
     public Collection<Source> sources() {
         final ArrayList<Source> next = new ArrayList<Source>();
-        for (final Source src : prior.sources()) {
-            next.add(new BodyFinalizerSource(src, mutator));
+        for (final Source src : this.prior.sources()) {
+            next.add(new BodyFinalizerSource(src, this.mutator));
         }
         return next;
     }

@@ -4,7 +4,7 @@ import farm.bsg.route.RequestResponseWrapper;
 
 public class ParameterHelper {
 
-    public static int getIntParamWithDefault(RequestResponseWrapper wrapper, String key, int defaultValue) {
+    public static int getIntParamWithDefault(final RequestResponseWrapper wrapper, final String key, final int defaultValue) {
         String value = wrapper.getParam(key);
         if (value == null) {
             return defaultValue;
@@ -15,7 +15,7 @@ public class ParameterHelper {
         }
         try {
             return Integer.parseInt(value);
-        } catch (NumberFormatException nfe) {
+        } catch (final NumberFormatException nfe) {
             return defaultValue;
         }
     }

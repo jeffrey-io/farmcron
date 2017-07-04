@@ -13,14 +13,14 @@ public class ComplexMapInjectedSourceTest extends TestingBase {
 
     @Test
     public void testComplexMapInjectionWithTemplating() {
-        HashMapSource dataRaw = createVerySimpleSource();
+        final HashMapSource dataRaw = createVerySimpleSource();
         dataRaw.put("body", "howdy");
-        HashMap<String, Object> map = new HashMap<>();
+        final HashMap<String, Object> map = new HashMap<>();
         map.put("foo", "kicker");
-        ComplexMapInjectedSource data = new ComplexMapInjectedSource(dataRaw, "map", map);
-        HashMapSource template = createVerySimpleSource();
+        final ComplexMapInjectedSource data = new ComplexMapInjectedSource(dataRaw, "map", map);
+        final HashMapSource template = createVerySimpleSource();
         template.put("body", "{{body}}{{#map}}{{foo}}{{/map}}{{body}}");
-        ApplyTemplateBodySource finalSource = new ApplyTemplateBodySource(data, template);
+        final ApplyTemplateBodySource finalSource = new ApplyTemplateBodySource(data, template);
         assertBodyEvaluate(finalSource, "howdykickerhowdy");
     }
 }

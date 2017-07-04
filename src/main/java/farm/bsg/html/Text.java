@@ -2,19 +2,19 @@ package farm.bsg.html;
 
 public class Text extends HtmlPump {
 
-    public String value;
+    public static Text EMPTY_TEXT = new Text("");
 
-    public Text(String value) {
+    public String      value;
+
+    public Text(final String value) {
         this.value = value;
     }
 
     @Override
-    public void pump(StringBuilder html) {
-        if (value == null) {
+    public void pump(final StringBuilder html) {
+        if (this.value == null) {
             return;
         }
-        html.append(value);
+        html.append(this.value);
     }
-
-    public static Text EMPTY_TEXT = new Text("");
 }

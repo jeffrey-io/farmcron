@@ -25,7 +25,7 @@ public class TemplateCrossStage extends Stage {
     @Override
     public Collection<Source> sources() {
         final HashMap<String, Source> templates = new HashMap<>();
-        final Collection<Source> priorSources = priorStage.sources();
+        final Collection<Source> priorSources = this.priorStage.sources();
         final ArrayList<Source> nonTemplates = new ArrayList<>();
         for (final Source source : priorSources) {
             if (source.getType() == SourceType.Template) {

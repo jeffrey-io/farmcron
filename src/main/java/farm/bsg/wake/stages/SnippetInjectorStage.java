@@ -26,7 +26,7 @@ public class SnippetInjectorStage extends Stage {
     public Collection<Source> sources() {
         final ArrayList<Source> preSnippetInjector = new ArrayList<>();
         final HashMap<String, String> snippets = new HashMap<>();
-        for (final Source source : prior.sources()) {
+        for (final Source source : this.prior.sources()) {
             if (source.getType() == SourceType.Snippet) {
                 snippets.put(source.get("name"), source.get("body"));
             } else {

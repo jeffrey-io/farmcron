@@ -7,7 +7,7 @@ public class CounterSource {
     private final ArrayList<Counter>   counters;
     private final ArrayList<Histogram> histograms;
     private String                     section = "General";
-    private AtomicBoolean              locked;
+    private final AtomicBoolean        locked;
 
     public CounterSource() {
         this.counters = new ArrayList<>();
@@ -15,50 +15,38 @@ public class CounterSource {
         this.locked = new AtomicBoolean(false);
     }
 
-    public void lockDown() {
-        this.locked.set(true);
-    }
-
-    public void setSection(String section) {
-        this.section = section;
-    }
-
-    public RequestMetrics request(String method, String uri) {
-        return new RequestMetrics(this, method, uri);
-    }
-
-    public Counter counter(String name, String description) {
-        if (locked.get()) {
+    public Counter alarm(final String name, final String description) {
+        if (this.locked.get()) {
             throw new RuntimeException("Unable to make counter; we are locked down");
         }
-        Counter counter = new Counter(section, name, description, false);
+        final Counter counter = new Counter(this.section, name, description, true);
         this.counters.add(counter);
         return counter;
     }
 
-    public Histogram histogram(String name, String description) {
-        if (locked.get()) {
+    public Counter counter(final String name, final String description) {
+        if (this.locked.get()) {
             throw new RuntimeException("Unable to make counter; we are locked down");
         }
-        Histogram histo = new Histogram(section, name, description);
+        final Counter counter = new Counter(this.section, name, description, false);
+        this.counters.add(counter);
+        return counter;
+    }
+
+    public Histogram histogram(final String name, final String description) {
+        if (this.locked.get()) {
+            throw new RuntimeException("Unable to make counter; we are locked down");
+        }
+        final Histogram histo = new Histogram(this.section, name, description);
         this.histograms.add(histo);
         return histo;
     }
 
-    public Counter alarm(String name, String description) {
-        if (locked.get()) {
-            throw new RuntimeException("Unable to make counter; we are locked down");
-        }
-        Counter counter = new Counter(section, name, description, true);
-        this.counters.add(counter);
-        return counter;
-    }
-
     public synchronized String html() {
-        StringBuilder sb = new StringBuilder();
+        final StringBuilder sb = new StringBuilder();
         String lastSection = "";
         sb.append("<h2>Counters</h2>");
-        for (Counter counter : counters) {
+        for (final Counter counter : this.counters) {
             if (!lastSection.equals(counter.section)) {
                 sb.append("<h3>").append(counter.section).append("</h3>");
                 lastSection = counter.section;
@@ -67,7 +55,7 @@ public class CounterSource {
         }
         lastSection = "";
         sb.append("<h2>Histograms</h2>");
-        for (Histogram histo : histograms) {
+        for (final Histogram histo : this.histograms) {
             if (!lastSection.equals(histo.section)) {
                 sb.append("<h3>").append(histo.section).append("</h3>");
                 lastSection = histo.section;
@@ -75,5 +63,17 @@ public class CounterSource {
             sb.append(histo.name + " = " + histo.render() + "<br />");
         }
         return sb.toString();
+    }
+
+    public void lockDown() {
+        this.locked.set(true);
+    }
+
+    public RequestMetrics request(final String method, final String uri) {
+        return new RequestMetrics(this, method, uri);
+    }
+
+    public void setSection(final String section) {
+        this.section = section;
     }
 }

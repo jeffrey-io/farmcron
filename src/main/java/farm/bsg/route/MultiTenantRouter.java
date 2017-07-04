@@ -10,12 +10,12 @@ public interface MultiTenantRouter {
     public ProductEngine findByDomain(String domain);
 
     /**
-     * is the routing secure? are we are on HTTPS
-     */
-    public boolean isSecure();
-
-    /**
      * Lazily inform the tenants when the routing table is built.
      */
     public void informRoutingTableBuilt(RoutingTable routing);
+
+    /**
+     * is the routing secure? are we are on HTTPS
+     */
+    public boolean isSecure();
 }

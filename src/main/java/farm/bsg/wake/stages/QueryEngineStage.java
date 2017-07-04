@@ -7,9 +7,11 @@ import java.util.Collection;
 import java.util.Collections;
 
 import org.apache.commons.codec.binary.Base64;
+import org.slf4j.Logger;
 
 import farm.bsg.QueryEngine;
 import farm.bsg.models.WakeInputFile;
+import farm.bsg.ops.Logs;
 import farm.bsg.wake.sources.BangedSource;
 import farm.bsg.wake.sources.EngineJoinSource;
 import farm.bsg.wake.sources.InjectBuildId;
@@ -18,15 +20,15 @@ import farm.bsg.wake.sources.Source;
 import farm.bsg.wake.sources.TagsFilteredSource;
 
 public class QueryEngineStage extends Stage {
+    
+    private static final Logger LOG = Logs.of(QueryEngineStage.class);
 
-    private final Collection<Source> sources;
-
-    private static Source loadIfPossible(WakeInputFile input, QueryEngine engine) throws IOException {
+    private static Source loadIfPossible(final WakeInputFile input, final QueryEngine engine) throws IOException {
         final String name = input.get("filename");
         if (!(name.endsWith(".html") || name.endsWith(".markdown"))) {
             return null;
         }
-        String content = new String(Base64.decodeBase64(input.get("contents").getBytes()));
+        final String content = new String(Base64.decodeBase64(input.get("contents").getBytes()));
         try {
             Source source = new TagsFilteredSource(new EngineJoinSource(new BangedSource(name, new StringReader(content)), engine));
             if (name.endsWith(".markdown")) {
@@ -42,26 +44,22 @@ public class QueryEngineStage extends Stage {
             }
             return source;
         } catch (final Exception err) {
-            System.err.println("Skipping:" + name);
-            err.printStackTrace();
+            LOG.error("failed to compile:{} reason:{}", name, err);
             return null;
         }
     }
 
-    public QueryEngineStage(QueryEngine engine, String buildId) throws IOException {
+    private final Collection<Source> sources;
+
+    public QueryEngineStage(final QueryEngine engine, final String buildId) throws IOException {
         final ArrayList<Source> _sources = new ArrayList<>();
-        for (WakeInputFile input : engine.select_wakeinputfile().done()) {
-            Source src = loadIfPossible(input, engine);
+        for (final WakeInputFile input : engine.select_wakeinputfile().done()) {
+            final Source src = loadIfPossible(input, engine);
             if (src != null) {
                 _sources.add(new InjectBuildId(src, buildId));
             }
         }
         this.sources = Collections.unmodifiableCollection(_sources);
-    }
-
-    @Override
-    public Collection<Source> sources() {
-        return sources;
     }
 
     public Stage compile() {
@@ -79,5 +77,10 @@ public class QueryEngineStage extends Stage {
         final LinkageStage linked = new LinkageStage(withTemplates);
         // clean up the HTML
         return new CompressHTMLStage(linked);
+    }
+
+    @Override
+    public Collection<Source> sources() {
+        return this.sources;
     }
 }

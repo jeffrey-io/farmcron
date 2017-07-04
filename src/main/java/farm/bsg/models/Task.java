@@ -29,16 +29,55 @@ public class Task extends RawObject {
             Field.STRING("state").alwaysTrim().emptyStringSameAsNull().makeIndex(false) //
     );
 
+    public static boolean isClosedAndReadyForTransition(final Task task, final long now, final int daysAfter) {
+        if (task == null) {
+            return true;
+        }
+        return task.isClosedAndReadyForTransition(now, daysAfter);
+    }
+
+    public static void link(final CounterCodeGen c) {
+        c.section("Data: Tasks");
+        c.counter("task_transition", "a task was transitioned to a new state");
+    }
+
     public Task() {
         super(SCHEMA);
+    }
+
+    public boolean canClose() {
+        final String state = get("state");
+        return "created".equals(state) || "started".equals(state);
+    }
+
+    public boolean canStart() {
+        final String state = get("state");
+        return "created".equals(state);
     }
 
     @Override
     protected void invalidateCache() {
     }
 
-    public void setState(String state) {
-        String prior = get("state");
+    public boolean isClosedAndReadyForTransition(final long now, final int daysAfter) {
+        final String state = get("state");
+        if (!"closed".equals(state)) {
+            return false;
+        }
+        final DateTime lastPerformed = getTimestamp("closed");
+        final DateTime today = new DateTime(now);
+        final DateTime dayAfterPerformed = lastPerformed.minusMillis(lastPerformed.getMillisOfDay()).plusDays(daysAfter);
+        return today.isAfter(dayAfterPerformed);
+    }
+
+    public void setDue(final long now, final int daysDue) {
+        DateTime dueDate = new DateTime(now).plusDays(daysDue + 1);
+        dueDate = dueDate.minusMillis(dueDate.getMillisOfDay());
+        set("due_date", RawObject.isoTimestamp(dueDate.getMillis()));
+    }
+
+    public void setState(final String state) {
+        final String prior = get("state");
         if (state.equals(prior)) {
 
         } else {
@@ -46,44 +85,5 @@ public class Task extends RawObject {
             set("state", state);
             BsgCounters.I.task_transition.bump();
         }
-    }
-
-    public boolean canStart() {
-        String state = get("state");
-        return "created".equals(state);
-    }
-
-    public boolean canClose() {
-        String state = get("state");
-        return "created".equals(state) || "started".equals(state);
-    }
-
-    public static boolean isClosedAndReadyForTransition(Task task, long now, int daysAfter) {
-        if (task == null) {
-            return true;
-        }
-        return task.isClosedAndReadyForTransition(now, daysAfter);
-    }
-
-    public boolean isClosedAndReadyForTransition(long now, int daysAfter) {
-        String state = get("state");
-        if (!"closed".equals(state)) {
-            return false;
-        }
-        DateTime lastPerformed = getTimestamp("closed");
-        DateTime today = new DateTime(now);
-        DateTime dayAfterPerformed = lastPerformed.minusMillis(lastPerformed.getMillisOfDay()).plusDays(daysAfter);
-        return today.isAfter(dayAfterPerformed);
-    }
-
-    public void setDue(long now, int daysDue) {
-        DateTime dueDate = new DateTime(now).plusDays(daysDue + 1);
-        dueDate = dueDate.minusMillis(dueDate.getMillisOfDay());
-        set("due_date", RawObject.isoTimestamp(dueDate.getMillis()));
-    }
-
-    public static void link(CounterCodeGen c) {
-        c.section("Data: Tasks");
-        c.counter("task_transition", "a task was transitioned to a new state");
     }
 }

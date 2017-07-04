@@ -18,33 +18,44 @@ import farm.bsg.wake.stages.QueryEngineStage;
 import farm.bsg.wake.stages.Stage;
 
 public class PublicSiteBuilder extends DirtyBitIndexer {
-    private QueryEngine engine;
+    private final QueryEngine engine;
 
-    public PublicSiteBuilder(QueryEngine engine) {
+    public PublicSiteBuilder(final QueryEngine engine) {
         this.engine = engine;
+    }
+
+    @Override
+    public void onDirty(final AsyncTaskTarget target) {
+        this.engine.scheduler.schedule(() -> {
+            AsyncTaskTarget.execute(this.engine.executor, target, () -> {
+                BsgCounters.I.compile_wake.bump();
+                run();
+                return true;
+            });
+        } , 1000, TimeUnit.MILLISECONDS);
     }
 
     public void run() {
         try {
-            String buildId = UUID.randomUUID().toString().replaceAll("-", "") + "_" + System.currentTimeMillis();
-            Stage stage = new QueryEngineStage(engine, buildId).compile();
+            final String buildId = UUID.randomUUID().toString().replaceAll("-", "") + "_" + System.currentTimeMillis();
+            final Stage stage = new QueryEngineStage(this.engine, buildId).compile();
             for (final Source source : stage.sources()) {
                 final String url = source.get("url");
                 final String body = source.get("body");
-                String contentType = "text/html"; // TODO: fix this
-                engine.publicBlobCache.write("/" + url, new UriBlobCache.UriBlob(contentType, body.getBytes(Charsets.UTF_8)));
+                final String contentType = "text/html"; // TODO: fix this
+                this.engine.publicBlobCache.write("/" + url, new UriBlobCache.UriBlob(contentType, body.getBytes(Charsets.UTF_8)));
                 if ("index.html".equals(url)) {
-                    engine.publicBlobCache.write("/", new UriBlobCache.UriBlob(contentType, body.getBytes(Charsets.UTF_8)));
+                    this.engine.publicBlobCache.write("/", new UriBlobCache.UriBlob(contentType, body.getBytes(Charsets.UTF_8)));
                 }
             }
-            StringBuilder js = new StringBuilder();
-            StringBuilder css = new StringBuilder();
+            final StringBuilder js = new StringBuilder();
+            final StringBuilder css = new StringBuilder();
 
-            for (WakeInputFile file : engine.select_wakeinputfile().done()) {
-                String contentType = file.get("content_type");
-                String contentsRaw = file.get("contents");
+            for (final WakeInputFile file : this.engine.select_wakeinputfile().done()) {
+                final String contentType = file.get("content_type");
+                final String contentsRaw = file.get("contents");
                 if (contentsRaw != null) {
-                    String content = new String(Base64.decodeBase64(contentsRaw.getBytes()));
+                    final String content = new String(Base64.decodeBase64(contentsRaw.getBytes()));
                     if ("text/javascript".equals(contentType)) {
                         js.append(content);
                     }
@@ -55,21 +66,10 @@ public class PublicSiteBuilder extends DirtyBitIndexer {
             }
 
             // bring in YUI compressor here
-            engine.publicBlobCache.write("/" + buildId + ".js", new UriBlobCache.UriBlob("text/javascript", js.toString().getBytes(Charsets.UTF_8)));
-            engine.publicBlobCache.write("/" + buildId + ".css", new UriBlobCache.UriBlob("text/css", css.toString().getBytes(Charsets.UTF_8)));
-        } catch (IOException e) {
+            this.engine.publicBlobCache.write("/" + buildId + ".js", new UriBlobCache.UriBlob("text/javascript", js.toString().getBytes(Charsets.UTF_8)));
+            this.engine.publicBlobCache.write("/" + buildId + ".css", new UriBlobCache.UriBlob("text/css", css.toString().getBytes(Charsets.UTF_8)));
+        } catch (final IOException e) {
             e.printStackTrace();
         }
-    }
-
-    @Override
-    public void onDirty(AsyncTaskTarget target) {
-        engine.scheduler.schedule(() -> {
-            AsyncTaskTarget.execute(engine.executor, target, () -> {
-                BsgCounters.I.compile_wake.bump();
-                run();
-                return true;
-            });
-        } , 1000, TimeUnit.MILLISECONDS);
     }
 }

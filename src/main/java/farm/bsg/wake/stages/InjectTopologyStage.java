@@ -29,34 +29,34 @@ public class InjectTopologyStage extends Stage {
 
         public HashMap<String, Object> compile(final Source active) {
             final HashMap<String, Object> result = new HashMap<>();
-            result.put("exists", source != null);
+            result.put("exists", this.source != null);
             final String activePath = active.get("path");
             if (activePath != null) {
-                result.put("child_is_active", activePath.startsWith(path));
+                result.put("child_is_active", activePath.startsWith(this.path));
             }
-            if (source != null) {
-                result.put("title", source.get("title"));
-                result.put("active", active == source);
-                result.put("url", source.get("url"));
+            if (this.source != null) {
+                result.put("title", this.source.get("title"));
+                result.put("active", active == this.source);
+                result.put("url", this.source.get("url"));
             }
             final ArrayList<Object> compiledChildren = new ArrayList<>();
-            final ArrayList<TopologyNode> sortedChildren = new ArrayList<>(children.values());
+            final ArrayList<TopologyNode> sortedChildren = new ArrayList<>(this.children.values());
             Collections.sort(sortedChildren, Comparator.comparingLong((item) -> item.order()));
             for (final TopologyNode child : sortedChildren) {
                 compiledChildren.add(child.compile(active));
             }
             result.put("children", compiledChildren);
-            for (final String childName : children.keySet()) {
-                result.put(childName, children.get(childName).compile(active));
+            for (final String childName : this.children.keySet()) {
+                result.put(childName, this.children.get(childName).compile(active));
             }
             return result;
         }
 
         private long order() {
-            if (source == null) {
+            if (this.source == null) {
                 return Integer.MAX_VALUE;
             }
-            return source.order();
+            return this.source.order();
         }
     }
 
@@ -76,11 +76,11 @@ public class InjectTopologyStage extends Stage {
         }
 
         public HashMap<String, Object> compile(final Source active) {
-            return root.compile(active);
+            return this.root.compile(active);
         }
 
         TopologyNode node(final String path, final Source source) {
-            TopologyNode head = root;
+            TopologyNode head = this.root;
             for (String part : path.split(SLASH)) {
                 if ("$".equals(part)) {
                     part = source.get("name");
@@ -113,7 +113,7 @@ public class InjectTopologyStage extends Stage {
     public Collection<Source> sources() {
         final ArrayList<Source> attachTo = new ArrayList<>();
         final TopologyTree topology = new TopologyTree();
-        for (final Source source : priorStage.sources()) {
+        for (final Source source : this.priorStage.sources()) {
             final String path = source.get("path");
             if (path != null) {
                 topology.add(path, source);

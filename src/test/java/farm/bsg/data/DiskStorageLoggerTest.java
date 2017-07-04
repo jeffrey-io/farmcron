@@ -12,18 +12,18 @@ public class DiskStorageLoggerTest {
 
     @Test
     public void WriteAndPump() throws Exception {
-        File temp = new File("/tmp/disk.logger." + UUID.randomUUID().toString());
+        final File temp = new File("/tmp/disk.logger." + UUID.randomUUID().toString());
         temp.mkdir();
         try {
-            DiskStorageLogger disk = new DiskStorageLogger(temp);
+            final DiskStorageLogger disk = new DiskStorageLogger(temp);
             disk.put("a", TestWorld.value_start().with("hey", "you").done());
             disk.put("b", TestWorld.value_start().with("what", "said").done());
-            InMemoryStorage memory = new InMemoryStorage();
+            final InMemoryStorage memory = new InMemoryStorage();
             disk.pump(memory);
             Assert.assertEquals("{\"hey\":\"you\"}", memory.get("a").toString());
             Assert.assertEquals("{\"what\":\"said\"}", memory.get("b").toString());
         } finally {
-            for (File file : temp.listFiles()) {
+            for (final File file : temp.listFiles()) {
                 file.delete();
             }
             temp.delete();

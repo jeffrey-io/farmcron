@@ -21,12 +21,12 @@ public class HashMapSource extends Source {
 
     @Override
     public String get(final String key) {
-        return data.get(key);
+        return this.data.get(key);
     }
 
     @Override
     public void populateDomain(final Set<String> domain) {
-        domain.addAll(data.keySet());
+        domain.addAll(this.data.keySet());
     }
 
     public HashMapSource put(final String key, final String value) {

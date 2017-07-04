@@ -10,25 +10,25 @@ import farm.bsg.ops.Logs;
 public class OutputStreamLogger extends OutputStream {
     private final Logger log;
 
-    public OutputStreamLogger(String prefix) {
+    public OutputStreamLogger(final String prefix) {
         this.log = Logs.of(OutputStreamLogger.class, prefix);
     }
 
     @Override
-    public void write(int b) throws IOException {
-        if (b >= 0) {
-            write(new byte[] { (byte) b }, 0, 1);
-        }
-    }
-
-    @Override
-    public void write(byte[] b) throws IOException {
+    public void write(final byte[] b) throws IOException {
         write(b, 0, b.length);
     }
 
     @Override
-    public void write(byte[] b, int off, int len) throws IOException {
-        log.debug(new String(b, off, len));
+    public void write(final byte[] b, final int off, final int len) throws IOException {
+        this.log.debug(new String(b, off, len));
+    }
+
+    @Override
+    public void write(final int b) throws IOException {
+        if (b >= 0) {
+            write(new byte[] { (byte) b }, 0, 1);
+        }
     }
 
 }

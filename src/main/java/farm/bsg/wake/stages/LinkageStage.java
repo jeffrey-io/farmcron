@@ -25,7 +25,7 @@ public class LinkageStage extends Stage {
     public Collection<Source> sources() {
         final ArrayList<Source> next = new ArrayList<>();
         final HashMap<String, Source> links = new HashMap<>();
-        for (final Source src : stage.sources()) {
+        for (final Source src : this.stage.sources()) {
             final String name = src.get("name");
             if (name != null) {
                 links.put(name, src);

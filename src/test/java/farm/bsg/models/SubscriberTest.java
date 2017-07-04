@@ -6,7 +6,7 @@ import org.junit.Test;
 public class SubscriberTest {
     @Test
     public void Coverage() {
-        Subscriber subcriber = new Subscriber();
+        final Subscriber subcriber = new Subscriber();
         Assert.assertNotNull(subcriber.toJson());
     }
 

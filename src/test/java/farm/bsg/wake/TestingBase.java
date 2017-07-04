@@ -22,19 +22,64 @@ public class TestingBase {
 
     private static String lastTest = "?";
 
+    protected void assertBodyEvaluate(final Source source, final String expected) {
+        assertEvaluate("body", source, expected);
+    }
+
+    protected void assertEquals(final String expected, final String computed) {
+        logCheck("'" + computed + "'='" + expected + "'");
+        if (expected.equals(computed)) {
+            return;
+        }
+        throw new AssertionError("expected:'" + expected + "', but got '" + computed + "'");
+    }
+
+    protected void assertEvaluate(final String key, final Source source, final String expected) {
+        final String computed = source.get(key);
+        logCheck(key + ":'" + computed + "'='" + expected + "'");
+        if (expected.equals(computed)) {
+            return;
+        }
+        throw new AssertionError("expected:\n'" + expected + "'\n, but got \n'" + computed + "'");
+    }
+
+    protected void assertItemization(final Source source, final String... keys) {
+        final HashSet<String> itemizedKeys = new HashSet<>();
+        source.populateDomain(itemizedKeys);
+        for (final String keyToCheck : keys) {
+            logCheck(itemizedKeys.toString() + " contains '" + keyToCheck + "'");
+            if (!itemizedKeys.contains(keyToCheck)) {
+                throw new AssertionError("itemization lacked '" + keyToCheck + "'");
+            }
+        }
+    }
+
     public HashMapSource createVerySimpleSource() {
-        HashMap<String, String> map = new HashMap<>();
+        final HashMap<String, String> map = new HashMap<>();
         map.put("title", "Z' Title");
         map.put("body", "body");
         return new HashMapSource(map);
     }
 
-    protected void logCheck(String msg) {
+    protected void fail(final String why) {
+        throw new AssertionError("we expected to fail:" + why);
+    }
+
+    protected Source getExactlyOne(final Stage stages) {
+        final Collection<Source> sources = stages.sources();
+        logCheck("one size check:" + sources.size() + ":" + stages.getClass().getName());
+        if (1 != sources.size()) {
+            throw new AssertionError("size was not 1");
+        }
+        return sources.iterator().next();
+    }
+
+    protected void logCheck(final String msg) {
         String test = "?";
         try {
             throw new NullPointerException();
-        } catch (NullPointerException npe) {
-            for (StackTraceElement ste : npe.getStackTrace()) {
+        } catch (final NullPointerException npe) {
+            for (final StackTraceElement ste : npe.getStackTrace()) {
                 if (ste.getMethodName().startsWith("test")) {
                     test = ste.getMethodName().substring(4);
                 }
@@ -48,58 +93,16 @@ public class TestingBase {
         System.out.println("check[" + test + "]:" + msg);
     }
 
-    protected void assertEvaluate(String key, Source source, String expected) {
-        String computed = source.get(key);
-        logCheck(key + ":'" + computed + "'='" + expected + "'");
-        if (expected.equals(computed))
-            return;
-        throw new AssertionError("expected:\n'" + expected + "'\n, but got \n'" + computed + "'");
-    }
-
-    protected void assertBodyEvaluate(Source source, String expected) {
-        assertEvaluate("body", source, expected);
-    }
-
-    protected void fail(String why) {
-        throw new AssertionError("we expected to fail:" + why);
-    }
-
-    protected void assertItemization(Source source, String... keys) {
-        final HashSet<String> itemizedKeys = new HashSet<>();
-        source.populateDomain(itemizedKeys);
-        for (String keyToCheck : keys) {
-            logCheck(itemizedKeys.toString() + " contains '" + keyToCheck + "'");
-            if (!itemizedKeys.contains(keyToCheck)) {
-                throw new AssertionError("itemization lacked '" + keyToCheck + "'");
-            }
-        }
-    }
-
-    protected void assertEquals(String expected, String computed) {
-        logCheck("'" + computed + "'='" + expected + "'");
-        if (expected.equals(computed))
-            return;
-        throw new AssertionError("expected:'" + expected + "', but got '" + computed + "'");
-    }
-
-    protected Reader readerize(String value) {
+    protected Reader readerize(final String value) {
         return new InputStreamReader(new ByteArrayInputStream(value.getBytes()));
     }
 
-    protected Stage stageOf(Source... sources) {
-        HashSet<Source> set = new HashSet<>();
-        for (Source source : sources)
+    protected Stage stageOf(final Source... sources) {
+        final HashSet<Source> set = new HashSet<>();
+        for (final Source source : sources) {
             set.add(source);
-        return new SetStage(set);
-    }
-
-    protected Source getExactlyOne(Stage stages) {
-        Collection<Source> sources = stages.sources();
-        logCheck("one size check:" + sources.size() + ":" + stages.getClass().getName());
-        if (1 != sources.size()) {
-            throw new AssertionError("size was not 1");
         }
-        return sources.iterator().next();
+        return new SetStage(set);
     }
 
 }

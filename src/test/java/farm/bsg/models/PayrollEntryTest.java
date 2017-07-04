@@ -6,7 +6,7 @@ import org.junit.Test;
 public class PayrollEntryTest {
     @Test
     public void Coverage() {
-        PayrollEntry payroll = new PayrollEntry();
+        final PayrollEntry payroll = new PayrollEntry();
         Assert.assertNotNull(payroll.toJson());
     }
 

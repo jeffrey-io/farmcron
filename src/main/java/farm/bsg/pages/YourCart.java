@@ -5,12 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.regex.Pattern;
 
-import com.github.jknack.handlebars.Handlebars;
-
 import farm.bsg.data.UriBlobCache.UriBlob;
-import farm.bsg.html.Block;
-import farm.bsg.html.Html;
-import farm.bsg.html.Table;
 import farm.bsg.models.Cart;
 import farm.bsg.models.CartItem;
 import farm.bsg.models.Product;
@@ -22,79 +17,107 @@ import farm.bsg.route.RoutingTable;
 import farm.bsg.route.SimpleURI;
 
 public class YourCart extends CustomerPage {
-    private static final Handlebars compiler = new Handlebars();
+    public static final SimpleURI CART        = new SimpleURI("/cart");
 
-    public YourCart(CustomerRequest request) {
+    public static final SimpleURI CART_ADD    = new SimpleURI("/cart;add");
+
+    public static final SimpleURI CART_UPDATE = new SimpleURI("/cart;update");
+
+    public static void link(final CounterCodeGen c) {
+        c.section("Page: Your Cart");
+    }
+
+    public static void link(final RoutingTable routing) {
+        routing.customer_get_or_post(CART, (cr) -> new YourCart(cr).show());
+        routing.customer_get_or_post(CART_ADD, (cr) -> new YourCart(cr).add());
+        routing.customer_get_or_post(CART_UPDATE, (cr) -> new YourCart(cr).update());
+    }
+
+    public YourCart(final CustomerRequest request) {
         super(request, CART);
     }
 
     public String add() {
-        String productId = request.getParam("pid");
-        String cartId = request.getCartId();
-        int quantity = ParameterHelper.getIntParamWithDefault(request, "quantity", 1);
+        final String productId = this.request.getParam("pid");
+        final String cartId = this.request.getCartId();
+        final int quantity = ParameterHelper.getIntParamWithDefault(this.request, "quantity", 1);
 
         // make sure the cart exists
-        Cart cart = engine.cart_by_id(cartId, false);
+        Cart cart = this.engine.cart_by_id(cartId, false);
         if (cart == null) {
-            cart = engine.cart_by_id(cartId, true);
-            engine.put(cart);
+            cart = this.engine.cart_by_id(cartId, true);
+            this.engine.put(cart);
         }
 
-        CartItem found = engine.select_cartitem().where_cart_eq(request.getCartId()).where_product_eq(productId).to_list().first();
+        final CartItem found = this.engine.select_cartitem().where_cart_eq(this.request.getCartId()).where_product_eq(productId).to_list().first();
         if (found != null) {
             found.set("quantity", found.getAsInt("quantity") + quantity);
-            engine.put(found);
+            this.engine.put(found);
         } else {
-            CartItem item = new CartItem();
+            final CartItem item = new CartItem();
             item.generateAndSetId();
             item.set("cart", cartId);
             item.set("product", productId);
             item.set("quantity", quantity);
-            if (request.hasNonNullQueryParam("customizations")) {
-                item.set("customizations", request.getParam("customizations"));
+            if (this.request.hasNonNullQueryParam("customizations")) {
+                item.set("customizations", this.request.getParam("customizations"));
             }
-            engine.put(item);
+            this.engine.put(item);
         }
-        request.redirect(CART.href("back", request.getParam("$$referer")));
+        this.request.redirect(CART.href("back", this.request.getParam("$$referer")));
         return null;
     }
 
-    public String update() {
-        String itemId = request.getParam("item");
-        int quantity = ParameterHelper.getIntParamWithDefault(request, "quantity", 1);
-        CartItem item = engine.cartitem_by_id(itemId, false);
-        if (item != null) {
-            if (quantity == 0) {
-                engine.del(item);
-            } else {
-                item.set("quantity", quantity);
-                engine.put(item);
-            }
+    private Object createPhase(final String currentPhase, final String thisPhase, final int step, final String name) {
+        final HashMap<String, Object> map = new HashMap<>();
+        map.put("step", step);
+        map.put("name", name);
+        map.put("active", thisPhase.equals(currentPhase));
+        return map;
+    }
+
+    private String injectBack(final HashMap<String, Object> thing, final String phase) {
+        String current = CART.href("phase", phase).value;
+        if (this.request.hasNonNullQueryParam("back")) {
+            final String back = this.request.getParam("back");
+            thing.put("back_url", back);
+            thing.put("has_back", true);
+            current = CART.href("phase", phase, "back", back).value;
         }
-        request.redirect(CART.href());
-        return null;
+        return current;
     }
 
     public Object show() {
-        UriBlob blob = query().publicBlobCache.get("/*cart.html");
-        if (blob != null) {
-            return showCartWithTemplate(blob);
+        final UriBlob blob = query().publicBlobCache.get("/*cart.html");
+        if (blob == null) {
+            return null;
         }
-        return showCartDefault();
-    }
-
-    public Object showCartWithTemplate(UriBlob blob) {
-        HashMap<String, Object> tree = new HashMap<>();
-        ArrayList<Object> items = new ArrayList<>();
+        final ArrayList<Object> items = new ArrayList<>();
         double ticketPrice = 0;
-        for (CartItem item : engine.select_cartitem().where_cart_eq(request.getCartId()).to_list().done()) {
-            Product product = engine.product_by_id(item.get("product"), false);
+        for (final CartItem item : this.engine.select_cartitem().where_cart_eq(this.request.getCartId()).to_list().done()) {
+            final Product product = this.engine.product_by_id(item.get("product"), false);
             if (product != null) {
                 int quantity = item.getAsInt("quantity");
-                double price = product.getAsDouble("price");
-                double total = Math.floor(price * quantity * 100) / 100.0;
+                final String updateQuantity = this.request.getParam("q_" + item.getId());
+                if (updateQuantity != null) {
+                    final int newQuantity = Integer.parseInt(updateQuantity);
+                    if (newQuantity != quantity) {
+                        quantity = newQuantity;
+                        item.set("quantity", Integer.toString(newQuantity));
+                        if (newQuantity <= 0) {
+                            query().del(item);
+                            break;
+                        } else {
+                            query().put(item);
+                        }
+                    }
+                }
+                final double price = product.getAsDouble("price");
+                final double total = Math.floor(price * quantity * 100) / 100.0;
+
                 ticketPrice += total;
-                HashMap<String, Object> iMap = new HashMap<>();
+                final HashMap<String, Object> iMap = new HashMap<>();
+                iMap.put("id", item.getId());
                 iMap.put("pid", product.getId());
                 iMap.put("name", product.get("name"));
                 iMap.put("price", price);
@@ -104,60 +127,85 @@ public class YourCart extends CustomerPage {
                 items.add(iMap);
             }
         }
-        tree.put("items", items);
-        tree.put("total", ticketPrice);
+        final HashMap<String, Object> root = new HashMap<>();
+
+        String phase = this.request.getParam("phase");
+        if (phase == null || "".equals(phase)) {
+            final HashMap<String, Object> show_cart = new HashMap<>();
+            show_cart.put("items", items);
+            show_cart.put("total", ticketPrice);
+            final String current = injectBack(show_cart, phase);
+            String nextPhase = "assoc";
+            if (!request.hasCustomer) {
+                nextPhase = "pickup";
+            }
+            // if I have a customer logged in already, then go right to the next step after that.
+            show_cart.put("next_url", CART.href("back", current, "phase", nextPhase).value);
+            root.put("cart", show_cart);
+            phase = "start";
+        }
+
+        if ("assoc".equals(phase)) {
+            final HashMap<String, Object> assoc = new HashMap<>();
+            injectBack(assoc, phase);
+            assoc.put("total", ticketPrice);
+            root.put("assoc", assoc);
+        }
+        
+        if ("pickup".equals(phase)) {
+            final HashMap<String, Object> pickup = new HashMap<>();
+            injectBack(pickup, phase);
+            root.put("pickup", pickup);
+        }        
+
+        if ("delivery".equals(phase)) {
+            final HashMap<String, Object> delivery = new HashMap<>();
+            injectBack(delivery, phase);
+            root.put("delivery", delivery);
+        } 
+        
+        if ("payment".equals(phase)) {
+            final HashMap<String, Object> payment = new HashMap<>();
+            injectBack(payment, phase);
+            root.put("payment", payment);
+        } 
+
+        
+        final ArrayList<Object> phases = new ArrayList<>();
+        int stepCounter = 0;
+        phases.add(createPhase(phase, "start", ++stepCounter, "Shopping Cart"));
+        if (!request.hasCustomer) {
+            phases.add(createPhase(phase, "assoc", ++stepCounter, "Sign In"));
+        }
+        phases.add(createPhase(phase, "pickup", ++stepCounter, "Pick up Timing"));
+        phases.add(createPhase(phase, "delivery", ++stepCounter, "Delivery Options"));
+        phases.add(createPhase(phase, "delivery", ++stepCounter, "Payment"));
+
+        root.put("phases", phases);
+
         return blob.transform((s) -> {
             try {
-                String template = s.replaceAll(Pattern.quote("%["), "{{").replaceAll(Pattern.quote("]%"), "}}");
-                return compiler.compileInline(template).apply(tree);
-            } catch (IOException ioe) {
+                final String template = s.replaceAll(Pattern.quote("%["), "{{").replaceAll(Pattern.quote("]%"), "}}");
+                return compiler.compileInline(template).apply(root);
+            } catch (final IOException ioe) {
                 throw new RuntimeException(ioe);
             }
         });
     }
 
-    public String showCartDefault() {
-        Table cart = new Table("Name", "Quantity", "Unit Price", "Total", "Actions");
-        double ticketPrice = 0;
-        for (CartItem item : engine.select_cartitem().where_cart_eq(request.getCartId()).to_list().done()) {
-            Product product = engine.product_by_id(item.get("product"), false);
-            if (product != null) {
-                int quantity = item.getAsInt("quantity");
-                double price = product.getAsDouble("price");
-                double total = Math.floor(price * quantity * 100) / 100.0;
-                cart.row( //
-                        product.get("name"), //
-                        item.get("quantity"), //
-                        product.get("price"), //
-                        total, Html.link(CART_UPDATE.href("item", item.getId(), "quantity", "0"), "remove"));
-                ticketPrice += total;
+    public String update() {
+        final String itemId = this.request.getParam("item");
+        final int quantity = ParameterHelper.getIntParamWithDefault(this.request, "quantity", 1);
+        final CartItem item = this.engine.cartitem_by_id(itemId, false);
+        if (item != null) {
+            if (quantity == 0) {
+                this.engine.del(item);
             } else {
-                // show there was a removed product.
+                item.set("quantity", quantity);
+                this.engine.put(item);
             }
         }
-        Block page = Html.block();
-        page.add(Html.wrapped().h4().wrap("Items in Cart"));
-        page.add(cart);
-        String back = request.getParam("back");
-        if (back != null) {
-            page.add(Html.link_direct(back, "Back").btn_secondary());
-        }
-        page.add(Html.wrapped().h4().wrap("Total:" + ticketPrice));
-        return page.toHtml();
-    }
-
-    public static void link(RoutingTable routing) {
-        routing.customer_get(CART, (cr) -> new YourCart(cr).show());
-        routing.customer_get_or_post(CART_ADD, (cr) -> new YourCart(cr).add());
-        routing.customer_get_or_post(CART_UPDATE, (cr) -> new YourCart(cr).update());
-    }
-
-    public static final SimpleURI CART          = new SimpleURI("/cart");
-    public static final SimpleURI CART_ADD      = new SimpleURI("/cart;add");
-    public static final SimpleURI CART_UPDATE   = new SimpleURI("/cart;update");
-    public static final SimpleURI CART_CHECKOUT = new SimpleURI("/cart;checkout");
-
-    public static void link(CounterCodeGen c) {
-        c.section("Page: Your Cart");
+        this.request.redirect(CART.href());
+        return null;
     }
 }

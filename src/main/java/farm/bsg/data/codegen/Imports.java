@@ -7,29 +7,29 @@ public class Imports {
 
     private final TreeSet<String> imports = new TreeSet<>();
 
-    public void add(String i) {
-        imports.add(i);
+    public void add(final String i) {
+        this.imports.add(i);
     }
 
-    public void write(ArrayList<String> lines) {
-        imports.add("java.util.ArrayList");
-        imports.add("farm.bsg.data.MultiPrefixLogger");
-        imports.add("farm.bsg.data.KeyIndex");
-        imports.add("java.util.HashSet");
-        imports.add("farm.bsg.data.*");
-        imports.add("farm.bsg.data.contracts.*");
-        imports.add("java.util.Collections");
-        imports.add("java.util.function.*");
-        imports.add("java.util.Iterator");
-        imports.add("java.util.HashMap");
-        imports.add("java.util.Comparator");
-        imports.add("java.util.concurrent.ExecutorService");
-        imports.add("java.util.concurrent.Executors");
-        imports.add("java.util.concurrent.ScheduledExecutorService");
+    public void write(final ArrayList<String> lines) {
+        this.imports.add("java.util.ArrayList");
+        this.imports.add("farm.bsg.data.MultiPrefixLogger");
+        this.imports.add("farm.bsg.data.KeyIndex");
+        this.imports.add("java.util.HashSet");
+        this.imports.add("farm.bsg.data.*");
+        this.imports.add("farm.bsg.data.contracts.*");
+        this.imports.add("java.util.Collections");
+        this.imports.add("java.util.function.*");
+        this.imports.add("java.util.Iterator");
+        this.imports.add("java.util.HashMap");
+        this.imports.add("java.util.Comparator");
+        this.imports.add("java.util.concurrent.ExecutorService");
+        this.imports.add("java.util.concurrent.Executors");
+        this.imports.add("java.util.concurrent.ScheduledExecutorService");
 
         String prefix = "";
-        for (String i : imports) {
-            String currentPrefix = i.substring(0, i.lastIndexOf('.'));
+        for (final String i : this.imports) {
+            final String currentPrefix = i.substring(0, i.lastIndexOf('.'));
             if (!currentPrefix.equals(prefix)) {
                 lines.add("");
             }

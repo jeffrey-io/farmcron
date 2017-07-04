@@ -12,39 +12,39 @@ import farm.bsg.data.types.TypeUUID;
 
 public class Field {
 
-    public static Type UUID(String name) {
-        return new TypeUUID(name);
-    }
-
-    public static TypeString STRING(String name) {
-        return new TypeString(name);
-    }
-
-    public static TypeBytesInBase64 BYTESB64(String name) {
-        return new TypeBytesInBase64(name);
-    }
-
-    public static Type BOOL(String name) {
+    public static Type BOOL(final String name) {
         return new TypeBoolean(name);
     }
 
-    public static Type TOKEN_STRING_LIST(String name) {
-        return new TypeStringTokenList(name);
+    public static TypeBytesInBase64 BYTESB64(final String name) {
+        return new TypeBytesInBase64(name);
     }
 
-    public static Type DATETIME(String name) {
+    public static Type DATETIME(final String name) {
         return new TypeDateTime(name);
     }
 
-    public static TypeNumber NUMBER(String name) {
-        return new TypeNumber(name);
-    }
-
-    public static Type DAYFILTER(String name) {
+    public static Type DAYFILTER(final String name) {
         return new TypeDayFilter(name);
     }
 
-    public static Type MONTHFILTER(String name) {
+    public static Type MONTHFILTER(final String name) {
         return new TypeMonthFilter(name);
+    }
+
+    public static TypeNumber NUMBER(final String name) {
+        return new TypeNumber(name);
+    }
+
+    public static TypeString STRING(final String name) {
+        return new TypeString(name);
+    }
+
+    public static Type TOKEN_STRING_LIST(final String name) {
+        return new TypeStringTokenList(name);
+    }
+
+    public static Type UUID(final String name) {
+        return new TypeUUID(name);
     }
 }

@@ -10,8 +10,8 @@ public class PeopleTest extends PageTesting {
 
     @Test
     public void Coverage() throws Exception {
-        PageBootstrap bootstrap = go();
-        String html = bootstrap.GET("/people", params());
+        final PageBootstrap bootstrap = go();
+        final String html = bootstrap.GET("/people", params());
         Assert.assertNotNull(html);
     }
 }

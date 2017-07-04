@@ -18,61 +18,56 @@ import farm.bsg.ops.CounterCodeGen;
 
 public class AlexaCommands implements Speechlet {
 
+    public static void link(final CounterCodeGen c) {
+        c.section("Alexa");
+        c.counter("alexa_auth_attempt", "an alexa auth request was made");
+        c.counter("alexa_auth_success", "an alexa auth passed");
+        c.counter("alexa_auth_failure", "an alexa auth failed");
+    }
+
     private transient final SpeechletToSpeechletV2Adapter  adapter;
+
     private transient final ServletSpeechletRequestHandler handler;
 
-    public AlexaCommands(ProductEngine engine) {
+    public AlexaCommands(final ProductEngine engine) {
         this.adapter = new SpeechletToSpeechletV2Adapter(this);
         this.handler = new ServletSpeechletRequestHandler();
     }
 
-    public boolean auth(byte[] serializedSpeechletRequest, String signature, String chain) {
+    public boolean auth(final byte[] serializedSpeechletRequest, final String signature, final String chain) {
         BsgCounters.I.alexa_auth_attempt.bump();
         try {
             SpeechletRequestSignatureVerifier.checkRequestSignature(serializedSpeechletRequest, signature, chain);
             BsgCounters.I.alexa_auth_success.bump();
             return true;
-        } catch (Exception err) {
+        } catch (final Exception err) {
             BsgCounters.I.alexa_auth_failure.bump();
             return false;
         }
     }
 
-    public byte[] handle(byte[] serializedSpeechletRequest) throws Exception {
-        return handler.handleSpeechletCall(adapter, serializedSpeechletRequest);
+    public byte[] handle(final byte[] serializedSpeechletRequest) throws Exception {
+        return this.handler.handleSpeechletCall(this.adapter, serializedSpeechletRequest);
     }
 
     @Override
-    public void onSessionStarted(SessionStartedRequest request, Session session) throws SpeechletException {
-    }
-
-    @Override
-    public SpeechletResponse onLaunch(LaunchRequest request, Session session) throws SpeechletException {
-        SpeechletResponse response = new SpeechletResponse();
-        PlainTextOutputSpeech output = new PlainTextOutputSpeech();
-        output.setText("I AM THE GOAT, and you are not the goat. My name is roslin, and I am your baby goat.");
-        response.setOutputSpeech(output);
-        return response;
-    }
-
-    @Override
-    public SpeechletResponse onIntent(IntentRequest request, Session session) throws SpeechletException {
-        SpeechletResponse response = new SpeechletResponse();
+    public SpeechletResponse onIntent(final IntentRequest request, final Session session) throws SpeechletException {
+        final SpeechletResponse response = new SpeechletResponse();
         if ("chores".equalsIgnoreCase(request.getIntent().getName())) {
-            PlainTextOutputSpeech output = new PlainTextOutputSpeech();
+            final PlainTextOutputSpeech output = new PlainTextOutputSpeech();
             output.setText("this needs to be linked to tasks");
             response.setOutputSpeech(output);
         }
         if ("habits".equalsIgnoreCase(request.getIntent().getName())) {
-            PlainTextOutputSpeech output = new PlainTextOutputSpeech();
+            final PlainTextOutputSpeech output = new PlainTextOutputSpeech();
             output.setText("Habits are not yet integrated");
             response.setOutputSpeech(output);
         }
         if ("stretch".equalsIgnoreCase(request.getIntent().getName())) {
-            SsmlOutputSpeech output = new SsmlOutputSpeech();
+            final SsmlOutputSpeech output = new SsmlOutputSpeech();
             try {
-                int input = Integer.parseInt(request.getIntent().getSlot("Count").getValue());
-                StringBuilder sb = new StringBuilder();
+                final int input = Integer.parseInt(request.getIntent().getSlot("Count").getValue());
+                final StringBuilder sb = new StringBuilder();
                 sb.append("<speak>");
                 sb.append("Going to begin ").append(input).append(" reps. You have five seconds to get into position. <break time=\"5s\"/>");
                 for (int k = 0; k < input; k++) {
@@ -81,13 +76,13 @@ public class AlexaCommands implements Speechlet {
                 sb.append(". You are finished.");
                 sb.append("</speak>");
                 output.setSsml(sb.toString());
-            } catch (NumberFormatException nfe) {
+            } catch (final NumberFormatException nfe) {
                 output.setSsml("<speak>failed to understand the intent, sorry</speak>");
             }
             response.setOutputSpeech(output);
         }
         if ("whatup".equalsIgnoreCase(request.getIntent().getName())) {
-            SsmlOutputSpeech output = new SsmlOutputSpeech();
+            final SsmlOutputSpeech output = new SsmlOutputSpeech();
             output.setSsml("<speak>Nothing much mother <phoneme alphabet=\"ipa\" ph=\"fʌkər\">forka</phoneme></speak>");
             response.setOutputSpeech(output);
         }
@@ -95,13 +90,19 @@ public class AlexaCommands implements Speechlet {
     }
 
     @Override
-    public void onSessionEnded(SessionEndedRequest request, Session session) throws SpeechletException {
+    public SpeechletResponse onLaunch(final LaunchRequest request, final Session session) throws SpeechletException {
+        final SpeechletResponse response = new SpeechletResponse();
+        final PlainTextOutputSpeech output = new PlainTextOutputSpeech();
+        output.setText("I AM THE GOAT, and you are not the goat. My name is roslin, and I am your baby goat.");
+        response.setOutputSpeech(output);
+        return response;
     }
 
-    public static void link(CounterCodeGen c) {
-        c.section("Alexa");
-        c.counter("alexa_auth_attempt", "an alexa auth request was made");
-        c.counter("alexa_auth_success", "an alexa auth passed");
-        c.counter("alexa_auth_failure", "an alexa auth failed");
+    @Override
+    public void onSessionEnded(final SessionEndedRequest request, final Session session) throws SpeechletException {
+    }
+
+    @Override
+    public void onSessionStarted(final SessionStartedRequest request, final Session session) throws SpeechletException {
     }
 }

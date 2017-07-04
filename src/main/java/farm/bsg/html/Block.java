@@ -4,39 +4,39 @@ import java.util.ArrayList;
 
 public class Block extends HtmlPump {
 
-    private ArrayList<HtmlPump> pumps;
+    private final ArrayList<HtmlPump> pumps;
 
     public Block() {
         this.pumps = new ArrayList<>();
     }
 
-    @Override
-    public void pump(StringBuilder html) {
-        for (HtmlPump pump : pumps) {
-            pump.pump(html);
-        }
-    }
-
-    public Block add(HtmlPump pump) {
+    public Block add(final HtmlPump pump) {
         if (pump == null) {
             return null;
         }
-        pumps.add(pump);
+        this.pumps.add(pump);
         return this;
     }
 
-    public Block add(String text) {
+    public Block add(final String text) {
         if (text == null) {
             return null;
         }
-        pumps.add(new Text(text));
+        this.pumps.add(new Text(text));
         return this;
     }
 
-    public Block add_if(boolean condition, HtmlPump pump) {
+    public Block add_if(final boolean condition, final HtmlPump pump) {
         if (condition && pump != null) {
-            pumps.add(pump);
+            this.pumps.add(pump);
         }
         return this;
+    }
+
+    @Override
+    public void pump(final StringBuilder html) {
+        for (final HtmlPump pump : this.pumps) {
+            pump.pump(html);
+        }
     }
 }

@@ -22,17 +22,17 @@ public class ComplexMapInjectedSource extends Source {
 
     @Override
     public String get(final String key) {
-        return source.get(key);
+        return this.source.get(key);
     }
 
     @Override
     public void populateDomain(final Set<String> domain) {
-        source.populateDomain(domain);
+        this.source.populateDomain(domain);
     }
 
     @Override
     public void walkComplex(final BiConsumer<String, Object> injectComplex) {
-        source.walkComplex(injectComplex);
-        injectComplex.accept(mapKey, mapValue);
+        this.source.walkComplex(injectComplex);
+        injectComplex.accept(this.mapKey, this.mapValue);
     }
 }

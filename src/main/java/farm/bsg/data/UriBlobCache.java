@@ -11,17 +11,17 @@ public class UriBlobCache {
         public final String contentType;
         public final byte[] blob;
 
-        public UriBlob(String contentType, byte[] blob) {
+        public UriBlob(final String contentType, final byte[] blob) {
             this.contentType = contentType;
             this.blob = blob;
         }
 
-        public UriBlob transform(Function<String, String> fun) {
-            String output = fun.apply(new String(blob, Charsets.UTF_8));
+        public UriBlob transform(final Function<String, String> fun) {
+            final String output = fun.apply(new String(this.blob, Charsets.UTF_8));
             if (output == null) {
-                return new UriBlob(contentType, new byte[0]);
+                return new UriBlob(this.contentType, new byte[0]);
             }
-            return new UriBlob(contentType, output.getBytes(Charsets.UTF_8));
+            return new UriBlob(this.contentType, output.getBytes(Charsets.UTF_8));
         }
     }
 
@@ -31,12 +31,12 @@ public class UriBlobCache {
         this.blobs = new HashMap<>();
     }
 
-    public synchronized void write(String uri, UriBlob blob) {
-        blobs.put(uri, blob);
+    public synchronized UriBlob get(final String uri) {
+        return this.blobs.get(uri);
     }
 
-    public synchronized UriBlob get(String uri) {
-        return blobs.get(uri);
+    public synchronized void write(final String uri, final UriBlob blob) {
+        this.blobs.put(uri, blob);
     }
 
 }

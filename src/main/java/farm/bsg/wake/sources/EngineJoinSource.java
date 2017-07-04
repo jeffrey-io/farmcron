@@ -14,81 +14,83 @@ import farm.bsg.pages.YourCart;
 
 public class EngineJoinSource extends Source {
 
-    private final Source      base;
-    private final QueryEngine engine;
-
-    public EngineJoinSource(Source base, QueryEngine engine) {
-        this.base = base;
-        this.engine = engine;
-    }
-
-    private static final String QUERY_BEGIN_PREFIX = "!!query:";
-    private static final String QUERY_BEGIN_SUFFIX = "!!";
-    private static final String QUERY_END          = ":query!!";
-
     public static class InlineQuery {
-        public final String query;
-        public final String interior;
-        public final String replacement;
-
-        public InlineQuery(String query, String interior, String replacement) {
-            this.query = query;
-            this.interior = interior;
-            this.replacement = replacement;
-        }
-
-        public static InlineQuery parse(String body) {
+        public static InlineQuery parse(final String body) {
             if (body == null) {
                 return null;
             }
-            int start = body.indexOf(QUERY_BEGIN_PREFIX);
+            final int start = body.indexOf(QUERY_BEGIN_PREFIX);
             if (start >= 0) {
-                int end = body.indexOf(QUERY_BEGIN_SUFFIX, start + QUERY_BEGIN_SUFFIX.length());
-                String query = body.substring(start + QUERY_BEGIN_PREFIX.length(), end);
+                final int end = body.indexOf(QUERY_BEGIN_SUFFIX, start + QUERY_BEGIN_SUFFIX.length());
+                final String query = body.substring(start + QUERY_BEGIN_PREFIX.length(), end);
 
-                int wrappedEnd = body.indexOf(QUERY_END, end);
+                final int wrappedEnd = body.indexOf(QUERY_END, end);
                 if (wrappedEnd < 0) {
                     return null;
                 }
 
-                String middle = body.substring(end + QUERY_BEGIN_SUFFIX.length(), wrappedEnd);
-                String toReplace = body.substring(start, wrappedEnd + QUERY_END.length());
+                final String middle = body.substring(end + QUERY_BEGIN_SUFFIX.length(), wrappedEnd);
+                final String toReplace = body.substring(start, wrappedEnd + QUERY_END.length());
                 return new InlineQuery(query, middle, toReplace);
             }
             return null;
         }
 
+        public final String query;
+        public final String interior;
+
+        public final String replacement;
+
+        public InlineQuery(final String query, final String interior, final String replacement) {
+            this.query = query;
+            this.interior = interior;
+            this.replacement = replacement;
+        }
+
+    }
+
+    private static final String QUERY_BEGIN_PREFIX = "!!query:";
+
+    private static final String QUERY_BEGIN_SUFFIX = "!!";
+
+    private static final String QUERY_END          = ":query!!";
+    private final Source        base;
+    private final QueryEngine   engine;
+
+    public EngineJoinSource(final Source base, final QueryEngine engine) {
+        this.base = base;
+        this.engine = engine;
     }
 
     @Override
-    public String get(String key) {
-        return base.get(key);
+    public String get(final String key) {
+        return this.base.get(key);
     }
 
     @Override
-    public void populateDomain(Set<String> domain) {
-        base.populateDomain(domain);
+    public void populateDomain(final Set<String> domain) {
+        this.base.populateDomain(domain);
 
     }
 
     @Override
-    public void walkComplex(BiConsumer<String, Object> injectComplex) {
-        base.walkComplex(injectComplex);
+    public void walkComplex(final BiConsumer<String, Object> injectComplex) {
+        this.base.walkComplex(injectComplex);
 
-        ArrayList<String> categories = new ArrayList<>();
-        HashMap<String, ArrayList<HashMap<String, Object>>> productsByCategory = new HashMap<>();
+        final ArrayList<String> categories = new ArrayList<>();
+        final HashMap<String, ArrayList<HashMap<String, Object>>> productsByCategory = new HashMap<>();
 
-        ArrayList<HashMap<String, Object>> products = new ArrayList<>();
-        for (Product product : engine.select_product().done()) {
-            HashMap<String, Object> pMap = new HashMap<>();
+        final ArrayList<HashMap<String, Object>> products = new ArrayList<>();
+        for (final Product product : this.engine.select_product().done()) {
+            final HashMap<String, Object> pMap = new HashMap<>();
             pMap.put("id", product.getId());
             pMap.put("name", product.get("name"));
             pMap.put("description", product.get("description"));
             pMap.put("price", "$" + product.get("price"));
             pMap.put("old_price", "$" + product.get("old_price"));
 
-            HashMap<String, String> image = new HashMap<>();
-            String contentType = product.get("image_content_type");
+            final HashMap<String, String> image = new HashMap<>();
+            final String contentType = product.get("image_content_type");
             image.put("type", contentType);
             if (contentType != null) {
                 image.put("data", product.get("image"));
@@ -114,15 +116,15 @@ public class EngineJoinSource extends Source {
             products.add(pMap);
         }
         injectComplex.accept("products", products);
-        for (Entry<String, ArrayList<HashMap<String, Object>>> entry : productsByCategory.entrySet()) {
+        for (final Entry<String, ArrayList<HashMap<String, Object>>> entry : productsByCategory.entrySet()) {
             injectComplex.accept(entry.getKey(), entry.getValue());
         }
 
         // we should inject categories
 
-        for (WakeInputFile input : engine.select_wakeinputfile().done()) {
+        for (final WakeInputFile input : this.engine.select_wakeinputfile().done()) {
             if (input.isImage()) {
-                HashMap<String, String> iMap = new HashMap<>();
+                final HashMap<String, String> iMap = new HashMap<>();
                 iMap.put("base64", input.get("contents"));
                 iMap.put("mime", input.get("content_type"));
                 injectComplex.accept("file_" + input.get("filename").replaceAll(Pattern.quote("."), "_"), iMap);

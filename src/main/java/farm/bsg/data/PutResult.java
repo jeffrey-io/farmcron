@@ -16,17 +16,24 @@ public class PutResult {
         this.errors = null;
     }
 
-    public void addFieldFailure(String field, String errorCode) {
+    public void addFieldFailure(final String field, final String errorCode) {
         this.successful = false;
-        if (errors == null) {
-            errors = new HashMap<>();
+        if (this.errors == null) {
+            this.errors = new HashMap<>();
         }
-        ArrayList<String> current = errors.get(field);
+        ArrayList<String> current = this.errors.get(field);
         if (current == null) {
             current = new ArrayList<>();
-            errors.put(field, current);
+            this.errors.put(field, current);
         }
         current.add(errorCode);
+    }
+
+    public List<String> getErrors(final String field) {
+        if (this.errors == null) {
+            return null;
+        }
+        return this.errors.get(field);
     }
 
     public void setFailedStorage() {
@@ -39,32 +46,25 @@ public class PutResult {
         this.tooMuchData = true;
     }
 
-    public List<String> getErrors(String field) {
-        if (errors == null) {
-            return null;
-        }
-        return errors.get(field);
-    }
-
-    public boolean wasStorageFailure() {
-        return storageFailure;
-    }
-
-    public boolean wasTooMuchData() {
-        return tooMuchData;
-    }
-
     public boolean success() {
-        return successful;
+        return this.successful;
     }
 
     @Override
     public String toString() {
-        if (successful) {
+        if (this.successful) {
             return "success";
         }
-        StringBuilder failure = new StringBuilder();
+        final StringBuilder failure = new StringBuilder();
         failure.append("failed;");
         return failure.toString();
+    }
+
+    public boolean wasStorageFailure() {
+        return this.storageFailure;
+    }
+
+    public boolean wasTooMuchData() {
+        return this.tooMuchData;
     }
 }

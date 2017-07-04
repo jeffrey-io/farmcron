@@ -9,7 +9,7 @@ public class Form extends HtmlPump {
     private boolean      multipartFormData;
     private String       id;
 
-    public Form(String method, String href) {
+    public Form(final String method, final String href) {
         this.method = method;
         this.href = href;
         this.inner = null;
@@ -17,13 +17,13 @@ public class Form extends HtmlPump {
         this.clazz = null;
     }
 
-    public Form inner(HtmlPump inner) {
-        this.inner = inner;
+    public Form clazz(final String clazz) {
+        this.clazz = clazz;
         return this;
     }
 
-    public Form clazz(String clazz) {
-        this.clazz = clazz;
+    public Form inner(final HtmlPump inner) {
+        this.inner = inner;
         return this;
     }
 
@@ -32,28 +32,28 @@ public class Form extends HtmlPump {
         return this;
     }
 
-    public Form withId(String id) {
-        this.id = id;
-        return this;
-    }
-
     @Override
-    public void pump(StringBuilder html) {
-        html.append("<form method=\"").append(method).append("\" action=\"").append(href).append("\"");
-        if (multipartFormData) {
+    public void pump(final StringBuilder html) {
+        html.append("<form method=\"").append(this.method).append("\" action=\"").append(this.href).append("\"");
+        if (this.multipartFormData) {
             html.append(" enctype=\"multipart/form-data\"");
         }
-        if (clazz != null) {
-            html.append(" class=\"").append(clazz).append("\"");
+        if (this.clazz != null) {
+            html.append(" class=\"").append(this.clazz).append("\"");
         }
-        if (id != null) {
-            html.append(" id=\"").append(id).append("\"");
+        if (this.id != null) {
+            html.append(" id=\"").append(this.id).append("\"");
         }
         html.append(">");
-        if (inner != null) {
-            inner.pump(html);
+        if (this.inner != null) {
+            this.inner.pump(html);
 
         }
         html.append("</form>");
+    }
+
+    public Form withId(final String id) {
+        this.id = id;
+        return this;
     }
 }

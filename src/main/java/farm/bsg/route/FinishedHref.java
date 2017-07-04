@@ -4,7 +4,12 @@ public class FinishedHref {
 
     public final String value;
 
-    public FinishedHref(String href) {
+    public FinishedHref(final String href) {
         this.value = href;
+    }
+    
+    @Override
+    public String toString() {
+        return this.value;
     }
 }

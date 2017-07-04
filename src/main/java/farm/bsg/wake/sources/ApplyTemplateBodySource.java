@@ -42,13 +42,13 @@ public final class ApplyTemplateBodySource extends Source {
                 final HashSet<String> domain = new HashSet<>();
                 populateDomain(domain);
                 for (final String item : domain) {
-                    map.put(item, data.get(item));
+                    map.put(item, this.data.get(item));
                 }
                 walkComplex((k, v) -> {
                     map.put(k, v);
                 });
                 // render the body template
-                String ret = template.get("body");
+                String ret = this.template.get("body");
 
                 // until the hash code stablizie
                 long hash = ret.hashCode();
@@ -71,22 +71,22 @@ public final class ApplyTemplateBodySource extends Source {
                 throw new SourceException(failed.getMessage() + " impossible!");
             }
         }
-        final String returnValueIfNotNull = data.get(key);
+        final String returnValueIfNotNull = this.data.get(key);
         if (returnValueIfNotNull != null) {
             return returnValueIfNotNull;
         }
-        return template.get(key);
+        return this.template.get(key);
     }
 
     @Override
     public void populateDomain(final Set<String> domain) {
-        template.populateDomain(domain);
-        data.populateDomain(domain);
+        this.template.populateDomain(domain);
+        this.data.populateDomain(domain);
     }
 
     @Override
     public void walkComplex(final BiConsumer<String, Object> injectComplex) {
-        template.walkComplex(injectComplex);
-        data.walkComplex(injectComplex);
+        this.template.walkComplex(injectComplex);
+        this.data.walkComplex(injectComplex);
     }
 }

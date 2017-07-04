@@ -44,24 +44,6 @@ public abstract class Source implements Comparable<Source> {
     }
 
     /**
-     * Test whether or not the key has a boolean value like yes or true
-     */
-    public boolean testBoolean(String key) {
-        String value = get(key);
-        if (value == null) {
-            return false;
-        }
-        value = value.toLowerCase();
-        if (value.length() == 0) {
-            return false;
-        }
-        if ("1".equals(value)) {
-            return true;
-        }
-        return value.startsWith("t") || value.startsWith("y");
-    }
-
-    /**
      * Get the order from the object; if you sort this
      *
      * @return
@@ -80,6 +62,24 @@ public abstract class Source implements Comparable<Source> {
      * @param domain
      */
     public abstract void populateDomain(Set<String> domain);
+
+    /**
+     * Test whether or not the key has a boolean value like yes or true
+     */
+    public boolean testBoolean(final String key) {
+        String value = get(key);
+        if (value == null) {
+            return false;
+        }
+        value = value.toLowerCase();
+        if (value.length() == 0) {
+            return false;
+        }
+        if ("1".equals(value)) {
+            return true;
+        }
+        return value.startsWith("t") || value.startsWith("y");
+    }
 
     /**
      * A source may define things too complicated to return as a string, so instead, a source may provide things in the form of an Object that the top level can decide what to do with

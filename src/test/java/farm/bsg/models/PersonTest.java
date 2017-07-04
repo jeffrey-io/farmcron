@@ -6,7 +6,7 @@ import org.junit.Test;
 public class PersonTest {
     @Test
     public void Coverage() {
-        Person person = new Person();
+        final Person person = new Person();
         Assert.assertNotNull(person.toJson());
     }
 

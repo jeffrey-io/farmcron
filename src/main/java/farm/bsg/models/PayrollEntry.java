@@ -30,32 +30,21 @@ public class PayrollEntry extends RawObject {
             Field.STRING("unpaid").makeIndex(false) // if not "paid", then it is the employee id; DONE; indexed
     );
 
+    public static List<PayrollEntry> getUnpaidEntries(final QueryEngine engine, final String id) {
+        return engine.select_payrollentry().where_unpaid_eq(id).to_list().inline_order_lexographically_asc_by("reported").done();
+    }
+
+    public static void link(final CounterCodeGen c) {
+        c.section("Data: PayrollEntry");
+    }
+
     public PayrollEntry() {
         super(SCHEMA);
     }
 
-    public boolean isOutstanding() {
-        String unpaid = get("unpaid");
-        if (unpaid == null) {
-            return false;
-        }
-        if (unpaid.equals(get("person"))) {
-            return true;
-        }
-        return false;
-    }
-
-    public double getOwed() {
-        String owedRaw = get("owed");
-        if (owedRaw == null) {
-            return 0.0;
-        }
-        return Double.parseDouble(owedRaw);
-    }
-
-    public boolean executeBenefits(Person person, int dMonth) {
+    public boolean executeBenefits(final Person person, final int dMonth) {
         set("person", person.getId());
-        String monthly_benefits = person.get("monthly_benefits");
+        final String monthly_benefits = person.get("monthly_benefits");
         if (monthly_benefits == null) {
             return false;
         }
@@ -67,27 +56,30 @@ public class PayrollEntry extends RawObject {
         return true;
     }
 
-    private void sharedNormalize(Person person) {
-        copyFrom(person, "hourly_wage_compesation", "mileage_compensation", "tax_withholding");
-        double hoursWorked = getAsDouble("hours_worked");
-        double mileageReported = getAsDouble("mileage");
-        double wageRate = getAsDouble("hourly_wage_compesation");
-        double mileageRate = getAsDouble("mileage_compensation");
-        double ptoUsed = getAsDouble("pto_used");
-        double sickLeaveUsed = getAsDouble("sick_leave_used");
-        double hoursOwed = hoursWorked + ptoUsed + sickLeaveUsed;
-        double benefitsOwed = getAsDouble("benefits");
-        double taxWithholding = getAsDouble("tax_withholding");
-        double beforeTaxes = hoursOwed * wageRate + mileageReported * mileageRate + benefitsOwed;
-        double taxes = taxWithholding * beforeTaxes;
-        taxes = Math.ceil(taxes * 100) / 100.0;
-        double owed = beforeTaxes - taxes;
-        owed = Math.ceil(owed * 10) / 10.0;
-        set("owed", owed);
-        set("taxes", taxes);
+    public double getOwed() {
+        final String owedRaw = get("owed");
+        if (owedRaw == null) {
+            return 0.0;
+        }
+        return Double.parseDouble(owedRaw);
     }
 
-    public void normalize(Person person) {
+    @Override
+    protected void invalidateCache() {
+    }
+
+    public boolean isOutstanding() {
+        final String unpaid = get("unpaid");
+        if (unpaid == null) {
+            return false;
+        }
+        if (unpaid.equals(get("person"))) {
+            return true;
+        }
+        return false;
+    }
+
+    public void normalize(final Person person) {
         set("person", person.getId());
         if (get("unpaid") == null) {
             set("unpaid", person.getId());
@@ -103,16 +95,24 @@ public class PayrollEntry extends RawObject {
         sharedNormalize(person);
     }
 
-    public static List<PayrollEntry> getUnpaidEntries(QueryEngine engine, String id) {
-        return engine.select_payrollentry().where_unpaid_eq(id).to_list().inline_order_lexographically_asc_by("reported").done();
-    }
-
-    public static void link(CounterCodeGen c) {
-        c.section("Data: PayrollEntry");
-    }
-
-    @Override
-    protected void invalidateCache() {
+    private void sharedNormalize(final Person person) {
+        copyFrom(person, "hourly_wage_compesation", "mileage_compensation", "tax_withholding");
+        final double hoursWorked = getAsDouble("hours_worked");
+        final double mileageReported = getAsDouble("mileage");
+        final double wageRate = getAsDouble("hourly_wage_compesation");
+        final double mileageRate = getAsDouble("mileage_compensation");
+        final double ptoUsed = getAsDouble("pto_used");
+        final double sickLeaveUsed = getAsDouble("sick_leave_used");
+        final double hoursOwed = hoursWorked + ptoUsed + sickLeaveUsed;
+        final double benefitsOwed = getAsDouble("benefits");
+        final double taxWithholding = getAsDouble("tax_withholding");
+        final double beforeTaxes = hoursOwed * wageRate + mileageReported * mileageRate + benefitsOwed;
+        double taxes = taxWithholding * beforeTaxes;
+        taxes = Math.ceil(taxes * 100) / 100.0;
+        double owed = beforeTaxes - taxes;
+        owed = Math.ceil(owed * 10) / 10.0;
+        set("owed", owed);
+        set("taxes", taxes);
     }
 
 }

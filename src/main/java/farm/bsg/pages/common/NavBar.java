@@ -15,41 +15,37 @@ public class NavBar {
         public final String     label;
         public final Permission permission;
 
-        public NavItem(String href, String label, Permission permission) {
+        public NavItem(final String href, final String label, final Permission permission) {
             this.href = href;
             this.label = label;
             this.permission = permission;
         }
     }
 
-    private ArrayList<NavItem>      items;
-    private ProductEngine           engine;
-    private HashMap<String, String> uri2title;
+    private final ArrayList<NavItem>      items;
+    private final ProductEngine           engine;
+    private final HashMap<String, String> uri2title;
 
-    public NavBar(ProductEngine engine) {
+    public NavBar(final ProductEngine engine) {
         this.engine = engine;
         this.items = new ArrayList<>();
         this.uri2title = new HashMap<>();
     }
 
-    public String title(String href) {
-        return uri2title.get(href);
-    }
-
-    public void add(String href, String label, Permission permission) {
-        uri2title.put(href, label);
+    public void add(final String href, final String label, final Permission permission) {
+        this.uri2title.put(href, label);
         this.items.add(new NavItem(href, label, permission));
     }
 
-    public String html(String href, SessionRequest session) {
-        String productName = engine.siteproperties_get().get("product_name");
-        StringBuilder sb = new StringBuilder();
+    public String html(final String href, final SessionRequest session) {
+        final String productName = this.engine.siteproperties_get().get("product_name");
+        final StringBuilder sb = new StringBuilder();
         sb.append("<nav class=\"navbar navbar-fixed-top navbar-dark bg-inverse\"><div class=\"container\">");
         sb.append("<button class=\"navbar-toggler hidden-sm-up\" type=\"button\" data-toggle=\"collapse\" data-target=\"#navbar-header\" aria-controls=\"navbar-header\" aria-expanded=\"false\" aria-label=\"Toggle navigation\"></button>");
         sb.append("<div class=\"collapse navbar-toggleable-xs\" id=\"navbar-header\">");
         sb.append("<a class=\"navbar-brand\" href=\"/\">" + productName + "</a>");
         sb.append("<ul class=\"nav navbar-nav\">");
-        for (NavItem item : items) {
+        for (final NavItem item : this.items) {
             if (!session.has(item.permission)) {
                 continue;
             }
@@ -67,5 +63,9 @@ public class NavBar {
         sb.append("</div>");
         sb.append("</div></nav>");
         return sb.toString();
+    }
+
+    public String title(final String href) {
+        return this.uri2title.get(href);
     }
 }

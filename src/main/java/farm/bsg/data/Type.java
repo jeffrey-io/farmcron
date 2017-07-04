@@ -15,13 +15,13 @@ public abstract class Type implements ReadOnlyType {
 
     private Set<String>  projections;
 
-    public Type(String name) {
+    public Type(final String name) {
         this.name = name;
         this.annotations = null;
         this.projections = null;
     }
 
-    public Type addProjection(String projection) {
+    public Type addProjection(final String projection) {
         if (this.projections == null) {
             this.projections = new HashSet<>();
             this.projections.add("admin");
@@ -30,27 +30,27 @@ public abstract class Type implements ReadOnlyType {
         return this;
     }
 
+    public Type annotate(final String flag) {
+        if (this.annotations == null) {
+            this.annotations = new HashSet<>();
+        }
+        this.annotations.add(flag);
+        return this;
+    }
+
     public Set<String> getProjections() {
-        if (projections == null) {
+        if (this.projections == null) {
             return Collections.singleton("admin");
         } else {
-            return projections;
+            return this.projections;
         }
     }
 
-    public Type markAsScope() {
-        isScoped = true;
-        return this;
-    }
-
-    public boolean isScoped() {
-        return this.isScoped;
-    }
-
-    public Type makeIndex(boolean isUnique) {
-        this.isIndex = true;
-        this.isUnique = isUnique;
-        return this;
+    public boolean has(final String flag) {
+        if (this.annotations == null) {
+            return false;
+        }
+        return this.annotations.add(flag);
     }
 
     public boolean isIndexed() {
@@ -61,18 +61,18 @@ public abstract class Type implements ReadOnlyType {
         return this.isUnique;
     }
 
-    public boolean has(String flag) {
-        if (this.annotations == null) {
-            return false;
-        }
-        return this.annotations.add(flag);
+    public boolean isScoped() {
+        return this.isScoped;
     }
 
-    public Type annotate(String flag) {
-        if (this.annotations == null) {
-            this.annotations = new HashSet<>();
-        }
-        this.annotations.add(flag);
+    public Type makeIndex(final boolean isUnique) {
+        this.isIndex = true;
+        this.isUnique = isUnique;
+        return this;
+    }
+
+    public Type markAsScope() {
+        this.isScoped = true;
         return this;
     }
 

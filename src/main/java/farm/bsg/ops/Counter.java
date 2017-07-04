@@ -9,7 +9,7 @@ public class Counter {
     public final String      description;
     public final boolean     alarm;
 
-    public Counter(final String section, final String name, final String description, boolean alarm) {
+    public Counter(final String section, final String name, final String description, final boolean alarm) {
         this.value = new AtomicLong(0);
         this.section = section;
         this.name = name;
@@ -17,20 +17,20 @@ public class Counter {
         this.alarm = alarm;
     }
 
-    public void add(long delta) {
+    public void add(final long delta) {
         this.value.addAndGet(delta);
     }
 
     public void bump() {
-        value.incrementAndGet();
+        this.value.incrementAndGet();
     }
 
     public void decrement() {
-        value.decrementAndGet();
+        this.value.decrementAndGet();
     }
 
     public long get() {
-        return value.get();
+        return this.value.get();
     }
 
 }

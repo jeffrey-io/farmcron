@@ -21,6 +21,6 @@ public class SetStage extends Stage {
 
     @Override
     public Collection<Source> sources() {
-        return sources;
+        return this.sources;
     }
 }

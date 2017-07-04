@@ -9,26 +9,11 @@ import farm.bsg.route.SessionRequest;
 import farm.bsg.route.SessionRoute;
 
 public interface SparkBoxConverter<T, R> {
+    public static final SparkBoxConverter<CustomerRequest, CustomerRoute>   TO_CUSTOMER_REQUEST  = (engine, request) -> new CustomerRequest(engine, request);
+
+    public static final SparkBoxConverter<SessionRequest, SessionRoute>     TO_SESSION_REQUEST   = (engine, request) -> new SessionRequest(engine, request);
+
+    public static final SparkBoxConverter<AnonymousRequest, AnonymousRoute> TO_ANONYMOUS_REQUEST = (engine, request) -> new AnonymousRequest(engine, request);
+
     public T convert(ProductEngine engine, SparkBox request);
-
-    public static final SparkBoxConverter<CustomerRequest, CustomerRoute>   TO_CUSTOMER_REQUEST  = new SparkBoxConverter<CustomerRequest, CustomerRoute>() {
-                                                                                                     @Override
-                                                                                                     public CustomerRequest convert(ProductEngine engine, SparkBox request) {
-                                                                                                         return new CustomerRequest(engine, request);
-                                                                                                     }
-                                                                                                 };
-
-    public static final SparkBoxConverter<SessionRequest, SessionRoute>     TO_SESSION_REQUEST   = new SparkBoxConverter<SessionRequest, SessionRoute>() {
-                                                                                                     @Override
-                                                                                                     public SessionRequest convert(ProductEngine engine, SparkBox request) {
-                                                                                                         return new SessionRequest(engine, request);
-                                                                                                     }
-                                                                                                 };
-
-    public static final SparkBoxConverter<AnonymousRequest, AnonymousRoute> TO_ANONYMOUS_REQUEST = new SparkBoxConverter<AnonymousRequest, AnonymousRoute>() {
-                                                                                                     @Override
-                                                                                                     public AnonymousRequest convert(ProductEngine engine, SparkBox request) {
-                                                                                                         return new AnonymousRequest(engine, request);
-                                                                                                     }
-                                                                                                 };
 }

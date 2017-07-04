@@ -15,12 +15,12 @@ public class Subscriber extends RawObject {
             Field.STRING("debug") // DONE
     );
 
-    public Subscriber() {
-        super(SCHEMA);
+    public static void link(final CounterCodeGen c) {
+        c.section("Data: Subscriber");
     }
 
-    public static void link(CounterCodeGen c) {
-        c.section("Data: Subscriber");
+    public Subscriber() {
+        super(SCHEMA);
     }
 
     @Override

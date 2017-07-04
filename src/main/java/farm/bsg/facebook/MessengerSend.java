@@ -10,32 +10,31 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.slf4j.Logger;
 
 import com.amazonaws.util.json.Jackson;
 
+import farm.bsg.ops.Logs;
+
 public class MessengerSend {
 
-    private final String pageAccessToken;
+    private static final Logger LOG = Logs.of(MessengerSend.class);
 
-    public MessengerSend(String pageAccessToken) {
-        this.pageAccessToken = pageAccessToken;
-    }
-
-    public static byte[] executeJsonPost(String uri, String body) {
+    public static byte[] executeJsonPost(final String uri, final String body) {
         try {
-            CloseableHttpClient httpclient = HttpClients.createDefault();
+            final CloseableHttpClient httpclient = HttpClients.createDefault();
             try {
-                HttpPost post = new HttpPost(uri);
+                final HttpPost post = new HttpPost(uri);
                 post.setHeader("Content-Type", "application/json");
                 post.setEntity(new StringEntity(body));
-                CloseableHttpResponse response = httpclient.execute(post);
+                final CloseableHttpResponse response = httpclient.execute(post);
                 try {
-                    HttpEntity entity = response.getEntity();
+                    final HttpEntity entity = response.getEntity();
                     if (entity != null) {
-                        InputStream input = entity.getContent();
+                        final InputStream input = entity.getContent();
                         try {
-                            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                            byte[] bytes = new byte[64 * 1024];
+                            final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                            final byte[] bytes = new byte[64 * 1024];
                             int read;
                             while ((read = input.read(bytes)) >= 0) {
                                 baos.write(bytes, 0, read);
@@ -53,26 +52,32 @@ public class MessengerSend {
             } finally {
                 httpclient.close();
             }
-        } catch (Exception err) {
+        } catch (final Exception err) {
             return null;
         }
     }
 
-    public boolean send(String userId, String text) {
-        HashMap<String, Object> node = new HashMap<>();
-        HashMap<String, Object> recipient = new HashMap<>();
-        HashMap<String, Object> message = new HashMap<>();
+    private final String pageAccessToken;
+
+    public MessengerSend(final String pageAccessToken) {
+        this.pageAccessToken = pageAccessToken;
+    }
+
+    public boolean send(final String userId, final String text) {
+        final HashMap<String, Object> node = new HashMap<>();
+        final HashMap<String, Object> recipient = new HashMap<>();
+        final HashMap<String, Object> message = new HashMap<>();
 
         recipient.put("id", userId);
         message.put("text", text);
         node.put("recipient", recipient);
         node.put("message", message);
 
-        String body = Jackson.toJsonString(node);
-        String url = "https://graph.facebook.com/v2.6/me/messages?access_token=" + pageAccessToken;
+        final String body = Jackson.toJsonString(node);
+        final String url = "https://graph.facebook.com/v2.6/me/messages?access_token=" + this.pageAccessToken;
 
-        byte[] result = executeJsonPost(url, body);
-        System.out.println(new String(result));
+        final byte[] result = executeJsonPost(url, body);
+        LOG.info("Message-send-result-fb: {}", new String(result));
         return true;
     }
 }

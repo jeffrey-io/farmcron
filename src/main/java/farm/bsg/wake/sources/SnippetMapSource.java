@@ -23,26 +23,26 @@ public class SnippetMapSource extends Source {
 
     @Override
     public String get(final String key) {
-        String value = snippetsHigher.get(key);
+        String value = this.snippetsHigher.get(key);
         if (value != null) {
             return value;
         }
-        value = real.get(key);
+        value = this.real.get(key);
         if (value != null) {
             return value;
         }
-        return snippetsLower.get(key);
+        return this.snippetsLower.get(key);
     }
 
     @Override
     public void populateDomain(final Set<String> domain) {
-        domain.addAll(snippetsHigher.keySet());
-        real.populateDomain(domain);
-        domain.addAll(snippetsLower.keySet());
+        domain.addAll(this.snippetsHigher.keySet());
+        this.real.populateDomain(domain);
+        domain.addAll(this.snippetsLower.keySet());
     }
 
     @Override
     public void walkComplex(final BiConsumer<String, Object> injectComplex) {
-        real.walkComplex(injectComplex);
+        this.real.walkComplex(injectComplex);
     }
 }

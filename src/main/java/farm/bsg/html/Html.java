@@ -5,53 +5,65 @@ import farm.bsg.route.FinishedHref;
 
 public class Html {
 
-    public static Input input(String name) {
-        return new Input(name);
+    public static BitMaskInput bitmask(final String name, final SingleCharacterBitmaskProvider provider) {
+        return new BitMaskInput(name, provider);
     }
 
-    public static Table table(String... headings) {
-        return Table.start(headings);
-    }
-
-    public static Label label(String id, String label) {
-        return new Label(id, text(label));
-    }
-
-    public static Text text(String s) {
-        return new Text(s);
-    }
-
-    public static Tag tag() {
-        return new Tag();
+    public static Block block() {
+        return new Block();
     }
 
     public static BreadCrumbs breadcrumbs() {
         return new BreadCrumbs();
     }
 
-    public static Link link(FinishedHref href, String label) {
-        return new Link(href.value, text(label));
-    }
-
-    public static Link link(FinishedHref href, HtmlPump label) {
-        return new Link(href.value, label);
-    }
-
-    public static Link link_direct(String href, String label) {
-        return new Link(href, text(label));
-    }
-
-    @Deprecated
-    public static Link link(String href, HtmlPump label) {
-        return new Link(href, label);
+    public static Form form(final String method, final FinishedHref href) {
+        return new Form(method, href.value);
     }
 
     public static Img img() {
         return new Img();
     }
 
-    public static Block block() {
-        return new Block();
+    public static Input input(final String name) {
+        return new Input(name);
+    }
+
+    public static Label label(final String id, final String label) {
+        return new Label(id, text(label));
+    }
+
+    public static Link link(final FinishedHref href, final HtmlPump label) {
+        return new Link(href.value, label);
+    }
+
+    public static Link link(final FinishedHref href, final String label) {
+        return new Link(href.value, text(label));
+    }
+
+    @Deprecated
+    public static Link link(final String href, final HtmlPump label) {
+        return new Link(href, label);
+    }
+
+    public static Link link_direct(final String href, final String label) {
+        return new Link(href, text(label));
+    }
+
+    public static Nav nav() {
+        return new Nav();
+    }
+
+    public static Table table(final String... headings) {
+        return Table.start(headings);
+    }
+
+    public static Tag tag() {
+        return new Tag();
+    }
+
+    public static Text text(final String s) {
+        return new Text(s);
     }
 
     public static WrappedBlock W() {
@@ -60,17 +72,5 @@ public class Html {
 
     public static WrappedBlock wrapped() {
         return new WrappedBlock();
-    }
-
-    public static Nav nav() {
-        return new Nav();
-    }
-
-    public static Form form(String method, FinishedHref href) {
-        return new Form(method, href.value);
-    }
-
-    public static BitMaskInput bitmask(String name, SingleCharacterBitmaskProvider provider) {
-        return new BitMaskInput(name, provider);
     }
 }

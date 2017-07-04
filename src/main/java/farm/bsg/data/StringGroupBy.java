@@ -10,11 +10,11 @@ public class StringGroupBy<T> {
         this.index = new HashMap<>();
     }
 
-    public void add(String key, T value) {
-        ArrayList<T> list = index.get(key);
+    public void add(final String key, final T value) {
+        ArrayList<T> list = this.index.get(key);
         if (list == null) {
             list = new ArrayList<>();
-            index.put(key, list);
+            this.index.put(key, list);
         }
         list.add(value);
     }

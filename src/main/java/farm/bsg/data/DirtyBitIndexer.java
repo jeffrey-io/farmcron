@@ -4,7 +4,7 @@ import farm.bsg.data.contracts.KeyValuePairLogger;
 
 /**
  * a dirty bit indexer allows for asynchonous invalidating of caches or things that can be computed. It allows you to say "Ok, everything under this prefix changed, so we need to compute something.";
- * 
+ *
  * It is asynchronous in the sense that if multiple things changes, then the implementor can shift the compute temporarily and wait until things are settled down and minimize compute.
  *
  * @author jeffrey
@@ -22,23 +22,40 @@ public abstract class DirtyBitIndexer implements KeyValuePairLogger, AsyncTaskTa
     }
 
     @Override
-    public void validate(String key, Value oldValue, Value newValue, PutResult result) {
+    public synchronized void begin() {
+        this.state = State.TASK_IN_PROGRESS;
     }
 
     @Override
-    public void put(String key, Value oldValue, Value newValue) {
-        if (markDirtyUnderLock()) {
+    public void complete(final boolean success) {
+        if (completeUnderLock(success)) {
             onDirty(this);
         }
     }
 
+    private synchronized boolean completeUnderLock(final boolean success) {
+        switch (this.state) {
+            case TASK_IN_PROGRESS_NEEDS_DIRTY:
+                this.state = State.TASK_IN_PROGRESS;
+                return true;
+            default:
+                if (success) {
+                    this.state = State.CLEAN;
+                    return false;
+                } else {
+                    this.state = State.DIRTY;
+                    return true;
+                }
+        }
+    }
+
     private synchronized boolean markDirtyUnderLock() {
-        switch (state) {
+        switch (this.state) {
             case CLEAN:
-                state = State.DIRTY;
+                this.state = State.DIRTY;
                 return true;
             case TASK_IN_PROGRESS:
-                state = State.TASK_IN_PROGRESS_NEEDS_DIRTY;
+                this.state = State.TASK_IN_PROGRESS_NEEDS_DIRTY;
             default:
                 return false;
 
@@ -48,30 +65,13 @@ public abstract class DirtyBitIndexer implements KeyValuePairLogger, AsyncTaskTa
     public abstract void onDirty(AsyncTaskTarget target);
 
     @Override
-    public synchronized void begin() {
-        state = State.TASK_IN_PROGRESS;
-    }
-
-    private synchronized boolean completeUnderLock(boolean success) {
-        switch (state) {
-            case TASK_IN_PROGRESS_NEEDS_DIRTY:
-                state = State.TASK_IN_PROGRESS;
-                return true;
-            default:
-                if (success) {
-                    state = State.CLEAN;
-                    return false;
-                } else {
-                    state = State.DIRTY;
-                    return true;
-                }
+    public void put(final String key, final Value oldValue, final Value newValue) {
+        if (markDirtyUnderLock()) {
+            onDirty(this);
         }
     }
 
     @Override
-    public void complete(boolean success) {
-        if (completeUnderLock(success)) {
-            onDirty(this);
-        }
+    public void validate(final String key, final Value oldValue, final Value newValue, final PutResult result) {
     }
 }

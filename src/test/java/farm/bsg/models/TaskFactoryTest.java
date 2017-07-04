@@ -6,8 +6,8 @@ import org.junit.Test;
 public class TaskFactoryTest {
     @Test
     public void Readyness() {
-        TaskFactory factory = new TaskFactory();
-        long now = 1498099238370L;
+        final TaskFactory factory = new TaskFactory();
+        final long now = 1498099238370L;
         for (int k = 0; k < 100; k++) {
             Assert.assertTrue(factory.ready(now + k * 24 * 60 * 60 * 1000));
         }

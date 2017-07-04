@@ -19,17 +19,134 @@ import farm.bsg.route.SessionRequest;
 import farm.bsg.route.SimpleURI;
 
 public class You extends SessionPage {
-    private static final Logger LOG = Logs.of(You.class);
+    private static final Logger LOG                     = Logs.of(You.class);
 
-    public You(SessionRequest session) {
+    public static SimpleURI     YOU                     = new SimpleURI("/admin/you");
+
+    public static SimpleURI     YOU_CHANGE_PW           = new SimpleURI("/admin/you;change-password");
+
+    public static SimpleURI     YOU_UPDATE_CONTACT_INFO = new SimpleURI("/admin/you;update-contact-info");
+
+    public static SimpleURI     YOU_COMMIT_CONTACT_INFO = new SimpleURI("/admin/you;commit-contact-info");
+
+    public static void link(final CounterCodeGen c) {
+        c.section("Page: You");
+    }
+
+    public static void link(final RoutingTable routing) {
+        routing.navbar(YOU, "You", Permission.Public);
+
+        routing.text((engine, text) -> {
+            final String message = text.message.toLowerCase().trim();
+            if (message.startsWith("link")) {
+                LOG.info("recieved link request from:" + text.from);
+                final String token = message.substring(message.length() - 4).trim().toLowerCase();
+                final Person person = engine.select_person().where_notification_token_eq(token).to_list().first();
+                if (person != null) {
+                    LOG.info("recieved request associated!");
+                    person.set("notification_uri", text.getNotificationUri());
+                    if (engine.put(person).success()) {
+                        return text.generateResponse("Linked");
+                    } else {
+                        return text.generateResponse("Failed to write");
+                    }
+                } else {
+                    LOG.info("was unable to find notification token: " + token);
+                    return text.generateResponse("Failed to find notification token");
+                }
+            }
+
+            return null;
+        });
+        routing.get(YOU, (session) -> new You(session).show());
+        routing.get_or_post(YOU_CHANGE_PW, (session) -> new You(session).changepw());
+        routing.get_or_post(YOU_UPDATE_CONTACT_INFO, (session) -> new You(session).edit_contact());
+        routing.get_or_post(YOU_COMMIT_CONTACT_INFO, (session) -> new You(session).commit_contact());
+    }
+
+    public You(final SessionRequest session) {
         super(session, YOU);
         ensurePersonHasNotificationToken();
     }
 
+    public String changepw() {
+        if (commitpw()) {
+            redirect(YOU.href());
+            return null;
+        }
+        final Block page = Html.block();
+        page.add(Html.W().h5().wrap("Change Password"));
+        final Table table = new Table(null, null);
+        table.row(Html.label("old_password", "Current Password"), //
+                new Input("old_password").placeholder("current password...").clazz("form-control").password().id_from_name().autofocus().required());
+
+        table.row(Html.label("new_password_1", "Password"), //
+                new Input("new_password_1").placeholder("new password...").clazz("form-control").password().id_from_name().autofocus().required());
+        table.row(Html.label("new_password_2", "Confirm Password"), //
+                new Input("new_password_2").placeholder("new password confirm...").clazz("form-control").password().id_from_name().autofocus().required());
+        table.row("", Html.input("submit").id_from_name().value("Update").submit());
+        page.add(Html.form("post", YOU_CHANGE_PW.href()).inner(table));
+        return finish_pump(page);
+    }
+
+    public String commit_contact() {
+        final Person person = person();
+        if (query().projection_person_contact_info_of(this.session).apply(person).success()) {
+            this.engine.put(person);
+            person.sync(this.session.engine);
+            redirect(YOU.href());
+            return null;
+        }
+        return edit_contact();
+    }
+
+    public boolean commitpw() {
+        final Person person = person();
+        final String old_password = this.session.getParam("old_password");
+        final String new_password_1 = this.session.getParam("new_password_1");
+        final String new_password_2 = this.session.getParam("new_password_2");
+
+        if (old_password == null || new_password_1 == null) {
+            return false;
+        }
+
+        final boolean allowed = this.session.engine.auth.authenticateByUsernameAndPassword(person.login(), old_password).allowed;
+        if (!allowed) {
+            return false;
+        }
+
+        if (new_password_1.equals(new_password_2)) {
+            person.setPassword(new_password_1);
+            if (query().put(person).success()) {
+                person.sync(this.session.engine);
+                return true;
+            }
+            return false;
+        }
+        return false;
+    }
+
+    public String edit_contact() {
+        final Person person = person();
+        person.importValuesFromReqeust(this.session, "");
+        final Block page = Html.block();
+        page.add(Html.W().h3().wrap("Edit Contact Information"));
+
+        final Block formInner = Html.block();
+
+        page.add(Html.W().h3().wrap("Contact Information"));
+        formInner.add(Html.input("id").pull(person));
+        People.injectContact(formInner, person);
+        formInner.add(Html.wrapped().form_group() //
+                .wrap(Html.input("submit").id_from_name().value("Update").submit()));
+        page.add(Html.form("post", YOU_COMMIT_CONTACT_INFO.href()).inner(formInner));
+        return finish_pump(page);
+    }
+
     private void ensurePersonHasNotificationToken() {
-        Person person = person();
+        final Person person = person();
         if (person.isNullOrEmpty("notification_token")) {
-            byte[] token = new byte[4];
+            final byte[] token = new byte[4];
             ThreadLocalRandom.current().nextBytes(token);
             person.set("notification_token", new String(Hex.encodeHex(token, true)));
             query().put(person);
@@ -37,8 +154,8 @@ public class You extends SessionPage {
     }
 
     public String show() {
-        Block page = Html.block();
-        Person person = person();
+        final Block page = Html.block();
+        final Person person = person();
 
         Table table = new Table("Field", "Value");
         table.row("login", person.get("login"));
@@ -64,132 +181,18 @@ public class You extends SessionPage {
 
         page.add(Html.W().h5().wrap("Notifications"));
         if (person.isNullOrEmpty("notification_uri")) {
-            String token = person.get("notification_token");
+            final String token = person.get("notification_token");
             page.add(Html.W().p().wrap("Currently, notifications are not set up for you. Text \"link " + token + "\" to the robot to link."));
         } else {
-            String uri = person.get("notification_uri");
+            final String uri = person.get("notification_uri");
             page.add(Html.W().p().wrap("Notifications are currently set up to use this token: \"" + uri + "\" If this is not working, then please clear the notification uri to start over."));
         }
         page.add(Html.W().h5().wrap("Actions"));
-        Block actions = Html.block();
+        final Block actions = Html.block();
         actions.add(Html.W().li().wrap(Html.link(YOU_CHANGE_PW.href(), "Change Password").btn_secondary()));
         actions.add(Html.W().li().wrap(Html.link(YOU_UPDATE_CONTACT_INFO.href(), "Edit Contact Information").btn_secondary()));
         page.add(Html.wrapped().ul().wrap(actions));
 
         return finish_pump(page);
-    }
-
-    public String edit_contact() {
-        Person person = person();
-        person.importValuesFromReqeust(session, "");
-        Block page = Html.block();
-        page.add(Html.W().h3().wrap("Edit Contact Information"));
-
-        Block formInner = Html.block();
-
-        page.add(Html.W().h3().wrap("Contact Information"));
-        formInner.add(Html.input("id").pull(person));
-        People.injectContact(formInner, person);
-        formInner.add(Html.wrapped().form_group() //
-                .wrap(Html.input("submit").id_from_name().value("Update").submit()));
-        page.add(Html.form("post", YOU_COMMIT_CONTACT_INFO.href()).inner(formInner));
-        return finish_pump(page);
-    }
-
-    public String commit_contact() {
-        Person person = person();
-        if (query().projection_person_contact_info_of(session).apply(person).success()) {
-            engine.put(person);
-            person.sync(session.engine);
-            redirect(YOU.href());
-            return null;
-        }
-        return edit_contact();
-    }
-
-    public String changepw() {
-        if (commitpw()) {
-            redirect(YOU.href());
-            return null;
-        }
-        Block page = Html.block();
-        page.add(Html.W().h5().wrap("Change Password"));
-        Table table = new Table(null, null);
-        table.row(Html.label("old_password", "Current Password"), //
-                new Input("old_password").placeholder("current password...").clazz("form-control").password().id_from_name().autofocus().required());
-
-        table.row(Html.label("new_password_1", "Password"), //
-                new Input("new_password_1").placeholder("new password...").clazz("form-control").password().id_from_name().autofocus().required());
-        table.row(Html.label("new_password_2", "Confirm Password"), //
-                new Input("new_password_2").placeholder("new password confirm...").clazz("form-control").password().id_from_name().autofocus().required());
-        table.row("", Html.input("submit").id_from_name().value("Update").submit());
-        page.add(Html.form("post", YOU_CHANGE_PW.href()).inner(table));
-        return finish_pump(page);
-    }
-
-    public boolean commitpw() {
-        Person person = person();
-        String old_password = session.getParam("old_password");
-        String new_password_1 = session.getParam("new_password_1");
-        String new_password_2 = session.getParam("new_password_2");
-
-        if (old_password == null || new_password_1 == null) {
-            return false;
-        }
-
-        boolean allowed = session.engine.auth.authenticateByUsernameAndPassword(person.login(), old_password).allowed;
-        if (!allowed) {
-            return false;
-        }
-
-        if (new_password_1.equals(new_password_2)) {
-            person.setPassword(new_password_1);
-            if (query().put(person).success()) {
-                person.sync(session.engine);
-                return true;
-            }
-            return false;
-        }
-        return false;
-    }
-
-    public static void link(RoutingTable routing) {
-        routing.navbar(YOU, "You", Permission.Public);
-
-        routing.text((engine, text) -> {
-            String message = text.message.toLowerCase().trim();
-            if (message.startsWith("link")) {
-                LOG.info("recieved link request from:" + text.from);
-                String token = message.substring(message.length() - 4).trim().toLowerCase();
-                Person person = engine.select_person().where_notification_token_eq(token).to_list().first();
-                if (person != null) {
-                    LOG.info("recieved request associated!");
-                    person.set("notification_uri", text.getNotificationUri());
-                    if (engine.put(person).success()) {
-                        return text.generateResponse("Linked");
-                    } else {
-                        return text.generateResponse("Failed to write");
-                    }
-                } else {
-                    LOG.info("was unable to find notification token: " + token);
-                    return text.generateResponse("Failed to find notification token");
-                }
-            }
-
-            return null;
-        });
-        routing.get(YOU, (session) -> new You(session).show());
-        routing.get_or_post(YOU_CHANGE_PW, (session) -> new You(session).changepw());
-        routing.get_or_post(YOU_UPDATE_CONTACT_INFO, (session) -> new You(session).edit_contact());
-        routing.get_or_post(YOU_COMMIT_CONTACT_INFO, (session) -> new You(session).commit_contact());
-    }
-
-    public static SimpleURI YOU                     = new SimpleURI("/you");
-    public static SimpleURI YOU_CHANGE_PW           = new SimpleURI("/you;change-password");
-    public static SimpleURI YOU_UPDATE_CONTACT_INFO = new SimpleURI("/you;update-contact-info");
-    public static SimpleURI YOU_COMMIT_CONTACT_INFO = new SimpleURI("/you;commit-contact-info");
-
-    public static void link(CounterCodeGen c) {
-        c.section("Page: You");
     }
 }
