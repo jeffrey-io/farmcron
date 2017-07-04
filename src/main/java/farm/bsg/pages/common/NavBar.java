@@ -47,7 +47,7 @@ public class NavBar {
         sb.append("<nav class=\"navbar navbar-fixed-top navbar-dark bg-inverse\"><div class=\"container\">");
         sb.append("<button class=\"navbar-toggler hidden-sm-up\" type=\"button\" data-toggle=\"collapse\" data-target=\"#navbar-header\" aria-controls=\"navbar-header\" aria-expanded=\"false\" aria-label=\"Toggle navigation\"></button>");
         sb.append("<div class=\"collapse navbar-toggleable-xs\" id=\"navbar-header\">");
-        sb.append("<a class=\"navbar-brand\" href=\"#\">" + productName + "</a>");
+        sb.append("<a class=\"navbar-brand\" href=\"/\">" + productName + "</a>");
         sb.append("<ul class=\"nav navbar-nav\">");
         for (NavItem item : items) {
             if (!session.has(item.permission)) {
