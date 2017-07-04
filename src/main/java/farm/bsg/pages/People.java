@@ -5,10 +5,9 @@ import java.util.UUID;
 import farm.bsg.Security.Permission;
 import farm.bsg.data.Type;
 import farm.bsg.data.Value;
+import farm.bsg.html.Block;
 import farm.bsg.html.Html;
-import farm.bsg.html.Input;
 import farm.bsg.html.Table;
-import farm.bsg.html.shit.ObjectModelForm;
 import farm.bsg.models.Person;
 import farm.bsg.ops.CounterCodeGen;
 import farm.bsg.pages.common.SessionPage;
@@ -23,25 +22,21 @@ public class People extends SessionPage {
 
     public String list() {
         person().mustHave(Permission.PeopleManagement);
-        StringBuilder sb = new StringBuilder();
-
+        Block page = Html.block();
         Table people = new Table("Name", "actions");
-        sb.append("<h5>People</h5>");
         for (Value s : query().storage.scan("person/").values()) {
             Person person = new Person();
             person.injectValue(s);
-
-            String actions = "";
-            actions += "<a class=\"btn btn-primary\" href=\"/person-view?id=" + person.get("id") + "\">view</a>";
-            actions += "<a class=\"btn btn-secondary\" href=\"/person-edit?id=" + person.get("id") + "\">edit</a>";
+            Block actions = Html.block();
+            actions.add(Html.link(PERSON_VIEW.href(), "view").btn_secondary());
+            actions.add(Html.link(PERSON_EDIT.href(), "edit").btn_secondary());
             people.row(person.get("name"), actions);
         }
-        sb.append(people.toHtml());
-
-        sb.append("<h5>Actions</h5><ul>");
-        sb.append("<li><a class=\"btn btn-secondary\" href=\"/person-create\">Add Person</a></li>");
-        sb.append("</ul>");
-        return formalize_html(sb.toString());
+        page.add(Html.W().h3().wrap("People"));
+        page.add(people);
+        page.add(Html.W().h3().wrap("Actions"));
+        page.add(Html.link(PERSON_CREATE.href(), "Create Person").btn_secondary());
+        return finish_pump(page);
     }
 
     public Person pullPerson() {
@@ -52,32 +47,39 @@ public class People extends SessionPage {
 
     public String create() {
         person().mustHave(Permission.PeopleManagement);
-        String username = session.getParam("username");
-        StringBuilder sb = new StringBuilder();
-        sb.append("<h1>Create New Person</h1>");
-        sb.append("<form method=\"post\" action=\"/person-edit\">");
-        sb.append(new Input("id").id_from_name().value(UUID.randomUUID().toString()));
-        Table table = new Table(null, null);
-        table.row(Html.label("login", "Login / username").toHtml(), //
-                new Input("login").placeholder("sign in name...").clazz("form-control").text().id_from_name().autofocus().value(username).required());
-        table.row(Html.label("new_password_1", "Password").toHtml(), //
-                new Input("new_password_1").placeholder("new password...").clazz("form-control").password().id_from_name().autofocus().required());
-        table.row(Html.label("new_password_2", "Confirm Password").toHtml(), //
-                new Input("new_password_2").placeholder("new password confirm...").clazz("form-control").password().id_from_name().autofocus().required());
-        sb.append(table.toString());
-        sb.append("<input type=\"submit\">");
-        sb.append("</form>");
-        return sb.toString();
+        String login = session.getParam("login");
+        
+        Block page = Html.block();
+        page.add(Html.W().h3().wrap("Create New Person"));
+        
+
+        Block formInner = Html.block();
+        formInner.add(Html.input("id").value(UUID.randomUUID().toString()));
+
+        formInner.add(Html.wrapped().form_group() //
+                .wrap(Html.label("login", "Login")) //
+                .wrap(Html.input("login").id_from_name().autofocus(login == null).value(login).text()));
+
+        formInner.add(Html.wrapped().form_group() //
+                .wrap(Html.label("new_password_1", "Password")) //
+                .wrap(Html.input("new_password_1").id_from_name().password().autofocus(login != null).placeholder("new password...")));
+
+        formInner.add(Html.wrapped().form_group() //
+                .wrap(Html.label("new_password_2", "Confirm Password")) //
+                .wrap(Html.input("new_password_2").id_from_name().password().placeholder("new password confirm...")));
+
+        formInner.add(Html.wrapped().form_group() //
+                .wrap(Html.input("submit").id_from_name().value("Create").submit()));
+        page.add(Html.form("post", PERSON_EDIT.href()).inner(formInner));
+        return finish_pump(page);
     }
 
     public String view() {
         person().mustHave(Permission.PeopleManagement);
         Person person = pullPerson();
-        StringBuilder sb = new StringBuilder();
-        sb.append("<h5>Viewing: " + person.get("name") + "</h5>");
-
+        Block page = Html.block();
+        page.add(Html.W().h3().wrap("Viewing: " + person.get("name")));
         Table table = new Table("Field", "Value", "Type");
-
         for (Type t : person.getTypes()) {
             String value = person.get(t.name());
             if (value == null) {
@@ -85,8 +87,8 @@ public class People extends SessionPage {
             }
             table.row(t.name(), value, t.type());
         }
-        sb.append(table.toHtml());
-        return formalize_html(sb.toString());
+        page.add(table);
+        return finish_pump(page);
     }
 
     public String admin_edit() {
@@ -98,18 +100,67 @@ public class People extends SessionPage {
         if (new_password_1 != null) {
             if (new_password_1.equals(new_password_2)) {
                 person.setPassword(new_password_1);
+                System.out.println(query().put(person));
             } else {
-                redirect("/person-create?username=" + person.get("login"));
+                redirect(PERSON_CREATE.href("login", session.getParam("login"), "error", "password-not-match"));
             }
         }
+        
+        Block page = Html.block();
+        page.add(Html.W().h3().wrap("Edit Person"));
 
-        StringBuilder sb = new StringBuilder();
-        sb.append("<h1>person edit</h1>");
-        sb.append("<form method=\"post\" action=\"/commit-person-edit\">");
-        sb.append(ObjectModelForm.htmlOf(person));
-        sb.append("<hr /><input type=\"submit\">");
-        sb.append("</form>");
-        return formalize_html(sb.toString());
+        Block formInner = Html.block();
+        formInner.add(Html.input("id").pull(person));
+
+        page.add(Html.W().h3().wrap("Contact Information"));
+        injectContact(formInner, person);
+
+        page.add(Html.W().h3().wrap("Employment"));
+
+        
+        formInner.add(Html.wrapped().form_group() //
+                .wrap(Html.input("submit").id_from_name().value("Update").submit()));
+        page.add(Html.form("post", PERSON_EDIT.href()).inner(formInner));
+        return finish_pump(page);
+    }
+    
+    public static void injectContact(Block formInner, Person person) {
+        formInner.add(Html.wrapped().form_group() //
+                .wrap(Html.label("name", "Name")) //
+                .wrap(Html.input("name").id_from_name().pull(person).text()));
+
+        formInner.add(Html.wrapped().form_group() //
+                .wrap(Html.label("phone", "Phone")) //
+                .wrap(Html.input("phone").id_from_name().pull(person).text()));
+
+        formInner.add(Html.wrapped().form_group() //
+                .wrap(Html.label("email", "E-mail")) //
+                .wrap(Html.input("email").id_from_name().pull(person).text()));
+
+        formInner.add(Html.wrapped().form_group() //
+                .wrap(Html.label("phone", "Phone")) //
+                .wrap(Html.input("phone").id_from_name().pull(person).text()));
+
+        formInner.add(Html.wrapped().form_group() //
+                .wrap(Html.label("address_1", "Address")) //
+                .wrap(Html.input("address_1").id_from_name().pull(person).text()));
+        formInner.add(Html.wrapped().form_group() //
+                .wrap(Html.label("address_2", "Address (optional)")) //
+                .wrap(Html.input("address_2").id_from_name().pull(person).text()));
+        formInner.add(Html.wrapped().form_group() //
+                .wrap(Html.label("city", "City")) //
+                .wrap(Html.input("city").id_from_name().pull(person).text()));
+        formInner.add(Html.wrapped().form_group() //
+                .wrap(Html.label("state", "State")) //
+                .wrap(Html.input("state").id_from_name().pull(person).text()));
+        formInner.add(Html.wrapped().form_group() //
+                .wrap(Html.label("postal", "Postal")) //
+                .wrap(Html.input("postal").id_from_name().pull(person).text()));
+        formInner.add(Html.wrapped().form_group() //
+                .wrap(Html.label("country", "Country")) //
+                .wrap(Html.input("country").id_from_name().pull(person).text()));
+
+    
     }
 
     public Object commit() {
@@ -120,7 +171,7 @@ public class People extends SessionPage {
         } else {
             query().storage.put(person.getStorageKey(), new Value(person.toJson()));
         }
-        redirect("/people");
+        redirect(PEOPLE.href());
         return null;
     }
 
@@ -133,12 +184,12 @@ public class People extends SessionPage {
         routing.get_or_post(PERSON_EDIT, (session) -> new People(session).admin_edit());
         routing.post(PERSON_EDIT_COMMIT, (session) -> new People(session).commit());
     }
-    
-    public static SimpleURI PEOPLE = new SimpleURI("/people");
-    public static SimpleURI PERSON_CREATE = new SimpleURI("/person-create");
-    public static SimpleURI PERSON_VIEW = new SimpleURI("/person-view");
-    public static SimpleURI PERSON_EDIT = new SimpleURI("/person-edit");
-    public static SimpleURI PERSON_EDIT_COMMIT = new SimpleURI("/commit-person-edit");
+
+    public static SimpleURI PEOPLE             = new SimpleURI("/admin/people");
+    public static SimpleURI PERSON_CREATE      = new SimpleURI("/admin/people;create");
+    public static SimpleURI PERSON_VIEW        = new SimpleURI("/admin/people;view");
+    public static SimpleURI PERSON_EDIT        = new SimpleURI("/admin/people;edit");
+    public static SimpleURI PERSON_EDIT_COMMIT = new SimpleURI("/admin/people;edit;commit");
 
     public static void link(CounterCodeGen c) {
         c.section("Page: People");

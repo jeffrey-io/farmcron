@@ -1,16 +1,15 @@
 package farm.bsg.pages;
 
-import java.security.MessageDigest;
 import java.util.concurrent.ThreadLocalRandom;
 
 import org.apache.commons.codec.binary.Hex;
 import org.slf4j.Logger;
 
 import farm.bsg.Security.Permission;
+import farm.bsg.html.Block;
 import farm.bsg.html.Html;
 import farm.bsg.html.Input;
 import farm.bsg.html.Table;
-import farm.bsg.html.shit.ObjectModelForm;
 import farm.bsg.models.Person;
 import farm.bsg.ops.CounterCodeGen;
 import farm.bsg.ops.Logs;
@@ -24,10 +23,21 @@ public class You extends SessionPage {
 
     public You(SessionRequest session) {
         super(session, YOU);
+        ensurePersonHasNotificationToken();
+    }
+
+    private void ensurePersonHasNotificationToken() {
+        Person person = person();
+        if (person.isNullOrEmpty("notification_token")) {
+            byte[] token = new byte[4];
+            ThreadLocalRandom.current().nextBytes(token);
+            person.set("notification_token", new String(Hex.encodeHex(token, true)));
+            query().put(person);
+        }
     }
 
     public String show() {
-        StringBuilder sb = new StringBuilder();
+        Block page = Html.block();
         Person person = person();
 
         Table table = new Table("Field", "Value");
@@ -37,13 +47,8 @@ public class You extends SessionPage {
         table.row("phone", person.get("phone"));
         table.row("country", person.get("country"));
         table.row("time zone", person.get("fiscal_timezone"));
-        sb.append("<h5>Contact Information</h5>");
-        sb.append(table.toHtml());
-
-        table = new Table("Field", "Value");
-        table.row("Equipment Skills", person.get("equipment_skills"));
-        sb.append("<h5>Abilities</h5>");
-        sb.append(table.toHtml());
+        page.add(Html.W().h5().wrap("Contact Information"));
+        page.add(table);
 
         table = new Table("Field", "Value");
         table.row("Hourly Wage", person.getAsDouble("hourly_wage_compesation"));
@@ -53,81 +58,62 @@ public class You extends SessionPage {
         table.row("Bonus Target", person.getAsDouble("bonus_target"));
         table.row("Minimum Performance Multipler for Bonus", person.getAsDouble("min_performance_multiplier"));
         table.row("Maximum Performance Multipler for Bonus", person.getAsDouble("max_performance_multiplier"));
-        sb.append("<h5>Employment</h5>");
-        sb.append(table.toHtml());
 
-        sb.append("<h5>Actions</h5>");
-        sb.append("<li><a class=\"btn btn-secondary\" href=\"/change-password\">Change Password</a></li>");
-        String superCookie = person.get("super_cookie");
-        if (superCookie != null) {
-            superCookie.trim();
-            if (superCookie.length() == 0) {
-                superCookie = null;
-            }
-        }
+        page.add(Html.W().h5().wrap("Employment"));
+        page.add(table);
 
-        sb.append("<li><a class=\"btn btn-secondary\" href=\"/make-super-cookie\">Invalidate Super Cookie</a></li>");
-        if (superCookie != null) {
-            sb.append("<li><a class=\"btn btn-secondary\" href=\"/kill-super-cookie\">Kill Super Cookie</a></li>");
-            sb.append("<li><a class=\"btn btn-secondary\" href=\"/dashboard?_sc=" + person.get("super_cookie") + "\">Use Super Cookie on Dashboard</a></li>");
-        }
-        // sb.append("<li><a class=\"btn btn-secondary\" href=\"/edit-you\">Edit Contact Information</a></li>");
-        return formalize_html(sb.toString());
-    }
-
-    public Object mutate_notification(boolean kill) {
-        Person person = pullPerson();
-        if (kill) {
-            person.set("notification_token", null);
+        page.add(Html.W().h5().wrap("Notifications"));
+        if (person.isNullOrEmpty("notification_uri")) {
+            String token = person.get("notification_token");
+            page.add(Html.W().p().wrap("Currently, notifications are not set up for you. Text \"link " + token + "\" to the robot to link."));
         } else {
-            byte[] token = new byte[3];
-            ThreadLocalRandom.current().nextBytes(token);
-            person.set("notification_token", Hex.encodeHexString(token).toLowerCase());
+            String uri = person.get("notification_uri");
+            page.add(Html.W().p().wrap("Notifications are currently set up to use this token: \"" + uri + "\" If this is not working, then please clear the notification uri to start over."));
         }
-        redirect("/you");
-        query().put(person);
-        return null;
+        page.add(Html.W().h5().wrap("Actions"));
+        Block actions = Html.block();
+        actions.add(Html.W().li().wrap(Html.link(YOU_CHANGE_PW.href(), "Change Password").btn_secondary()));
+        actions.add(Html.W().li().wrap(Html.link(YOU_UPDATE_CONTACT_INFO.href(), "Edit Contact Information").btn_secondary()));
+        page.add(Html.wrapped().ul().wrap(actions));
+
+        return finish_pump(page);
     }
 
-    public Object mutate_super_cookie(boolean kill) {
-        Person person = pullPerson();
-        if (kill) {
-            person.set("super_cookie", null);
-        } else {
-            person.set("super_cookie", makeSuperCookie(person));
-        }
-        query().put(person);
-        redirect("/you");
-        return null;
-    }
-
-    public Person pullPerson() {
+    public String edit_contact() {
         Person person = person();
         person.importValuesFromReqeust(session, "");
-        return person;
+        Block page = Html.block();
+        page.add(Html.W().h3().wrap("Edit Contact Information"));
+
+        Block formInner = Html.block();
+
+        page.add(Html.W().h3().wrap("Contact Information"));
+        formInner.add(Html.input("id").pull(person));
+        People.injectContact(formInner, person);
+        formInner.add(Html.wrapped().form_group() //
+                .wrap(Html.input("submit").id_from_name().value("Update").submit()));
+        page.add(Html.form("post", YOU_COMMIT_CONTACT_INFO.href()).inner(formInner));
+        return finish_pump(page);
     }
 
-    public String edit() {
-        Person person = pullPerson();
-
-        StringBuilder sb = new StringBuilder();
-        sb.append("<h1>person edit</h1>");
-        sb.append("<form method=\"post\" action=\"/commit-person-edit\">");
-        sb.append(ObjectModelForm.htmlOf(person));
-        sb.append("<hr /><input type=\"submit\">");
-        sb.append("</form>");
-
-        return formalize_html(sb.toString());
+    public String commit_contact() {
+        Person person = person();
+        if (query().projection_person_contact_info_of(session).apply(person).success()) {
+            engine.put(person);
+            person.sync(session.engine);
+            redirect(YOU.href());
+            return null;
+        }
+        return edit_contact();
     }
 
     public String changepw() {
         if (commitpw()) {
-            redirect("/you");
+            redirect(YOU.href());
             return null;
         }
-        StringBuilder sb = new StringBuilder();
-        sb.append("<h5>Change Password</h5>");
-        sb.append("<form method=\"post\" action=\"/change-password\">");
+        Block page = Html.block();
+        page.add(Html.W().h5().wrap("Change Password"));
         Table table = new Table(null, null);
         table.row(Html.label("old_password", "Current Password"), //
                 new Input("old_password").placeholder("current password...").clazz("form-control").password().id_from_name().autofocus().required());
@@ -136,14 +122,13 @@ public class You extends SessionPage {
                 new Input("new_password_1").placeholder("new password...").clazz("form-control").password().id_from_name().autofocus().required());
         table.row(Html.label("new_password_2", "Confirm Password"), //
                 new Input("new_password_2").placeholder("new password confirm...").clazz("form-control").password().id_from_name().autofocus().required());
-        sb.append(table.toString());
-        sb.append("<input type=\"submit\">");
-        sb.append("</form>");
-        return formalize_html(sb.toString());
+        table.row("", Html.input("submit").id_from_name().value("Update").submit());
+        page.add(Html.form("post", YOU_CHANGE_PW.href()).inner(table));
+        return finish_pump(page);
     }
 
     public boolean commitpw() {
-        Person person = pullPerson();
+        Person person = person();
         String old_password = session.getParam("old_password");
         String new_password_1 = session.getParam("new_password_1");
         String new_password_2 = session.getParam("new_password_2");
@@ -168,23 +153,6 @@ public class You extends SessionPage {
         return false;
     }
 
-    private String makeSuperCookie(Person person) {
-        try {
-            String cookie1 = session.engine.auth.generateCookie(person.getId());
-            String cookie2 = session.engine.auth.generateCookie(person.getId());
-            MessageDigest digest = MessageDigest.getInstance("SHA-512");
-            digest.update(cookie1.getBytes());
-            digest.update(person.get("salt").getBytes());
-            digest.update(person.get("hash").getBytes());
-            digest.update(person.get("login").getBytes());
-            digest.update(cookie2.getBytes());
-            String middle = Hex.encodeHexString(digest.digest());
-            return cookie1 + middle + cookie2;
-        } catch (Exception err) {
-            return null;
-        }
-    }
-
     public static void link(RoutingTable routing) {
         routing.navbar(YOU, "You", Permission.Public);
 
@@ -192,7 +160,7 @@ public class You extends SessionPage {
             String message = text.message.toLowerCase().trim();
             if (message.startsWith("link")) {
                 LOG.info("recieved link request from:" + text.from);
-                String token = message.substring(message.length() - 4);
+                String token = message.substring(message.length() - 4).trim().toLowerCase();
                 Person person = engine.select_person().where_notification_token_eq(token).to_list().first();
                 if (person != null) {
                     LOG.info("recieved request associated!");
@@ -211,21 +179,17 @@ public class You extends SessionPage {
             return null;
         });
         routing.get(YOU, (session) -> new You(session).show());
-        routing.get_or_post(YOU_EDIT, (session) -> new You(session).edit());
         routing.get_or_post(YOU_CHANGE_PW, (session) -> new You(session).changepw());
-
-        routing.get_or_post(YOU_MAKE_SC, (session) -> new You(session).mutate_super_cookie(false));
-        routing.get_or_post(YOU_KILL_SC, (session) -> new You(session).mutate_super_cookie(true));
+        routing.get_or_post(YOU_UPDATE_CONTACT_INFO, (session) -> new You(session).edit_contact());
+        routing.get_or_post(YOU_COMMIT_CONTACT_INFO, (session) -> new You(session).commit_contact());
     }
-    
-    public static SimpleURI YOU = new SimpleURI("/you");
-    public static SimpleURI YOU_EDIT = new SimpleURI("/edit-you");
-    public static SimpleURI YOU_CHANGE_PW = new SimpleURI("/change-password");
-    public static SimpleURI YOU_MAKE_SC = new SimpleURI("/make-super-cookie");
-    public static SimpleURI YOU_KILL_SC = new SimpleURI("/kill-super-cookie");
+
+    public static SimpleURI YOU                     = new SimpleURI("/you");
+    public static SimpleURI YOU_CHANGE_PW           = new SimpleURI("/you;change-password");
+    public static SimpleURI YOU_UPDATE_CONTACT_INFO = new SimpleURI("/you;update-contact-info");
+    public static SimpleURI YOU_COMMIT_CONTACT_INFO = new SimpleURI("/you;commit-contact-info");
 
     public static void link(CounterCodeGen c) {
         c.section("Page: You");
     }
-
 }

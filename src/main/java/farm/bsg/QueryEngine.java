@@ -3182,13 +3182,18 @@ public class QueryEngine {
       this.data.put("name", farm.bsg.data.types.TypeString.project(pp, "name"));
       this.data.put("phone", farm.bsg.data.types.TypeString.project(pp, "phone"));
       this.data.put("email", farm.bsg.data.types.TypeString.project(pp, "email"));
+      this.data.put("address_1", farm.bsg.data.types.TypeString.project(pp, "address_1"));
+      this.data.put("address_2", farm.bsg.data.types.TypeString.project(pp, "address_2"));
+      this.data.put("city", farm.bsg.data.types.TypeString.project(pp, "city"));
+      this.data.put("state", farm.bsg.data.types.TypeString.project(pp, "state"));
+      this.data.put("postal", farm.bsg.data.types.TypeString.project(pp, "postal"));
+      this.data.put("country", farm.bsg.data.types.TypeString.project(pp, "country"));
       this.data.put("salt", farm.bsg.data.types.TypeString.project(pp, "salt"));
       this.data.put("hash", farm.bsg.data.types.TypeString.project(pp, "hash"));
       this.data.put("cookie", farm.bsg.data.types.TypeString.project(pp, "cookie"));
       this.data.put("super_cookie", farm.bsg.data.types.TypeString.project(pp, "super_cookie"));
       this.data.put("notification_token", farm.bsg.data.types.TypeString.project(pp, "notification_token"));
       this.data.put("notification_uri", farm.bsg.data.types.TypeString.project(pp, "notification_uri"));
-      this.data.put("country", farm.bsg.data.types.TypeString.project(pp, "country"));
       this.data.put("fiscal_timezone", farm.bsg.data.types.TypeString.project(pp, "fiscal_timezone"));
       this.data.put("default_mileage", farm.bsg.data.types.TypeNumber.project(pp, "default_mileage"));
       this.data.put("hourly_wage_compesation", farm.bsg.data.types.TypeNumber.project(pp, "hourly_wage_compesation"));
@@ -3198,7 +3203,6 @@ public class QueryEngine {
       this.data.put("max_performance_multiplier", farm.bsg.data.types.TypeNumber.project(pp, "max_performance_multiplier"));
       this.data.put("monthly_benefits", farm.bsg.data.types.TypeNumber.project(pp, "monthly_benefits"));
       this.data.put("tax_withholding", farm.bsg.data.types.TypeNumber.project(pp, "tax_withholding"));
-      this.data.put("equipment_skills", farm.bsg.data.types.TypeStringTokenList.project(pp, "equipment_skills"));
       this.data.put("permissions_and_roles", farm.bsg.data.types.TypeStringTokenList.project(pp, "permissions_and_roles"));
     }
 
@@ -3209,6 +3213,32 @@ public class QueryEngine {
 
   public PersonProjection_admin projection_person_admin_of(ProjectionProvider pp) {
     return new PersonProjection_admin(pp);
+  }
+
+
+  public class PersonProjection_contact_info {
+    private final HashMap<String, String> data;
+    
+    public PersonProjection_contact_info(ProjectionProvider pp) {
+      this.data = new HashMap<String, String>();
+      this.data.put("name", farm.bsg.data.types.TypeString.project(pp, "name"));
+      this.data.put("phone", farm.bsg.data.types.TypeString.project(pp, "phone"));
+      this.data.put("email", farm.bsg.data.types.TypeString.project(pp, "email"));
+      this.data.put("address_1", farm.bsg.data.types.TypeString.project(pp, "address_1"));
+      this.data.put("address_2", farm.bsg.data.types.TypeString.project(pp, "address_2"));
+      this.data.put("city", farm.bsg.data.types.TypeString.project(pp, "city"));
+      this.data.put("state", farm.bsg.data.types.TypeString.project(pp, "state"));
+      this.data.put("postal", farm.bsg.data.types.TypeString.project(pp, "postal"));
+      this.data.put("country", farm.bsg.data.types.TypeString.project(pp, "country"));
+    }
+
+    public PutResult apply(Person person) {
+      return person.validateAndApplyProjection(this.data);
+    }
+  }
+
+  public PersonProjection_contact_info projection_person_contact_info_of(ProjectionProvider pp) {
+    return new PersonProjection_contact_info(pp);
   }
 
 

@@ -192,7 +192,7 @@ public class Payroll extends SessionPage {
             commitValue = new Value(payroll.toJson());
         }
         query().storage.put("payroll/" + payroll.get("id"), commitValue);
-        redirect("/payroll");
+        redirect(PAYROLL.href());
         return null;
 
     }
