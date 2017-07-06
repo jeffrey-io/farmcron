@@ -9,19 +9,19 @@ public class ErrorListBuilder {
         this.errored = false;
     }
 
-    public void accept(boolean trueForError, String errorMessageIfTrue) {
+    public void accept(final boolean trueForError, final String errorMessageIfTrue) {
         if (trueForError) {
-            errored = true;
-            list.append("<li>").append(errorMessageIfTrue).append("</li>");
+            this.errored = true;
+            this.list.append("<li>").append(errorMessageIfTrue).append("</li>");
         }
     }
 
-    public boolean hasErrored() {
-        return errored;
+    public String getErrors() {
+        return this.list.toString();
     }
 
-    public String getErrors() {
-        return list.toString();
+    public boolean hasErrored() {
+        return this.errored;
     }
 
     @Override

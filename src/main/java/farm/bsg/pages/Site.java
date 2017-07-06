@@ -97,7 +97,6 @@ public class Site extends SessionPage {
                 .wrap(Html.label("business_postal", "Postal")) //
                 .wrap(Html.input("business_postal").id_from_name().pull(properties).text()));
 
-        
         formInner.add(Html.W().h3().wrap("Notification Connectivity"));
         formInner.add(Html.wrapped().form_group() //
                 .wrap(Html.label("fb_page_token", "Facebook Page Token")) //

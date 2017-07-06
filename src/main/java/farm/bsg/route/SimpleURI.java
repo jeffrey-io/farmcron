@@ -35,7 +35,7 @@ public class SimpleURI extends ControlledURI {
     public String toRoutingPattern() {
         return this.uri;
     }
-    
+
     @Override
     public String toString() {
         return "Simple:" + toRoutingPattern();

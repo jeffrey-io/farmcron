@@ -7,7 +7,7 @@ public class FinishedHref {
     public FinishedHref(final String href) {
         this.value = href;
     }
-    
+
     @Override
     public String toString() {
         return this.value;

@@ -12,7 +12,7 @@ public class Task extends RawObject {
     public static final ObjectSchema SCHEMA = ObjectSchema.persisted("task/", //
             Field.STRING("owner").makeIndex(false),
 
-            Field.NUMBER("cart_id"), // for when tasks are created by an order
+            Field.STRING("cart_id"), // for when tasks are created by an order
 
             Field.STRING("name"), //
             Field.STRING("description"), //

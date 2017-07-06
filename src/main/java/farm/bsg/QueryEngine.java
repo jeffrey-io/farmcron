@@ -1,11 +1,30 @@
 package farm.bsg;
 
-import farm.bsg.data.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Predicate;
+
+import farm.bsg.data.BinaryOperators;
+import farm.bsg.data.InMemoryStorage;
 import farm.bsg.data.KeyIndex;
+import farm.bsg.data.LexographicalOrder;
 import farm.bsg.data.MultiPrefixLogger;
-
-import farm.bsg.data.contracts.*;
-
+import farm.bsg.data.PutResult;
+import farm.bsg.data.StorageEngine;
+import farm.bsg.data.StringGroupBy;
+import farm.bsg.data.UriBlobCache;
+import farm.bsg.data.Value;
+import farm.bsg.data.contracts.PersistenceLogger;
+import farm.bsg.data.contracts.ProjectionProvider;
 import farm.bsg.models.Cart;
 import farm.bsg.models.CartItem;
 import farm.bsg.models.Check;
@@ -22,3994 +41,4018 @@ import farm.bsg.models.TaskFactory;
 import farm.bsg.models.TaxBaton;
 import farm.bsg.models.WakeInputFile;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-
-import java.util.function.*;
-
 /****************************************************************
-WARNING: Generated
-This class is a generated database query engine that provides an
-easy to take a simple Persistence mechanism into a real DB
-****************************************************************/
+ * WARNING: Generated This class is a generated database query engine that provides an easy to take a simple Persistence mechanism into a real DB
+ ****************************************************************/
 public class QueryEngine {
-  public final MultiPrefixLogger indexing;
+    public class CartItemListHolder {
+        private final ArrayList<CartItem> list;
 
-  // INDEX[Cart]
-  public final KeyIndex cart_customer;  // BY[customer]
-  public final KeyIndex cart_task;  // BY[task]
-
-  // INDEX[CartItem]
-  public final KeyIndex cartitem_cart;  // BY[cart]
-  public final KeyIndex cartitem_product;  // BY[product]
-  public final KeyIndex cartitem_customizations;  // BY[customizations]
-
-  // INDEX[Check]
-  public final KeyIndex check_person;  // BY[person]
-  public final KeyIndex check_fiscal_day;  // BY[fiscal_day]
-  public final KeyIndex check_ready;  // BY[ready]
-
-  // INDEX[Customer]
-  public final KeyIndex customer_email;  // BY[email]
-  public final KeyIndex customer_phone;  // BY[phone]
-  public final KeyIndex customer_cookie;  // BY[cookie]
-  public final KeyIndex customer_notification_token;  // BY[notification_token]
-
-  // INDEX[PayrollEntry]
-  public final KeyIndex payrollentry_check;  // BY[check]
-  public final KeyIndex payrollentry_unpaid;  // BY[unpaid]
-
-  // INDEX[Person]
-  public final KeyIndex person_login;  // BY[login]
-  public final KeyIndex person_phone;  // BY[phone]
-  public final KeyIndex person_cookie;  // BY[cookie]
-  public final KeyIndex person_super_cookie;  // BY[super_cookie]
-  public final KeyIndex person_notification_token;  // BY[notification_token]
-
-  // INDEX[Subscriber]
-  public final KeyIndex subscriber_subscription;  // BY[subscription]
-
-  // INDEX[Subscription]
-  public final KeyIndex subscription_event;  // BY[event]
-
-  // INDEX[Task]
-  public final KeyIndex task_owner;  // BY[owner]
-  public final KeyIndex task_state;  // BY[state]
-
-  // INDEX[WakeInputFile]
-  public final KeyIndex wakeinputfile_filename;  // BY[filename]
-  public final StorageEngine storage;
-  public final ExecutorService executor;
-  public final ScheduledExecutorService scheduler;
-  public final UriBlobCache publicBlobCache;
-
-  public QueryEngine(PersistenceLogger persistence) throws Exception {
-    InMemoryStorage memory = new InMemoryStorage();
-    this.executor = Executors.newFixedThreadPool(2);
-    this.scheduler = Executors.newSingleThreadScheduledExecutor();
-    this.publicBlobCache = new UriBlobCache();
-    this.indexing = new MultiPrefixLogger();
-    this.cart_customer = indexing.add("cart/", new KeyIndex("customer", false));
-    this.cart_task = indexing.add("cart/", new KeyIndex("task", false));
-    this.cartitem_cart = indexing.add("cart-item/", new KeyIndex("cart", false));
-    this.cartitem_product = indexing.add("cart-item/", new KeyIndex("product", false));
-    this.cartitem_customizations = indexing.add("cart-item/", new KeyIndex("customizations", false));
-    this.check_person = indexing.add("checks/", new KeyIndex("person", false));
-    this.check_fiscal_day = indexing.add("checks/", new KeyIndex("fiscal_day", false));
-    this.check_ready = indexing.add("checks/", new KeyIndex("ready", false));
-    this.customer_email = indexing.add("customer/", new KeyIndex("email", true));
-    this.customer_phone = indexing.add("customer/", new KeyIndex("phone", false));
-    this.customer_cookie = indexing.add("customer/", new KeyIndex("cookie", false));
-    this.customer_notification_token = indexing.add("customer/", new KeyIndex("notification_token", false));
-    this.payrollentry_check = indexing.add("payroll/", new KeyIndex("check", false));
-    this.payrollentry_unpaid = indexing.add("payroll/", new KeyIndex("unpaid", false));
-    this.person_login = indexing.add("person/", new KeyIndex("login", true));
-    this.person_phone = indexing.add("person/", new KeyIndex("phone", false));
-    this.person_cookie = indexing.add("person/", new KeyIndex("cookie", false));
-    this.person_super_cookie = indexing.add("person/", new KeyIndex("super_cookie", false));
-    this.person_notification_token = indexing.add("person/", new KeyIndex("notification_token", false));
-    this.indexing.add("product/", new farm.bsg.models.PublicSiteBuilder(this));
-    this.subscriber_subscription = indexing.add("subscriber/", new KeyIndex("subscription", false));
-    this.subscription_event = indexing.add("subscription/", new KeyIndex("event", false));
-    this.task_owner = indexing.add("task/", new KeyIndex("owner", false));
-    this.task_state = indexing.add("task/", new KeyIndex("state", false));
-    this.wakeinputfile_filename = indexing.add("wake_input/", new KeyIndex("filename", true));
-    this.indexing.add("wake_input/", new farm.bsg.models.PublicSiteBuilder(this));
-    this.storage = new StorageEngine(memory, indexing, persistence);
-  }
-
-  private ArrayList<Value> fetch_all(String prefix) {
-    ArrayList<Value> values = new ArrayList<>();
-    values.addAll(storage.scan(prefix).values());
-    return values;
-  }
-
-  private ArrayList<Value> fetch(HashSet<String> keys) {
-    ArrayList<Value> values = new ArrayList<>();
-    if (keys == null) {
-      return values;
-    }
-    for (String key : keys) {
-      Value value = storage.get(key);
-        if (value != null) {
-          values.add(value);
+        private CartItemListHolder(final ArrayList<CartItem> list) {
+            this.list = list;
         }
-      }
-    return values;
-  }
 
-  /**************************************************
-  Basic Operations (look up, type transfer, keys, immutable copies) (cart/)
-  **************************************************/
-
-  public Cart cart_by_id(String id, boolean create) {
-    Value v = storage.get("cart/" + id);
-    if (v == null && !create) {
-      return null;
-    }
-    Cart result = cart_of(v);
-    result.set("id", id);
-    return result;
-  }
-
-  private Cart cart_of(Value v) {
-    Cart item = new Cart();
-    if (v != null) {
-      item.injectValue(v);
-    }
-    return item;
-  }
-
-  private ArrayList<Cart> carts_of(ArrayList<Value> values) {
-    ArrayList<Cart> list = new ArrayList<>(values.size());
-    for (Value v : values) {
-      list.add(cart_of(v));
-    }
-    return list;
-  }
-
-  public String make_key_cart(String id) {
-    StringBuilder key = new StringBuilder();
-    key.append("cart/");
-    key.append(id);
-    return key.toString();
-}
-
-  /**************************************************
-  Basic Operations (look up, type transfer, keys, immutable copies) (cart-item/)
-  **************************************************/
-
-  public CartItem cartitem_by_id(String id, boolean create) {
-    Value v = storage.get("cart-item/" + id);
-    if (v == null && !create) {
-      return null;
-    }
-    CartItem result = cartitem_of(v);
-    result.set("id", id);
-    return result;
-  }
-
-  private CartItem cartitem_of(Value v) {
-    CartItem item = new CartItem();
-    if (v != null) {
-      item.injectValue(v);
-    }
-    return item;
-  }
-
-  private ArrayList<CartItem> cartitems_of(ArrayList<Value> values) {
-    ArrayList<CartItem> list = new ArrayList<>(values.size());
-    for (Value v : values) {
-      list.add(cartitem_of(v));
-    }
-    return list;
-  }
-
-  public String make_key_cartitem(String id) {
-    StringBuilder key = new StringBuilder();
-    key.append("cart-item/");
-    key.append(id);
-    return key.toString();
-}
-
-  /**************************************************
-  Basic Operations (look up, type transfer, keys, immutable copies) (checks/)
-  **************************************************/
-
-  public Check check_by_id(String id, boolean create) {
-    Value v = storage.get("checks/" + id);
-    if (v == null && !create) {
-      return null;
-    }
-    Check result = check_of(v);
-    result.set("id", id);
-    return result;
-  }
-
-  private Check check_of(Value v) {
-    Check item = new Check();
-    if (v != null) {
-      item.injectValue(v);
-    }
-    return item;
-  }
-
-  private ArrayList<Check> checks_of(ArrayList<Value> values) {
-    ArrayList<Check> list = new ArrayList<>(values.size());
-    for (Value v : values) {
-      list.add(check_of(v));
-    }
-    return list;
-  }
-
-  public String make_key_check(String id) {
-    StringBuilder key = new StringBuilder();
-    key.append("checks/");
-    key.append(id);
-    return key.toString();
-}
-
-  /**************************************************
-  Basic Operations (look up, type transfer, keys, immutable copies) (customer/)
-  **************************************************/
-
-  public Customer customer_by_id(String id, boolean create) {
-    Value v = storage.get("customer/" + id);
-    if (v == null && !create) {
-      return null;
-    }
-    Customer result = customer_of(v);
-    result.set("id", id);
-    return result;
-  }
-
-  private Customer customer_of(Value v) {
-    Customer item = new Customer();
-    if (v != null) {
-      item.injectValue(v);
-    }
-    return item;
-  }
-
-  private ArrayList<Customer> customers_of(ArrayList<Value> values) {
-    ArrayList<Customer> list = new ArrayList<>(values.size());
-    for (Value v : values) {
-      list.add(customer_of(v));
-    }
-    return list;
-  }
-
-  public String make_key_customer(String id) {
-    StringBuilder key = new StringBuilder();
-    key.append("customer/");
-    key.append(id);
-    return key.toString();
-}
-
-  /**************************************************
-  Basic Operations (look up, type transfer, keys, immutable copies) (habits/)
-  **************************************************/
-
-  public Habit habit_by_id(String id, boolean create) {
-    Value v = storage.get("habits/" + id);
-    if (v == null && !create) {
-      return null;
-    }
-    Habit result = habit_of(v);
-    result.set("id", id);
-    return result;
-  }
-
-  private Habit habit_of(Value v) {
-    Habit item = new Habit();
-    if (v != null) {
-      item.injectValue(v);
-    }
-    return item;
-  }
-
-  private ArrayList<Habit> habits_of(ArrayList<Value> values) {
-    ArrayList<Habit> list = new ArrayList<>(values.size());
-    for (Value v : values) {
-      list.add(habit_of(v));
-    }
-    return list;
-  }
-
-  public String make_key_habit(String who, String id) {
-    StringBuilder key = new StringBuilder();
-    key.append("habits/");
-    key.append(who);
-    key.append("/");
-    key.append(id);
-    return key.toString();
-}
-
-  /**************************************************
-  Basic Operations (look up, type transfer, keys, immutable copies) (payroll/)
-  **************************************************/
-
-  public PayrollEntry payrollentry_by_id(String id, boolean create) {
-    Value v = storage.get("payroll/" + id);
-    if (v == null && !create) {
-      return null;
-    }
-    PayrollEntry result = payrollentry_of(v);
-    result.set("id", id);
-    return result;
-  }
-
-  private PayrollEntry payrollentry_of(Value v) {
-    PayrollEntry item = new PayrollEntry();
-    if (v != null) {
-      item.injectValue(v);
-    }
-    return item;
-  }
-
-  private ArrayList<PayrollEntry> payrollentrys_of(ArrayList<Value> values) {
-    ArrayList<PayrollEntry> list = new ArrayList<>(values.size());
-    for (Value v : values) {
-      list.add(payrollentry_of(v));
-    }
-    return list;
-  }
-
-  public String make_key_payrollentry(String id) {
-    StringBuilder key = new StringBuilder();
-    key.append("payroll/");
-    key.append(id);
-    return key.toString();
-}
-
-  /**************************************************
-  Basic Operations (look up, type transfer, keys, immutable copies) (person/)
-  **************************************************/
-
-  public Person person_by_id(String id, boolean create) {
-    Value v = storage.get("person/" + id);
-    if (v == null && !create) {
-      return null;
-    }
-    Person result = person_of(v);
-    result.set("id", id);
-    return result;
-  }
-
-  private Person person_of(Value v) {
-    Person item = new Person();
-    if (v != null) {
-      item.injectValue(v);
-    }
-    return item;
-  }
-
-  private ArrayList<Person> persons_of(ArrayList<Value> values) {
-    ArrayList<Person> list = new ArrayList<>(values.size());
-    for (Value v : values) {
-      list.add(person_of(v));
-    }
-    return list;
-  }
-
-  public String make_key_person(String id) {
-    StringBuilder key = new StringBuilder();
-    key.append("person/");
-    key.append(id);
-    return key.toString();
-}
-
-  /**************************************************
-  Basic Operations (look up, type transfer, keys, immutable copies) (product/)
-  **************************************************/
-
-  public Product product_by_id(String id, boolean create) {
-    Value v = storage.get("product/" + id);
-    if (v == null && !create) {
-      return null;
-    }
-    Product result = product_of(v);
-    result.set("id", id);
-    return result;
-  }
-
-  private Product product_of(Value v) {
-    Product item = new Product();
-    if (v != null) {
-      item.injectValue(v);
-    }
-    return item;
-  }
-
-  private ArrayList<Product> products_of(ArrayList<Value> values) {
-    ArrayList<Product> list = new ArrayList<>(values.size());
-    for (Value v : values) {
-      list.add(product_of(v));
-    }
-    return list;
-  }
-
-  public String make_key_product(String id) {
-    StringBuilder key = new StringBuilder();
-    key.append("product/");
-    key.append(id);
-    return key.toString();
-}
-
-  /**************************************************
-  Basic Operations (look up, type transfer, keys, immutable copies) (site/)
-  **************************************************/
-
-  public SiteProperties siteproperties_get() {
-    Value v = storage.get("site/properties");
-    SiteProperties result = siteproperties_of(v);
-    result.set("id", "properties");
-    return result;
-  }
-
-  private SiteProperties siteproperties_of(Value v) {
-    SiteProperties item = new SiteProperties();
-    if (v != null) {
-      item.injectValue(v);
-    }
-    return item;
-  }
-
-  private ArrayList<SiteProperties> sitepropertiess_of(ArrayList<Value> values) {
-    ArrayList<SiteProperties> list = new ArrayList<>(values.size());
-    for (Value v : values) {
-      list.add(siteproperties_of(v));
-    }
-    return list;
-  }
-
-  /**************************************************
-  Basic Operations (look up, type transfer, keys, immutable copies) (subscriber/)
-  **************************************************/
-
-  public Subscriber subscriber_by_id(String id, boolean create) {
-    Value v = storage.get("subscriber/" + id);
-    if (v == null && !create) {
-      return null;
-    }
-    Subscriber result = subscriber_of(v);
-    result.set("id", id);
-    return result;
-  }
-
-  private Subscriber subscriber_of(Value v) {
-    Subscriber item = new Subscriber();
-    if (v != null) {
-      item.injectValue(v);
-    }
-    return item;
-  }
-
-  private ArrayList<Subscriber> subscribers_of(ArrayList<Value> values) {
-    ArrayList<Subscriber> list = new ArrayList<>(values.size());
-    for (Value v : values) {
-      list.add(subscriber_of(v));
-    }
-    return list;
-  }
-
-  public String make_key_subscriber(String id) {
-    StringBuilder key = new StringBuilder();
-    key.append("subscriber/");
-    key.append(id);
-    return key.toString();
-}
-
-  /**************************************************
-  Basic Operations (look up, type transfer, keys, immutable copies) (subscription/)
-  **************************************************/
-
-  public Subscription subscription_by_id(String id, boolean create) {
-    Value v = storage.get("subscription/" + id);
-    if (v == null && !create) {
-      return null;
-    }
-    Subscription result = subscription_of(v);
-    result.set("id", id);
-    return result;
-  }
-
-  private Subscription subscription_of(Value v) {
-    Subscription item = new Subscription();
-    if (v != null) {
-      item.injectValue(v);
-    }
-    return item;
-  }
-
-  private ArrayList<Subscription> subscriptions_of(ArrayList<Value> values) {
-    ArrayList<Subscription> list = new ArrayList<>(values.size());
-    for (Value v : values) {
-      list.add(subscription_of(v));
-    }
-    return list;
-  }
-
-  public String make_key_subscription(String id) {
-    StringBuilder key = new StringBuilder();
-    key.append("subscription/");
-    key.append(id);
-    return key.toString();
-}
-
-  /**************************************************
-  Basic Operations (look up, type transfer, keys, immutable copies) (task/)
-  **************************************************/
-
-  public Task task_by_id(String id, boolean create) {
-    Value v = storage.get("task/" + id);
-    if (v == null && !create) {
-      return null;
-    }
-    Task result = task_of(v);
-    result.set("id", id);
-    return result;
-  }
-
-  private Task task_of(Value v) {
-    Task item = new Task();
-    if (v != null) {
-      item.injectValue(v);
-    }
-    return item;
-  }
-
-  private ArrayList<Task> tasks_of(ArrayList<Value> values) {
-    ArrayList<Task> list = new ArrayList<>(values.size());
-    for (Value v : values) {
-      list.add(task_of(v));
-    }
-    return list;
-  }
-
-  public String make_key_task(String id) {
-    StringBuilder key = new StringBuilder();
-    key.append("task/");
-    key.append(id);
-    return key.toString();
-}
-
-  /**************************************************
-  Basic Operations (look up, type transfer, keys, immutable copies) (task_factory/)
-  **************************************************/
-
-  public TaskFactory taskfactory_by_id(String id, boolean create) {
-    Value v = storage.get("task_factory/" + id);
-    if (v == null && !create) {
-      return null;
-    }
-    TaskFactory result = taskfactory_of(v);
-    result.set("id", id);
-    return result;
-  }
-
-  private TaskFactory taskfactory_of(Value v) {
-    TaskFactory item = new TaskFactory();
-    if (v != null) {
-      item.injectValue(v);
-    }
-    return item;
-  }
-
-  private ArrayList<TaskFactory> taskfactorys_of(ArrayList<Value> values) {
-    ArrayList<TaskFactory> list = new ArrayList<>(values.size());
-    for (Value v : values) {
-      list.add(taskfactory_of(v));
-    }
-    return list;
-  }
-
-  public String make_key_taskfactory(String id) {
-    StringBuilder key = new StringBuilder();
-    key.append("task_factory/");
-    key.append(id);
-    return key.toString();
-}
-
-  /**************************************************
-  Basic Operations (look up, type transfer, keys, immutable copies) (tax-baton/)
-  **************************************************/
-
-  public TaxBaton taxbaton_by_id(String id, boolean create) {
-    Value v = storage.get("tax-baton/" + id);
-    if (v == null && !create) {
-      return null;
-    }
-    TaxBaton result = taxbaton_of(v);
-    result.set("id", id);
-    return result;
-  }
-
-  private TaxBaton taxbaton_of(Value v) {
-    TaxBaton item = new TaxBaton();
-    if (v != null) {
-      item.injectValue(v);
-    }
-    return item;
-  }
-
-  private ArrayList<TaxBaton> taxbatons_of(ArrayList<Value> values) {
-    ArrayList<TaxBaton> list = new ArrayList<>(values.size());
-    for (Value v : values) {
-      list.add(taxbaton_of(v));
-    }
-    return list;
-  }
-
-  public String make_key_taxbaton(String id) {
-    StringBuilder key = new StringBuilder();
-    key.append("tax-baton/");
-    key.append(id);
-    return key.toString();
-}
-
-  /**************************************************
-  Basic Operations (look up, type transfer, keys, immutable copies) (wake_input/)
-  **************************************************/
-
-  public WakeInputFile wakeinputfile_by_id(String id, boolean create) {
-    Value v = storage.get("wake_input/" + id);
-    if (v == null && !create) {
-      return null;
-    }
-    WakeInputFile result = wakeinputfile_of(v);
-    result.set("id", id);
-    return result;
-  }
-
-  private WakeInputFile wakeinputfile_of(Value v) {
-    WakeInputFile item = new WakeInputFile();
-    if (v != null) {
-      item.injectValue(v);
-    }
-    return item;
-  }
-
-  private ArrayList<WakeInputFile> wakeinputfiles_of(ArrayList<Value> values) {
-    ArrayList<WakeInputFile> list = new ArrayList<>(values.size());
-    for (Value v : values) {
-      list.add(wakeinputfile_of(v));
-    }
-    return list;
-  }
-
-  public String make_key_wakeinputfile(String id) {
-    StringBuilder key = new StringBuilder();
-    key.append("wake_input/");
-    key.append(id);
-    return key.toString();
-}
-
-  /**************************************************
-  Indexing (cart/)
-  **************************************************/
-
-  public HashSet<String> get_cart_customer_index_keys() {
-    return cart_customer.getIndexKeys();
-  }
-
-  public HashSet<String> get_cart_task_index_keys() {
-    return cart_task.getIndexKeys();
-  }
-
-  /**************************************************
-  Indexing (cart-item/)
-  **************************************************/
-
-  public HashSet<String> get_cartitem_cart_index_keys() {
-    return cartitem_cart.getIndexKeys();
-  }
-
-  public HashSet<String> get_cartitem_product_index_keys() {
-    return cartitem_product.getIndexKeys();
-  }
-
-  public HashSet<String> get_cartitem_customizations_index_keys() {
-    return cartitem_customizations.getIndexKeys();
-  }
-
-  /**************************************************
-  Indexing (checks/)
-  **************************************************/
-
-  public HashSet<String> get_check_person_index_keys() {
-    return check_person.getIndexKeys();
-  }
-
-  public HashSet<String> get_check_fiscal_day_index_keys() {
-    return check_fiscal_day.getIndexKeys();
-  }
-
-  public HashSet<String> get_check_ready_index_keys() {
-    return check_ready.getIndexKeys();
-  }
-
-  /**************************************************
-  Indexing (customer/)
-  **************************************************/
-
-  public HashSet<String> get_customer_email_index_keys() {
-    return customer_email.getIndexKeys();
-  }
-
-  public HashSet<String> get_customer_phone_index_keys() {
-    return customer_phone.getIndexKeys();
-  }
-
-  public HashSet<String> get_customer_cookie_index_keys() {
-    return customer_cookie.getIndexKeys();
-  }
-
-  public HashSet<String> get_customer_notification_token_index_keys() {
-    return customer_notification_token.getIndexKeys();
-  }
-
-  /**************************************************
-  Indexing (habits/)
-  **************************************************/
-
-  /**************************************************
-  Indexing (payroll/)
-  **************************************************/
-
-  public HashSet<String> get_payrollentry_check_index_keys() {
-    return payrollentry_check.getIndexKeys();
-  }
-
-  public HashSet<String> get_payrollentry_unpaid_index_keys() {
-    return payrollentry_unpaid.getIndexKeys();
-  }
-
-  /**************************************************
-  Indexing (person/)
-  **************************************************/
-
-  public HashSet<String> get_person_login_index_keys() {
-    return person_login.getIndexKeys();
-  }
-
-  public HashSet<String> get_person_phone_index_keys() {
-    return person_phone.getIndexKeys();
-  }
-
-  public HashSet<String> get_person_cookie_index_keys() {
-    return person_cookie.getIndexKeys();
-  }
-
-  public HashSet<String> get_person_super_cookie_index_keys() {
-    return person_super_cookie.getIndexKeys();
-  }
-
-  public HashSet<String> get_person_notification_token_index_keys() {
-    return person_notification_token.getIndexKeys();
-  }
-
-  /**************************************************
-  Indexing (product/)
-  **************************************************/
-
-  /**************************************************
-  Indexing (site/)
-  **************************************************/
-
-  /**************************************************
-  Indexing (subscriber/)
-  **************************************************/
-
-  public HashSet<String> get_subscriber_subscription_index_keys() {
-    return subscriber_subscription.getIndexKeys();
-  }
-
-  /**************************************************
-  Indexing (subscription/)
-  **************************************************/
-
-  public HashSet<String> get_subscription_event_index_keys() {
-    return subscription_event.getIndexKeys();
-  }
-
-  /**************************************************
-  Indexing (task/)
-  **************************************************/
-
-  public HashSet<String> get_task_owner_index_keys() {
-    return task_owner.getIndexKeys();
-  }
-
-  public HashSet<String> get_task_state_index_keys() {
-    return task_state.getIndexKeys();
-  }
-
-  /**************************************************
-  Indexing (task_factory/)
-  **************************************************/
-
-  /**************************************************
-  Indexing (tax-baton/)
-  **************************************************/
-
-  /**************************************************
-  Indexing (wake_input/)
-  **************************************************/
-
-  public HashSet<String> get_wakeinputfile_filename_index_keys() {
-    return wakeinputfile_filename.getIndexKeys();
-  }
-
-  /**************************************************
-  Query Engine (cart/)
-  **************************************************/
-
-  public CartSetQuery select_cart() {
-    return new CartSetQuery();
-  }
-
-  public class CartListHolder {
-    private final ArrayList<Cart> list;
-
-    private CartListHolder(HashSet<String> keys, String scope) {
-      if (keys == null) {
-        this.list = carts_of(fetch_all("cart/" + scope));
-      } else {
-        this.list = carts_of(fetch(keys));
-      }
-    }
-
-    private CartListHolder(ArrayList<Cart> list) {
-      this.list = list;
-    }
-
-    public CartListHolder inline_filter(Predicate<Cart> filter) {
-      Iterator<Cart> it = list.iterator();
-      while (it.hasNext()) {
-        if (filter.test(it.next())) {
-          it.remove();
+        private CartItemListHolder(final HashSet<String> keys, final String scope) {
+            if (keys == null) {
+                this.list = cartitems_of(fetch_all("cart-item/" + scope));
+            } else {
+                this.list = cartitems_of(fetch(keys));
+            }
         }
-      }
-      return this;
-    }
 
-    public CartListHolder limit(int count) {
-      Iterator<Cart> it = list.iterator();
-      int at = 0;
-      while (it.hasNext()) {
-        it.next();
-        if (at >= count) {
-          it.remove();
+        public int count() {
+            return this.list.size();
         }
-        at++;
-      }
-      return this;
-    }
 
-    public CartListHolder inline_apply(Consumer<Cart> consumer) {
-      Iterator<Cart> it = list.iterator();
-      while (it.hasNext()) {
-        consumer.accept(it.next());
-      }
-      return this;
-    }
-
-    public CartListHolder fork() {
-      return new CartListHolder(this.list);
-    }
-
-    public HashMap<String, ArrayList<Cart>> groupBy(Function<Cart, String> f) {
-      StringGroupBy<Cart> map = new StringGroupBy<>();
-      Iterator<Cart> it = list.iterator();
-      while (it.hasNext()) {
-        Cart v = it.next();
-        String key = f.apply(v);
-        map.add(key, v);
-      }
-      return map.index;
-    }
-
-    public CartListHolder inline_order_lexographically_asc_by(String... keys) {
-      Collections.sort(this.list, new LexographicalOrder<Cart>(keys, true, true));
-      return this;
-    }
-
-    public CartListHolder inline_order_lexographically_desc_by(String... keys) {
-      Collections.sort(this.list, new LexographicalOrder<Cart>(keys, false, true));
-      return this;
-    }
-
-    public CartListHolder inline_order_lexographically_by(boolean asc, boolean caseSensitive, String... keys) {
-      Collections.sort(this.list, new LexographicalOrder<Cart>(keys, asc, caseSensitive));
-      return this;
-    }
-
-    public CartListHolder inline_order_by(Comparator<Cart> comparator) {
-      Collections.sort(this.list, comparator);
-      return this;
-    }
-
-    public int count() {
-      return this.list.size();
-    }
-    public Cart first() {
-      if (this.list.size() == 0) {
-        return null;
-      }
-      return this.list.get(0);
-    }
-    public ArrayList<Cart> done() {
-      return this.list;
-    }
-  }
-
-  public class CartSetQuery {
-    private String scope;
-    private HashSet<String> keys;
-
-    private CartSetQuery() {
-      this.scope = "";
-      this.keys = null;
-    }
-
-    public CartListHolder to_list() {
-      return new CartListHolder(this.keys, this.scope);
-    }
-
-    public ArrayList<Cart> done() {
-      return new CartListHolder(this.keys, this.scope).done();
-    }
-
-    public int count() {
-      if (this.keys == null) {
-        return to_list().count();
-      } else {
-        return this.keys.size();
-      }
-    }
-
-    public CartSetQuery scope(String scope) {
-      this.scope += scope + "/";
-      return this;
-    }
-
-    private HashSet<String> lookup_customer(String... values) {
-      HashSet<String> keys = new HashSet<>();
-      for(String value : values) {
-        keys.addAll(cart_customer.getKeys(value));
-      }
-      return keys;
-    }
-
-    public CartSetQuery where_customer_eq(String... values) {
-      if (this.keys == null) {
-        this.keys = lookup_customer(values);
-      } else {
-        this.keys = BinaryOperators.intersect(this.keys, lookup_customer(values));
-      }
-      return this;
-    }
-
-    private HashSet<String> lookup_task(String... values) {
-      HashSet<String> keys = new HashSet<>();
-      for(String value : values) {
-        keys.addAll(cart_task.getKeys(value));
-      }
-      return keys;
-    }
-
-    public CartSetQuery where_task_eq(String... values) {
-      if (this.keys == null) {
-        this.keys = lookup_task(values);
-      } else {
-        this.keys = BinaryOperators.intersect(this.keys, lookup_task(values));
-      }
-      return this;
-    }
-  }
-
-  /**************************************************
-  Query Engine (cart-item/)
-  **************************************************/
-
-  public CartItemSetQuery select_cartitem() {
-    return new CartItemSetQuery();
-  }
-
-  public class CartItemListHolder {
-    private final ArrayList<CartItem> list;
-
-    private CartItemListHolder(HashSet<String> keys, String scope) {
-      if (keys == null) {
-        this.list = cartitems_of(fetch_all("cart-item/" + scope));
-      } else {
-        this.list = cartitems_of(fetch(keys));
-      }
-    }
-
-    private CartItemListHolder(ArrayList<CartItem> list) {
-      this.list = list;
-    }
-
-    public CartItemListHolder inline_filter(Predicate<CartItem> filter) {
-      Iterator<CartItem> it = list.iterator();
-      while (it.hasNext()) {
-        if (filter.test(it.next())) {
-          it.remove();
+        public ArrayList<CartItem> done() {
+            return this.list;
         }
-      }
-      return this;
-    }
 
-    public CartItemListHolder limit(int count) {
-      Iterator<CartItem> it = list.iterator();
-      int at = 0;
-      while (it.hasNext()) {
-        it.next();
-        if (at >= count) {
-          it.remove();
+        public CartItem first() {
+            if (this.list.size() == 0) {
+                return null;
+            }
+            return this.list.get(0);
         }
-        at++;
-      }
-      return this;
-    }
 
-    public CartItemListHolder inline_apply(Consumer<CartItem> consumer) {
-      Iterator<CartItem> it = list.iterator();
-      while (it.hasNext()) {
-        consumer.accept(it.next());
-      }
-      return this;
-    }
-
-    public CartItemListHolder fork() {
-      return new CartItemListHolder(this.list);
-    }
-
-    public HashMap<String, ArrayList<CartItem>> groupBy(Function<CartItem, String> f) {
-      StringGroupBy<CartItem> map = new StringGroupBy<>();
-      Iterator<CartItem> it = list.iterator();
-      while (it.hasNext()) {
-        CartItem v = it.next();
-        String key = f.apply(v);
-        map.add(key, v);
-      }
-      return map.index;
-    }
-
-    public CartItemListHolder inline_order_lexographically_asc_by(String... keys) {
-      Collections.sort(this.list, new LexographicalOrder<CartItem>(keys, true, true));
-      return this;
-    }
-
-    public CartItemListHolder inline_order_lexographically_desc_by(String... keys) {
-      Collections.sort(this.list, new LexographicalOrder<CartItem>(keys, false, true));
-      return this;
-    }
-
-    public CartItemListHolder inline_order_lexographically_by(boolean asc, boolean caseSensitive, String... keys) {
-      Collections.sort(this.list, new LexographicalOrder<CartItem>(keys, asc, caseSensitive));
-      return this;
-    }
-
-    public CartItemListHolder inline_order_by(Comparator<CartItem> comparator) {
-      Collections.sort(this.list, comparator);
-      return this;
-    }
-
-    public int count() {
-      return this.list.size();
-    }
-    public CartItem first() {
-      if (this.list.size() == 0) {
-        return null;
-      }
-      return this.list.get(0);
-    }
-    public ArrayList<CartItem> done() {
-      return this.list;
-    }
-  }
-
-  public class CartItemSetQuery {
-    private String scope;
-    private HashSet<String> keys;
-
-    private CartItemSetQuery() {
-      this.scope = "";
-      this.keys = null;
-    }
-
-    public CartItemListHolder to_list() {
-      return new CartItemListHolder(this.keys, this.scope);
-    }
-
-    public ArrayList<CartItem> done() {
-      return new CartItemListHolder(this.keys, this.scope).done();
-    }
-
-    public int count() {
-      if (this.keys == null) {
-        return to_list().count();
-      } else {
-        return this.keys.size();
-      }
-    }
-
-    public CartItemSetQuery scope(String scope) {
-      this.scope += scope + "/";
-      return this;
-    }
-
-    private HashSet<String> lookup_cart(String... values) {
-      HashSet<String> keys = new HashSet<>();
-      for(String value : values) {
-        keys.addAll(cartitem_cart.getKeys(value));
-      }
-      return keys;
-    }
-
-    public CartItemSetQuery where_cart_eq(String... values) {
-      if (this.keys == null) {
-        this.keys = lookup_cart(values);
-      } else {
-        this.keys = BinaryOperators.intersect(this.keys, lookup_cart(values));
-      }
-      return this;
-    }
-
-    private HashSet<String> lookup_product(String... values) {
-      HashSet<String> keys = new HashSet<>();
-      for(String value : values) {
-        keys.addAll(cartitem_product.getKeys(value));
-      }
-      return keys;
-    }
-
-    public CartItemSetQuery where_product_eq(String... values) {
-      if (this.keys == null) {
-        this.keys = lookup_product(values);
-      } else {
-        this.keys = BinaryOperators.intersect(this.keys, lookup_product(values));
-      }
-      return this;
-    }
-
-    private HashSet<String> lookup_customizations(String... values) {
-      HashSet<String> keys = new HashSet<>();
-      for(String value : values) {
-        keys.addAll(cartitem_customizations.getKeys(value));
-      }
-      return keys;
-    }
-
-    public CartItemSetQuery where_customizations_eq(String... values) {
-      if (this.keys == null) {
-        this.keys = lookup_customizations(values);
-      } else {
-        this.keys = BinaryOperators.intersect(this.keys, lookup_customizations(values));
-      }
-      return this;
-    }
-  }
-
-  /**************************************************
-  Query Engine (checks/)
-  **************************************************/
-
-  public CheckSetQuery select_check() {
-    return new CheckSetQuery();
-  }
-
-  public class CheckListHolder {
-    private final ArrayList<Check> list;
-
-    private CheckListHolder(HashSet<String> keys, String scope) {
-      if (keys == null) {
-        this.list = checks_of(fetch_all("checks/" + scope));
-      } else {
-        this.list = checks_of(fetch(keys));
-      }
-    }
-
-    private CheckListHolder(ArrayList<Check> list) {
-      this.list = list;
-    }
-
-    public CheckListHolder inline_filter(Predicate<Check> filter) {
-      Iterator<Check> it = list.iterator();
-      while (it.hasNext()) {
-        if (filter.test(it.next())) {
-          it.remove();
+        public CartItemListHolder fork() {
+            return new CartItemListHolder(this.list);
         }
-      }
-      return this;
-    }
 
-    public CheckListHolder limit(int count) {
-      Iterator<Check> it = list.iterator();
-      int at = 0;
-      while (it.hasNext()) {
-        it.next();
-        if (at >= count) {
-          it.remove();
+        public HashMap<String, ArrayList<CartItem>> groupBy(final Function<CartItem, String> f) {
+            final StringGroupBy<CartItem> map = new StringGroupBy<>();
+            final Iterator<CartItem> it = this.list.iterator();
+            while (it.hasNext()) {
+                final CartItem v = it.next();
+                final String key = f.apply(v);
+                map.add(key, v);
+            }
+            return map.index;
         }
-        at++;
-      }
-      return this;
-    }
 
-    public CheckListHolder inline_apply(Consumer<Check> consumer) {
-      Iterator<Check> it = list.iterator();
-      while (it.hasNext()) {
-        consumer.accept(it.next());
-      }
-      return this;
-    }
-
-    public CheckListHolder fork() {
-      return new CheckListHolder(this.list);
-    }
-
-    public HashMap<String, ArrayList<Check>> groupBy(Function<Check, String> f) {
-      StringGroupBy<Check> map = new StringGroupBy<>();
-      Iterator<Check> it = list.iterator();
-      while (it.hasNext()) {
-        Check v = it.next();
-        String key = f.apply(v);
-        map.add(key, v);
-      }
-      return map.index;
-    }
-
-    public CheckListHolder inline_order_lexographically_asc_by(String... keys) {
-      Collections.sort(this.list, new LexographicalOrder<Check>(keys, true, true));
-      return this;
-    }
-
-    public CheckListHolder inline_order_lexographically_desc_by(String... keys) {
-      Collections.sort(this.list, new LexographicalOrder<Check>(keys, false, true));
-      return this;
-    }
-
-    public CheckListHolder inline_order_lexographically_by(boolean asc, boolean caseSensitive, String... keys) {
-      Collections.sort(this.list, new LexographicalOrder<Check>(keys, asc, caseSensitive));
-      return this;
-    }
-
-    public CheckListHolder inline_order_by(Comparator<Check> comparator) {
-      Collections.sort(this.list, comparator);
-      return this;
-    }
-
-    public int count() {
-      return this.list.size();
-    }
-    public Check first() {
-      if (this.list.size() == 0) {
-        return null;
-      }
-      return this.list.get(0);
-    }
-    public ArrayList<Check> done() {
-      return this.list;
-    }
-  }
-
-  public class CheckSetQuery {
-    private String scope;
-    private HashSet<String> keys;
-
-    private CheckSetQuery() {
-      this.scope = "";
-      this.keys = null;
-    }
-
-    public CheckListHolder to_list() {
-      return new CheckListHolder(this.keys, this.scope);
-    }
-
-    public ArrayList<Check> done() {
-      return new CheckListHolder(this.keys, this.scope).done();
-    }
-
-    public int count() {
-      if (this.keys == null) {
-        return to_list().count();
-      } else {
-        return this.keys.size();
-      }
-    }
-
-    public CheckSetQuery scope(String scope) {
-      this.scope += scope + "/";
-      return this;
-    }
-
-    private HashSet<String> lookup_person(String... values) {
-      HashSet<String> keys = new HashSet<>();
-      for(String value : values) {
-        keys.addAll(check_person.getKeys(value));
-      }
-      return keys;
-    }
-
-    public CheckSetQuery where_person_eq(String... values) {
-      if (this.keys == null) {
-        this.keys = lookup_person(values);
-      } else {
-        this.keys = BinaryOperators.intersect(this.keys, lookup_person(values));
-      }
-      return this;
-    }
-
-    private HashSet<String> lookup_fiscal_day(String... values) {
-      HashSet<String> keys = new HashSet<>();
-      for(String value : values) {
-        keys.addAll(check_fiscal_day.getKeys(value));
-      }
-      return keys;
-    }
-
-    public CheckSetQuery where_fiscal_day_eq(String... values) {
-      if (this.keys == null) {
-        this.keys = lookup_fiscal_day(values);
-      } else {
-        this.keys = BinaryOperators.intersect(this.keys, lookup_fiscal_day(values));
-      }
-      return this;
-    }
-
-    private HashSet<String> lookup_ready(String... values) {
-      HashSet<String> keys = new HashSet<>();
-      for(String value : values) {
-        keys.addAll(check_ready.getKeys(value));
-      }
-      return keys;
-    }
-
-    public CheckSetQuery where_ready_eq(String... values) {
-      if (this.keys == null) {
-        this.keys = lookup_ready(values);
-      } else {
-        this.keys = BinaryOperators.intersect(this.keys, lookup_ready(values));
-      }
-      return this;
-    }
-  }
-
-  /**************************************************
-  Query Engine (customer/)
-  **************************************************/
-
-  public CustomerSetQuery select_customer() {
-    return new CustomerSetQuery();
-  }
-
-  public class CustomerListHolder {
-    private final ArrayList<Customer> list;
-
-    private CustomerListHolder(HashSet<String> keys, String scope) {
-      if (keys == null) {
-        this.list = customers_of(fetch_all("customer/" + scope));
-      } else {
-        this.list = customers_of(fetch(keys));
-      }
-    }
-
-    private CustomerListHolder(ArrayList<Customer> list) {
-      this.list = list;
-    }
-
-    public CustomerListHolder inline_filter(Predicate<Customer> filter) {
-      Iterator<Customer> it = list.iterator();
-      while (it.hasNext()) {
-        if (filter.test(it.next())) {
-          it.remove();
+        public CartItemListHolder inline_apply(final Consumer<CartItem> consumer) {
+            final Iterator<CartItem> it = this.list.iterator();
+            while (it.hasNext()) {
+                consumer.accept(it.next());
+            }
+            return this;
         }
-      }
-      return this;
-    }
 
-    public CustomerListHolder limit(int count) {
-      Iterator<Customer> it = list.iterator();
-      int at = 0;
-      while (it.hasNext()) {
-        it.next();
-        if (at >= count) {
-          it.remove();
+        public CartItemListHolder inline_filter(final Predicate<CartItem> filter) {
+            final Iterator<CartItem> it = this.list.iterator();
+            while (it.hasNext()) {
+                if (filter.test(it.next())) {
+                    it.remove();
+                }
+            }
+            return this;
         }
-        at++;
-      }
-      return this;
-    }
 
-    public CustomerListHolder inline_apply(Consumer<Customer> consumer) {
-      Iterator<Customer> it = list.iterator();
-      while (it.hasNext()) {
-        consumer.accept(it.next());
-      }
-      return this;
-    }
-
-    public CustomerListHolder fork() {
-      return new CustomerListHolder(this.list);
-    }
-
-    public HashMap<String, ArrayList<Customer>> groupBy(Function<Customer, String> f) {
-      StringGroupBy<Customer> map = new StringGroupBy<>();
-      Iterator<Customer> it = list.iterator();
-      while (it.hasNext()) {
-        Customer v = it.next();
-        String key = f.apply(v);
-        map.add(key, v);
-      }
-      return map.index;
-    }
-
-    public CustomerListHolder inline_order_lexographically_asc_by(String... keys) {
-      Collections.sort(this.list, new LexographicalOrder<Customer>(keys, true, true));
-      return this;
-    }
-
-    public CustomerListHolder inline_order_lexographically_desc_by(String... keys) {
-      Collections.sort(this.list, new LexographicalOrder<Customer>(keys, false, true));
-      return this;
-    }
-
-    public CustomerListHolder inline_order_lexographically_by(boolean asc, boolean caseSensitive, String... keys) {
-      Collections.sort(this.list, new LexographicalOrder<Customer>(keys, asc, caseSensitive));
-      return this;
-    }
-
-    public CustomerListHolder inline_order_by(Comparator<Customer> comparator) {
-      Collections.sort(this.list, comparator);
-      return this;
-    }
-
-    public int count() {
-      return this.list.size();
-    }
-    public Customer first() {
-      if (this.list.size() == 0) {
-        return null;
-      }
-      return this.list.get(0);
-    }
-    public ArrayList<Customer> done() {
-      return this.list;
-    }
-  }
-
-  public class CustomerSetQuery {
-    private String scope;
-    private HashSet<String> keys;
-
-    private CustomerSetQuery() {
-      this.scope = "";
-      this.keys = null;
-    }
-
-    public CustomerListHolder to_list() {
-      return new CustomerListHolder(this.keys, this.scope);
-    }
-
-    public ArrayList<Customer> done() {
-      return new CustomerListHolder(this.keys, this.scope).done();
-    }
-
-    public int count() {
-      if (this.keys == null) {
-        return to_list().count();
-      } else {
-        return this.keys.size();
-      }
-    }
-
-    public CustomerSetQuery scope(String scope) {
-      this.scope += scope + "/";
-      return this;
-    }
-
-    private HashSet<String> lookup_email(String... values) {
-      HashSet<String> keys = new HashSet<>();
-      for(String value : values) {
-        keys.addAll(customer_email.getKeys(value));
-      }
-      return keys;
-    }
-
-    public CustomerSetQuery where_email_eq(String... values) {
-      if (this.keys == null) {
-        this.keys = lookup_email(values);
-      } else {
-        this.keys = BinaryOperators.intersect(this.keys, lookup_email(values));
-      }
-      return this;
-    }
-
-    private HashSet<String> lookup_phone(String... values) {
-      HashSet<String> keys = new HashSet<>();
-      for(String value : values) {
-        keys.addAll(customer_phone.getKeys(value));
-      }
-      return keys;
-    }
-
-    public CustomerSetQuery where_phone_eq(String... values) {
-      if (this.keys == null) {
-        this.keys = lookup_phone(values);
-      } else {
-        this.keys = BinaryOperators.intersect(this.keys, lookup_phone(values));
-      }
-      return this;
-    }
-
-    private HashSet<String> lookup_cookie(String... values) {
-      HashSet<String> keys = new HashSet<>();
-      for(String value : values) {
-        keys.addAll(customer_cookie.getKeys(value));
-      }
-      return keys;
-    }
-
-    public CustomerSetQuery where_cookie_eq(String... values) {
-      if (this.keys == null) {
-        this.keys = lookup_cookie(values);
-      } else {
-        this.keys = BinaryOperators.intersect(this.keys, lookup_cookie(values));
-      }
-      return this;
-    }
-
-    private HashSet<String> lookup_notification_token(String... values) {
-      HashSet<String> keys = new HashSet<>();
-      for(String value : values) {
-        keys.addAll(customer_notification_token.getKeys(value));
-      }
-      return keys;
-    }
-
-    public CustomerSetQuery where_notification_token_eq(String... values) {
-      if (this.keys == null) {
-        this.keys = lookup_notification_token(values);
-      } else {
-        this.keys = BinaryOperators.intersect(this.keys, lookup_notification_token(values));
-      }
-      return this;
-    }
-  }
-
-  /**************************************************
-  Query Engine (habits/)
-  **************************************************/
-
-  public HabitSetQuery select_habit() {
-    return new HabitSetQuery();
-  }
-
-  public class HabitListHolder {
-    private final ArrayList<Habit> list;
-
-    private HabitListHolder(HashSet<String> keys, String scope) {
-      if (keys == null) {
-        this.list = habits_of(fetch_all("habits/" + scope));
-      } else {
-        this.list = habits_of(fetch(keys));
-      }
-    }
-
-    private HabitListHolder(ArrayList<Habit> list) {
-      this.list = list;
-    }
-
-    public HabitListHolder inline_filter(Predicate<Habit> filter) {
-      Iterator<Habit> it = list.iterator();
-      while (it.hasNext()) {
-        if (filter.test(it.next())) {
-          it.remove();
+        public CartItemListHolder inline_order_by(final Comparator<CartItem> comparator) {
+            Collections.sort(this.list, comparator);
+            return this;
         }
-      }
-      return this;
-    }
 
-    public HabitListHolder limit(int count) {
-      Iterator<Habit> it = list.iterator();
-      int at = 0;
-      while (it.hasNext()) {
-        it.next();
-        if (at >= count) {
-          it.remove();
+        public CartItemListHolder inline_order_lexographically_asc_by(final String... keys) {
+            Collections.sort(this.list, new LexographicalOrder<CartItem>(keys, true, true));
+            return this;
         }
-        at++;
-      }
-      return this;
-    }
 
-    public HabitListHolder inline_apply(Consumer<Habit> consumer) {
-      Iterator<Habit> it = list.iterator();
-      while (it.hasNext()) {
-        consumer.accept(it.next());
-      }
-      return this;
-    }
-
-    public HabitListHolder fork() {
-      return new HabitListHolder(this.list);
-    }
-
-    public HashMap<String, ArrayList<Habit>> groupBy(Function<Habit, String> f) {
-      StringGroupBy<Habit> map = new StringGroupBy<>();
-      Iterator<Habit> it = list.iterator();
-      while (it.hasNext()) {
-        Habit v = it.next();
-        String key = f.apply(v);
-        map.add(key, v);
-      }
-      return map.index;
-    }
-
-    public HabitListHolder inline_order_lexographically_asc_by(String... keys) {
-      Collections.sort(this.list, new LexographicalOrder<Habit>(keys, true, true));
-      return this;
-    }
-
-    public HabitListHolder inline_order_lexographically_desc_by(String... keys) {
-      Collections.sort(this.list, new LexographicalOrder<Habit>(keys, false, true));
-      return this;
-    }
-
-    public HabitListHolder inline_order_lexographically_by(boolean asc, boolean caseSensitive, String... keys) {
-      Collections.sort(this.list, new LexographicalOrder<Habit>(keys, asc, caseSensitive));
-      return this;
-    }
-
-    public HabitListHolder inline_order_by(Comparator<Habit> comparator) {
-      Collections.sort(this.list, comparator);
-      return this;
-    }
-
-    public int count() {
-      return this.list.size();
-    }
-    public Habit first() {
-      if (this.list.size() == 0) {
-        return null;
-      }
-      return this.list.get(0);
-    }
-    public ArrayList<Habit> done() {
-      return this.list;
-    }
-  }
-
-  public class HabitSetQuery {
-    private String scope;
-    private HashSet<String> keys;
-
-    private HabitSetQuery() {
-      this.scope = "";
-      this.keys = null;
-    }
-
-    public HabitListHolder to_list() {
-      return new HabitListHolder(this.keys, this.scope);
-    }
-
-    public ArrayList<Habit> done() {
-      return new HabitListHolder(this.keys, this.scope).done();
-    }
-
-    public int count() {
-      if (this.keys == null) {
-        return to_list().count();
-      } else {
-        return this.keys.size();
-      }
-    }
-
-    public HabitSetQuery scope(String scope) {
-      this.scope += scope + "/";
-      return this;
-    }
-  }
-
-  /**************************************************
-  Query Engine (payroll/)
-  **************************************************/
-
-  public PayrollEntrySetQuery select_payrollentry() {
-    return new PayrollEntrySetQuery();
-  }
-
-  public class PayrollEntryListHolder {
-    private final ArrayList<PayrollEntry> list;
-
-    private PayrollEntryListHolder(HashSet<String> keys, String scope) {
-      if (keys == null) {
-        this.list = payrollentrys_of(fetch_all("payroll/" + scope));
-      } else {
-        this.list = payrollentrys_of(fetch(keys));
-      }
-    }
-
-    private PayrollEntryListHolder(ArrayList<PayrollEntry> list) {
-      this.list = list;
-    }
-
-    public PayrollEntryListHolder inline_filter(Predicate<PayrollEntry> filter) {
-      Iterator<PayrollEntry> it = list.iterator();
-      while (it.hasNext()) {
-        if (filter.test(it.next())) {
-          it.remove();
+        public CartItemListHolder inline_order_lexographically_by(final boolean asc, final boolean caseSensitive, final String... keys) {
+            Collections.sort(this.list, new LexographicalOrder<CartItem>(keys, asc, caseSensitive));
+            return this;
         }
-      }
-      return this;
-    }
 
-    public PayrollEntryListHolder limit(int count) {
-      Iterator<PayrollEntry> it = list.iterator();
-      int at = 0;
-      while (it.hasNext()) {
-        it.next();
-        if (at >= count) {
-          it.remove();
+        public CartItemListHolder inline_order_lexographically_desc_by(final String... keys) {
+            Collections.sort(this.list, new LexographicalOrder<CartItem>(keys, false, true));
+            return this;
         }
-        at++;
-      }
-      return this;
-    }
 
-    public PayrollEntryListHolder inline_apply(Consumer<PayrollEntry> consumer) {
-      Iterator<PayrollEntry> it = list.iterator();
-      while (it.hasNext()) {
-        consumer.accept(it.next());
-      }
-      return this;
-    }
-
-    public PayrollEntryListHolder fork() {
-      return new PayrollEntryListHolder(this.list);
-    }
-
-    public HashMap<String, ArrayList<PayrollEntry>> groupBy(Function<PayrollEntry, String> f) {
-      StringGroupBy<PayrollEntry> map = new StringGroupBy<>();
-      Iterator<PayrollEntry> it = list.iterator();
-      while (it.hasNext()) {
-        PayrollEntry v = it.next();
-        String key = f.apply(v);
-        map.add(key, v);
-      }
-      return map.index;
-    }
-
-    public PayrollEntryListHolder inline_order_lexographically_asc_by(String... keys) {
-      Collections.sort(this.list, new LexographicalOrder<PayrollEntry>(keys, true, true));
-      return this;
-    }
-
-    public PayrollEntryListHolder inline_order_lexographically_desc_by(String... keys) {
-      Collections.sort(this.list, new LexographicalOrder<PayrollEntry>(keys, false, true));
-      return this;
-    }
-
-    public PayrollEntryListHolder inline_order_lexographically_by(boolean asc, boolean caseSensitive, String... keys) {
-      Collections.sort(this.list, new LexographicalOrder<PayrollEntry>(keys, asc, caseSensitive));
-      return this;
-    }
-
-    public PayrollEntryListHolder inline_order_by(Comparator<PayrollEntry> comparator) {
-      Collections.sort(this.list, comparator);
-      return this;
-    }
-
-    public int count() {
-      return this.list.size();
-    }
-    public PayrollEntry first() {
-      if (this.list.size() == 0) {
-        return null;
-      }
-      return this.list.get(0);
-    }
-    public ArrayList<PayrollEntry> done() {
-      return this.list;
-    }
-  }
-
-  public class PayrollEntrySetQuery {
-    private String scope;
-    private HashSet<String> keys;
-
-    private PayrollEntrySetQuery() {
-      this.scope = "";
-      this.keys = null;
-    }
-
-    public PayrollEntryListHolder to_list() {
-      return new PayrollEntryListHolder(this.keys, this.scope);
-    }
-
-    public ArrayList<PayrollEntry> done() {
-      return new PayrollEntryListHolder(this.keys, this.scope).done();
-    }
-
-    public int count() {
-      if (this.keys == null) {
-        return to_list().count();
-      } else {
-        return this.keys.size();
-      }
-    }
-
-    public PayrollEntrySetQuery scope(String scope) {
-      this.scope += scope + "/";
-      return this;
-    }
-
-    private HashSet<String> lookup_check(String... values) {
-      HashSet<String> keys = new HashSet<>();
-      for(String value : values) {
-        keys.addAll(payrollentry_check.getKeys(value));
-      }
-      return keys;
-    }
-
-    public PayrollEntrySetQuery where_check_eq(String... values) {
-      if (this.keys == null) {
-        this.keys = lookup_check(values);
-      } else {
-        this.keys = BinaryOperators.intersect(this.keys, lookup_check(values));
-      }
-      return this;
-    }
-
-    private HashSet<String> lookup_unpaid(String... values) {
-      HashSet<String> keys = new HashSet<>();
-      for(String value : values) {
-        keys.addAll(payrollentry_unpaid.getKeys(value));
-      }
-      return keys;
-    }
-
-    public PayrollEntrySetQuery where_unpaid_eq(String... values) {
-      if (this.keys == null) {
-        this.keys = lookup_unpaid(values);
-      } else {
-        this.keys = BinaryOperators.intersect(this.keys, lookup_unpaid(values));
-      }
-      return this;
-    }
-  }
-
-  /**************************************************
-  Query Engine (person/)
-  **************************************************/
-
-  public PersonSetQuery select_person() {
-    return new PersonSetQuery();
-  }
-
-  public class PersonListHolder {
-    private final ArrayList<Person> list;
-
-    private PersonListHolder(HashSet<String> keys, String scope) {
-      if (keys == null) {
-        this.list = persons_of(fetch_all("person/" + scope));
-      } else {
-        this.list = persons_of(fetch(keys));
-      }
-    }
-
-    private PersonListHolder(ArrayList<Person> list) {
-      this.list = list;
-    }
-
-    public PersonListHolder inline_filter(Predicate<Person> filter) {
-      Iterator<Person> it = list.iterator();
-      while (it.hasNext()) {
-        if (filter.test(it.next())) {
-          it.remove();
+        public CartItemListHolder limit(final int count) {
+            final Iterator<CartItem> it = this.list.iterator();
+            int at = 0;
+            while (it.hasNext()) {
+                it.next();
+                if (at >= count) {
+                    it.remove();
+                }
+                at++;
+            }
+            return this;
         }
-      }
-      return this;
     }
 
-    public PersonListHolder limit(int count) {
-      Iterator<Person> it = list.iterator();
-      int at = 0;
-      while (it.hasNext()) {
-        it.next();
-        if (at >= count) {
-          it.remove();
+    /**************************************************
+     * Projects (cart-item/)
+     **************************************************/
+
+    public class CartItemProjection_admin {
+        private final HashMap<String, String> data;
+
+        public CartItemProjection_admin(final ProjectionProvider pp) {
+            this.data = new HashMap<String, String>();
+            this.data.put("id", farm.bsg.data.types.TypeUUID.project(pp, "id"));
+            this.data.put("__token", farm.bsg.data.types.TypeString.project(pp, "__token"));
+            this.data.put("cart", farm.bsg.data.types.TypeString.project(pp, "cart"));
+            this.data.put("product", farm.bsg.data.types.TypeString.project(pp, "product"));
+            this.data.put("quantity", farm.bsg.data.types.TypeNumber.project(pp, "quantity"));
+            this.data.put("customizations", farm.bsg.data.types.TypeString.project(pp, "customizations"));
         }
-        at++;
-      }
-      return this;
-    }
 
-    public PersonListHolder inline_apply(Consumer<Person> consumer) {
-      Iterator<Person> it = list.iterator();
-      while (it.hasNext()) {
-        consumer.accept(it.next());
-      }
-      return this;
-    }
-
-    public PersonListHolder fork() {
-      return new PersonListHolder(this.list);
-    }
-
-    public HashMap<String, ArrayList<Person>> groupBy(Function<Person, String> f) {
-      StringGroupBy<Person> map = new StringGroupBy<>();
-      Iterator<Person> it = list.iterator();
-      while (it.hasNext()) {
-        Person v = it.next();
-        String key = f.apply(v);
-        map.add(key, v);
-      }
-      return map.index;
-    }
-
-    public PersonListHolder inline_order_lexographically_asc_by(String... keys) {
-      Collections.sort(this.list, new LexographicalOrder<Person>(keys, true, true));
-      return this;
-    }
-
-    public PersonListHolder inline_order_lexographically_desc_by(String... keys) {
-      Collections.sort(this.list, new LexographicalOrder<Person>(keys, false, true));
-      return this;
-    }
-
-    public PersonListHolder inline_order_lexographically_by(boolean asc, boolean caseSensitive, String... keys) {
-      Collections.sort(this.list, new LexographicalOrder<Person>(keys, asc, caseSensitive));
-      return this;
-    }
-
-    public PersonListHolder inline_order_by(Comparator<Person> comparator) {
-      Collections.sort(this.list, comparator);
-      return this;
-    }
-
-    public int count() {
-      return this.list.size();
-    }
-    public Person first() {
-      if (this.list.size() == 0) {
-        return null;
-      }
-      return this.list.get(0);
-    }
-    public ArrayList<Person> done() {
-      return this.list;
-    }
-  }
-
-  public class PersonSetQuery {
-    private String scope;
-    private HashSet<String> keys;
-
-    private PersonSetQuery() {
-      this.scope = "";
-      this.keys = null;
-    }
-
-    public PersonListHolder to_list() {
-      return new PersonListHolder(this.keys, this.scope);
-    }
-
-    public ArrayList<Person> done() {
-      return new PersonListHolder(this.keys, this.scope).done();
-    }
-
-    public int count() {
-      if (this.keys == null) {
-        return to_list().count();
-      } else {
-        return this.keys.size();
-      }
-    }
-
-    public PersonSetQuery scope(String scope) {
-      this.scope += scope + "/";
-      return this;
-    }
-
-    private HashSet<String> lookup_login(String... values) {
-      HashSet<String> keys = new HashSet<>();
-      for(String value : values) {
-        keys.addAll(person_login.getKeys(value));
-      }
-      return keys;
-    }
-
-    public PersonSetQuery where_login_eq(String... values) {
-      if (this.keys == null) {
-        this.keys = lookup_login(values);
-      } else {
-        this.keys = BinaryOperators.intersect(this.keys, lookup_login(values));
-      }
-      return this;
-    }
-
-    private HashSet<String> lookup_phone(String... values) {
-      HashSet<String> keys = new HashSet<>();
-      for(String value : values) {
-        keys.addAll(person_phone.getKeys(value));
-      }
-      return keys;
-    }
-
-    public PersonSetQuery where_phone_eq(String... values) {
-      if (this.keys == null) {
-        this.keys = lookup_phone(values);
-      } else {
-        this.keys = BinaryOperators.intersect(this.keys, lookup_phone(values));
-      }
-      return this;
-    }
-
-    private HashSet<String> lookup_cookie(String... values) {
-      HashSet<String> keys = new HashSet<>();
-      for(String value : values) {
-        keys.addAll(person_cookie.getKeys(value));
-      }
-      return keys;
-    }
-
-    public PersonSetQuery where_cookie_eq(String... values) {
-      if (this.keys == null) {
-        this.keys = lookup_cookie(values);
-      } else {
-        this.keys = BinaryOperators.intersect(this.keys, lookup_cookie(values));
-      }
-      return this;
-    }
-
-    private HashSet<String> lookup_super_cookie(String... values) {
-      HashSet<String> keys = new HashSet<>();
-      for(String value : values) {
-        keys.addAll(person_super_cookie.getKeys(value));
-      }
-      return keys;
-    }
-
-    public PersonSetQuery where_super_cookie_eq(String... values) {
-      if (this.keys == null) {
-        this.keys = lookup_super_cookie(values);
-      } else {
-        this.keys = BinaryOperators.intersect(this.keys, lookup_super_cookie(values));
-      }
-      return this;
-    }
-
-    private HashSet<String> lookup_notification_token(String... values) {
-      HashSet<String> keys = new HashSet<>();
-      for(String value : values) {
-        keys.addAll(person_notification_token.getKeys(value));
-      }
-      return keys;
-    }
-
-    public PersonSetQuery where_notification_token_eq(String... values) {
-      if (this.keys == null) {
-        this.keys = lookup_notification_token(values);
-      } else {
-        this.keys = BinaryOperators.intersect(this.keys, lookup_notification_token(values));
-      }
-      return this;
-    }
-  }
-
-  /**************************************************
-  Query Engine (product/)
-  **************************************************/
-
-  public ProductSetQuery select_product() {
-    return new ProductSetQuery();
-  }
-
-  public class ProductListHolder {
-    private final ArrayList<Product> list;
-
-    private ProductListHolder(HashSet<String> keys, String scope) {
-      if (keys == null) {
-        this.list = products_of(fetch_all("product/" + scope));
-      } else {
-        this.list = products_of(fetch(keys));
-      }
-    }
-
-    private ProductListHolder(ArrayList<Product> list) {
-      this.list = list;
-    }
-
-    public ProductListHolder inline_filter(Predicate<Product> filter) {
-      Iterator<Product> it = list.iterator();
-      while (it.hasNext()) {
-        if (filter.test(it.next())) {
-          it.remove();
+        public PutResult apply(final CartItem cartitem) {
+            return cartitem.validateAndApplyProjection(this.data);
         }
-      }
-      return this;
     }
 
-    public ProductListHolder limit(int count) {
-      Iterator<Product> it = list.iterator();
-      int at = 0;
-      while (it.hasNext()) {
-        it.next();
-        if (at >= count) {
-          it.remove();
+    public class CartItemSetQuery {
+        private String          scope;
+        private HashSet<String> keys;
+
+        private CartItemSetQuery() {
+            this.scope = "";
+            this.keys = null;
         }
-        at++;
-      }
-      return this;
-    }
 
-    public ProductListHolder inline_apply(Consumer<Product> consumer) {
-      Iterator<Product> it = list.iterator();
-      while (it.hasNext()) {
-        consumer.accept(it.next());
-      }
-      return this;
-    }
-
-    public ProductListHolder fork() {
-      return new ProductListHolder(this.list);
-    }
-
-    public HashMap<String, ArrayList<Product>> groupBy(Function<Product, String> f) {
-      StringGroupBy<Product> map = new StringGroupBy<>();
-      Iterator<Product> it = list.iterator();
-      while (it.hasNext()) {
-        Product v = it.next();
-        String key = f.apply(v);
-        map.add(key, v);
-      }
-      return map.index;
-    }
-
-    public ProductListHolder inline_order_lexographically_asc_by(String... keys) {
-      Collections.sort(this.list, new LexographicalOrder<Product>(keys, true, true));
-      return this;
-    }
-
-    public ProductListHolder inline_order_lexographically_desc_by(String... keys) {
-      Collections.sort(this.list, new LexographicalOrder<Product>(keys, false, true));
-      return this;
-    }
-
-    public ProductListHolder inline_order_lexographically_by(boolean asc, boolean caseSensitive, String... keys) {
-      Collections.sort(this.list, new LexographicalOrder<Product>(keys, asc, caseSensitive));
-      return this;
-    }
-
-    public ProductListHolder inline_order_by(Comparator<Product> comparator) {
-      Collections.sort(this.list, comparator);
-      return this;
-    }
-
-    public int count() {
-      return this.list.size();
-    }
-    public Product first() {
-      if (this.list.size() == 0) {
-        return null;
-      }
-      return this.list.get(0);
-    }
-    public ArrayList<Product> done() {
-      return this.list;
-    }
-  }
-
-  public class ProductSetQuery {
-    private String scope;
-    private HashSet<String> keys;
-
-    private ProductSetQuery() {
-      this.scope = "";
-      this.keys = null;
-    }
-
-    public ProductListHolder to_list() {
-      return new ProductListHolder(this.keys, this.scope);
-    }
-
-    public ArrayList<Product> done() {
-      return new ProductListHolder(this.keys, this.scope).done();
-    }
-
-    public int count() {
-      if (this.keys == null) {
-        return to_list().count();
-      } else {
-        return this.keys.size();
-      }
-    }
-
-    public ProductSetQuery scope(String scope) {
-      this.scope += scope + "/";
-      return this;
-    }
-  }
-
-  /**************************************************
-  Query Engine (site/)
-  **************************************************/
-
-  public SitePropertiesSetQuery select_siteproperties() {
-    return new SitePropertiesSetQuery();
-  }
-
-  public class SitePropertiesListHolder {
-    private final ArrayList<SiteProperties> list;
-
-    private SitePropertiesListHolder(HashSet<String> keys, String scope) {
-      if (keys == null) {
-        this.list = sitepropertiess_of(fetch_all("site/" + scope));
-      } else {
-        this.list = sitepropertiess_of(fetch(keys));
-      }
-    }
-
-    private SitePropertiesListHolder(ArrayList<SiteProperties> list) {
-      this.list = list;
-    }
-
-    public SitePropertiesListHolder inline_filter(Predicate<SiteProperties> filter) {
-      Iterator<SiteProperties> it = list.iterator();
-      while (it.hasNext()) {
-        if (filter.test(it.next())) {
-          it.remove();
+        public int count() {
+            if (this.keys == null) {
+                return to_list().count();
+            } else {
+                return this.keys.size();
+            }
         }
-      }
-      return this;
-    }
 
-    public SitePropertiesListHolder limit(int count) {
-      Iterator<SiteProperties> it = list.iterator();
-      int at = 0;
-      while (it.hasNext()) {
-        it.next();
-        if (at >= count) {
-          it.remove();
+        public ArrayList<CartItem> done() {
+            return new CartItemListHolder(this.keys, this.scope).done();
         }
-        at++;
-      }
-      return this;
-    }
 
-    public SitePropertiesListHolder inline_apply(Consumer<SiteProperties> consumer) {
-      Iterator<SiteProperties> it = list.iterator();
-      while (it.hasNext()) {
-        consumer.accept(it.next());
-      }
-      return this;
-    }
-
-    public SitePropertiesListHolder fork() {
-      return new SitePropertiesListHolder(this.list);
-    }
-
-    public HashMap<String, ArrayList<SiteProperties>> groupBy(Function<SiteProperties, String> f) {
-      StringGroupBy<SiteProperties> map = new StringGroupBy<>();
-      Iterator<SiteProperties> it = list.iterator();
-      while (it.hasNext()) {
-        SiteProperties v = it.next();
-        String key = f.apply(v);
-        map.add(key, v);
-      }
-      return map.index;
-    }
-
-    public SitePropertiesListHolder inline_order_lexographically_asc_by(String... keys) {
-      Collections.sort(this.list, new LexographicalOrder<SiteProperties>(keys, true, true));
-      return this;
-    }
-
-    public SitePropertiesListHolder inline_order_lexographically_desc_by(String... keys) {
-      Collections.sort(this.list, new LexographicalOrder<SiteProperties>(keys, false, true));
-      return this;
-    }
-
-    public SitePropertiesListHolder inline_order_lexographically_by(boolean asc, boolean caseSensitive, String... keys) {
-      Collections.sort(this.list, new LexographicalOrder<SiteProperties>(keys, asc, caseSensitive));
-      return this;
-    }
-
-    public SitePropertiesListHolder inline_order_by(Comparator<SiteProperties> comparator) {
-      Collections.sort(this.list, comparator);
-      return this;
-    }
-
-    public int count() {
-      return this.list.size();
-    }
-    public SiteProperties first() {
-      if (this.list.size() == 0) {
-        return null;
-      }
-      return this.list.get(0);
-    }
-    public ArrayList<SiteProperties> done() {
-      return this.list;
-    }
-  }
-
-  public class SitePropertiesSetQuery {
-    private String scope;
-    private HashSet<String> keys;
-
-    private SitePropertiesSetQuery() {
-      this.scope = "";
-      this.keys = null;
-    }
-
-    public SitePropertiesListHolder to_list() {
-      return new SitePropertiesListHolder(this.keys, this.scope);
-    }
-
-    public ArrayList<SiteProperties> done() {
-      return new SitePropertiesListHolder(this.keys, this.scope).done();
-    }
-
-    public int count() {
-      if (this.keys == null) {
-        return to_list().count();
-      } else {
-        return this.keys.size();
-      }
-    }
-
-    public SitePropertiesSetQuery scope(String scope) {
-      this.scope += scope + "/";
-      return this;
-    }
-  }
-
-  /**************************************************
-  Query Engine (subscriber/)
-  **************************************************/
-
-  public SubscriberSetQuery select_subscriber() {
-    return new SubscriberSetQuery();
-  }
-
-  public class SubscriberListHolder {
-    private final ArrayList<Subscriber> list;
-
-    private SubscriberListHolder(HashSet<String> keys, String scope) {
-      if (keys == null) {
-        this.list = subscribers_of(fetch_all("subscriber/" + scope));
-      } else {
-        this.list = subscribers_of(fetch(keys));
-      }
-    }
-
-    private SubscriberListHolder(ArrayList<Subscriber> list) {
-      this.list = list;
-    }
-
-    public SubscriberListHolder inline_filter(Predicate<Subscriber> filter) {
-      Iterator<Subscriber> it = list.iterator();
-      while (it.hasNext()) {
-        if (filter.test(it.next())) {
-          it.remove();
+        private HashSet<String> lookup_cart(final String... values) {
+            final HashSet<String> keys = new HashSet<>();
+            for (final String value : values) {
+                keys.addAll(QueryEngine.this.cartitem_cart.getKeys(value));
+            }
+            return keys;
         }
-      }
-      return this;
-    }
 
-    public SubscriberListHolder limit(int count) {
-      Iterator<Subscriber> it = list.iterator();
-      int at = 0;
-      while (it.hasNext()) {
-        it.next();
-        if (at >= count) {
-          it.remove();
+        private HashSet<String> lookup_customizations(final String... values) {
+            final HashSet<String> keys = new HashSet<>();
+            for (final String value : values) {
+                keys.addAll(QueryEngine.this.cartitem_customizations.getKeys(value));
+            }
+            return keys;
         }
-        at++;
-      }
-      return this;
-    }
 
-    public SubscriberListHolder inline_apply(Consumer<Subscriber> consumer) {
-      Iterator<Subscriber> it = list.iterator();
-      while (it.hasNext()) {
-        consumer.accept(it.next());
-      }
-      return this;
-    }
-
-    public SubscriberListHolder fork() {
-      return new SubscriberListHolder(this.list);
-    }
-
-    public HashMap<String, ArrayList<Subscriber>> groupBy(Function<Subscriber, String> f) {
-      StringGroupBy<Subscriber> map = new StringGroupBy<>();
-      Iterator<Subscriber> it = list.iterator();
-      while (it.hasNext()) {
-        Subscriber v = it.next();
-        String key = f.apply(v);
-        map.add(key, v);
-      }
-      return map.index;
-    }
-
-    public SubscriberListHolder inline_order_lexographically_asc_by(String... keys) {
-      Collections.sort(this.list, new LexographicalOrder<Subscriber>(keys, true, true));
-      return this;
-    }
-
-    public SubscriberListHolder inline_order_lexographically_desc_by(String... keys) {
-      Collections.sort(this.list, new LexographicalOrder<Subscriber>(keys, false, true));
-      return this;
-    }
-
-    public SubscriberListHolder inline_order_lexographically_by(boolean asc, boolean caseSensitive, String... keys) {
-      Collections.sort(this.list, new LexographicalOrder<Subscriber>(keys, asc, caseSensitive));
-      return this;
-    }
-
-    public SubscriberListHolder inline_order_by(Comparator<Subscriber> comparator) {
-      Collections.sort(this.list, comparator);
-      return this;
-    }
-
-    public int count() {
-      return this.list.size();
-    }
-    public Subscriber first() {
-      if (this.list.size() == 0) {
-        return null;
-      }
-      return this.list.get(0);
-    }
-    public ArrayList<Subscriber> done() {
-      return this.list;
-    }
-  }
-
-  public class SubscriberSetQuery {
-    private String scope;
-    private HashSet<String> keys;
-
-    private SubscriberSetQuery() {
-      this.scope = "";
-      this.keys = null;
-    }
-
-    public SubscriberListHolder to_list() {
-      return new SubscriberListHolder(this.keys, this.scope);
-    }
-
-    public ArrayList<Subscriber> done() {
-      return new SubscriberListHolder(this.keys, this.scope).done();
-    }
-
-    public int count() {
-      if (this.keys == null) {
-        return to_list().count();
-      } else {
-        return this.keys.size();
-      }
-    }
-
-    public SubscriberSetQuery scope(String scope) {
-      this.scope += scope + "/";
-      return this;
-    }
-
-    private HashSet<String> lookup_subscription(String... values) {
-      HashSet<String> keys = new HashSet<>();
-      for(String value : values) {
-        keys.addAll(subscriber_subscription.getKeys(value));
-      }
-      return keys;
-    }
-
-    public SubscriberSetQuery where_subscription_eq(String... values) {
-      if (this.keys == null) {
-        this.keys = lookup_subscription(values);
-      } else {
-        this.keys = BinaryOperators.intersect(this.keys, lookup_subscription(values));
-      }
-      return this;
-    }
-  }
-
-  /**************************************************
-  Query Engine (subscription/)
-  **************************************************/
-
-  public SubscriptionSetQuery select_subscription() {
-    return new SubscriptionSetQuery();
-  }
-
-  public class SubscriptionListHolder {
-    private final ArrayList<Subscription> list;
-
-    private SubscriptionListHolder(HashSet<String> keys, String scope) {
-      if (keys == null) {
-        this.list = subscriptions_of(fetch_all("subscription/" + scope));
-      } else {
-        this.list = subscriptions_of(fetch(keys));
-      }
-    }
-
-    private SubscriptionListHolder(ArrayList<Subscription> list) {
-      this.list = list;
-    }
-
-    public SubscriptionListHolder inline_filter(Predicate<Subscription> filter) {
-      Iterator<Subscription> it = list.iterator();
-      while (it.hasNext()) {
-        if (filter.test(it.next())) {
-          it.remove();
+        private HashSet<String> lookup_product(final String... values) {
+            final HashSet<String> keys = new HashSet<>();
+            for (final String value : values) {
+                keys.addAll(QueryEngine.this.cartitem_product.getKeys(value));
+            }
+            return keys;
         }
-      }
-      return this;
-    }
 
-    public SubscriptionListHolder limit(int count) {
-      Iterator<Subscription> it = list.iterator();
-      int at = 0;
-      while (it.hasNext()) {
-        it.next();
-        if (at >= count) {
-          it.remove();
+        public CartItemSetQuery scope(final String scope) {
+            this.scope += scope + "/";
+            return this;
         }
-        at++;
-      }
-      return this;
-    }
 
-    public SubscriptionListHolder inline_apply(Consumer<Subscription> consumer) {
-      Iterator<Subscription> it = list.iterator();
-      while (it.hasNext()) {
-        consumer.accept(it.next());
-      }
-      return this;
-    }
-
-    public SubscriptionListHolder fork() {
-      return new SubscriptionListHolder(this.list);
-    }
-
-    public HashMap<String, ArrayList<Subscription>> groupBy(Function<Subscription, String> f) {
-      StringGroupBy<Subscription> map = new StringGroupBy<>();
-      Iterator<Subscription> it = list.iterator();
-      while (it.hasNext()) {
-        Subscription v = it.next();
-        String key = f.apply(v);
-        map.add(key, v);
-      }
-      return map.index;
-    }
-
-    public SubscriptionListHolder inline_order_lexographically_asc_by(String... keys) {
-      Collections.sort(this.list, new LexographicalOrder<Subscription>(keys, true, true));
-      return this;
-    }
-
-    public SubscriptionListHolder inline_order_lexographically_desc_by(String... keys) {
-      Collections.sort(this.list, new LexographicalOrder<Subscription>(keys, false, true));
-      return this;
-    }
-
-    public SubscriptionListHolder inline_order_lexographically_by(boolean asc, boolean caseSensitive, String... keys) {
-      Collections.sort(this.list, new LexographicalOrder<Subscription>(keys, asc, caseSensitive));
-      return this;
-    }
-
-    public SubscriptionListHolder inline_order_by(Comparator<Subscription> comparator) {
-      Collections.sort(this.list, comparator);
-      return this;
-    }
-
-    public int count() {
-      return this.list.size();
-    }
-    public Subscription first() {
-      if (this.list.size() == 0) {
-        return null;
-      }
-      return this.list.get(0);
-    }
-    public ArrayList<Subscription> done() {
-      return this.list;
-    }
-  }
-
-  public class SubscriptionSetQuery {
-    private String scope;
-    private HashSet<String> keys;
-
-    private SubscriptionSetQuery() {
-      this.scope = "";
-      this.keys = null;
-    }
-
-    public SubscriptionListHolder to_list() {
-      return new SubscriptionListHolder(this.keys, this.scope);
-    }
-
-    public ArrayList<Subscription> done() {
-      return new SubscriptionListHolder(this.keys, this.scope).done();
-    }
-
-    public int count() {
-      if (this.keys == null) {
-        return to_list().count();
-      } else {
-        return this.keys.size();
-      }
-    }
-
-    public SubscriptionSetQuery scope(String scope) {
-      this.scope += scope + "/";
-      return this;
-    }
-
-    private HashSet<String> lookup_event(String... values) {
-      HashSet<String> keys = new HashSet<>();
-      for(String value : values) {
-        keys.addAll(subscription_event.getKeys(value));
-      }
-      return keys;
-    }
-
-    public SubscriptionSetQuery where_event_eq(String... values) {
-      if (this.keys == null) {
-        this.keys = lookup_event(values);
-      } else {
-        this.keys = BinaryOperators.intersect(this.keys, lookup_event(values));
-      }
-      return this;
-    }
-  }
-
-  /**************************************************
-  Query Engine (task/)
-  **************************************************/
-
-  public TaskSetQuery select_task() {
-    return new TaskSetQuery();
-  }
-
-  public class TaskListHolder {
-    private final ArrayList<Task> list;
-
-    private TaskListHolder(HashSet<String> keys, String scope) {
-      if (keys == null) {
-        this.list = tasks_of(fetch_all("task/" + scope));
-      } else {
-        this.list = tasks_of(fetch(keys));
-      }
-    }
-
-    private TaskListHolder(ArrayList<Task> list) {
-      this.list = list;
-    }
-
-    public TaskListHolder inline_filter(Predicate<Task> filter) {
-      Iterator<Task> it = list.iterator();
-      while (it.hasNext()) {
-        if (filter.test(it.next())) {
-          it.remove();
+        public CartItemListHolder to_list() {
+            return new CartItemListHolder(this.keys, this.scope);
         }
-      }
-      return this;
-    }
 
-    public TaskListHolder limit(int count) {
-      Iterator<Task> it = list.iterator();
-      int at = 0;
-      while (it.hasNext()) {
-        it.next();
-        if (at >= count) {
-          it.remove();
+        public CartItemSetQuery where_cart_eq(final String... values) {
+            if (this.keys == null) {
+                this.keys = lookup_cart(values);
+            } else {
+                this.keys = BinaryOperators.intersect(this.keys, lookup_cart(values));
+            }
+            return this;
         }
-        at++;
-      }
-      return this;
-    }
 
-    public TaskListHolder inline_apply(Consumer<Task> consumer) {
-      Iterator<Task> it = list.iterator();
-      while (it.hasNext()) {
-        consumer.accept(it.next());
-      }
-      return this;
-    }
-
-    public TaskListHolder fork() {
-      return new TaskListHolder(this.list);
-    }
-
-    public HashMap<String, ArrayList<Task>> groupBy(Function<Task, String> f) {
-      StringGroupBy<Task> map = new StringGroupBy<>();
-      Iterator<Task> it = list.iterator();
-      while (it.hasNext()) {
-        Task v = it.next();
-        String key = f.apply(v);
-        map.add(key, v);
-      }
-      return map.index;
-    }
-
-    public TaskListHolder inline_order_lexographically_asc_by(String... keys) {
-      Collections.sort(this.list, new LexographicalOrder<Task>(keys, true, true));
-      return this;
-    }
-
-    public TaskListHolder inline_order_lexographically_desc_by(String... keys) {
-      Collections.sort(this.list, new LexographicalOrder<Task>(keys, false, true));
-      return this;
-    }
-
-    public TaskListHolder inline_order_lexographically_by(boolean asc, boolean caseSensitive, String... keys) {
-      Collections.sort(this.list, new LexographicalOrder<Task>(keys, asc, caseSensitive));
-      return this;
-    }
-
-    public TaskListHolder inline_order_by(Comparator<Task> comparator) {
-      Collections.sort(this.list, comparator);
-      return this;
-    }
-
-    public int count() {
-      return this.list.size();
-    }
-    public Task first() {
-      if (this.list.size() == 0) {
-        return null;
-      }
-      return this.list.get(0);
-    }
-    public ArrayList<Task> done() {
-      return this.list;
-    }
-  }
-
-  public class TaskSetQuery {
-    private String scope;
-    private HashSet<String> keys;
-
-    private TaskSetQuery() {
-      this.scope = "";
-      this.keys = null;
-    }
-
-    public TaskListHolder to_list() {
-      return new TaskListHolder(this.keys, this.scope);
-    }
-
-    public ArrayList<Task> done() {
-      return new TaskListHolder(this.keys, this.scope).done();
-    }
-
-    public int count() {
-      if (this.keys == null) {
-        return to_list().count();
-      } else {
-        return this.keys.size();
-      }
-    }
-
-    public TaskSetQuery scope(String scope) {
-      this.scope += scope + "/";
-      return this;
-    }
-
-    private HashSet<String> lookup_owner(String... values) {
-      HashSet<String> keys = new HashSet<>();
-      for(String value : values) {
-        keys.addAll(task_owner.getKeys(value));
-      }
-      return keys;
-    }
-
-    public TaskSetQuery where_owner_eq(String... values) {
-      if (this.keys == null) {
-        this.keys = lookup_owner(values);
-      } else {
-        this.keys = BinaryOperators.intersect(this.keys, lookup_owner(values));
-      }
-      return this;
-    }
-
-    private HashSet<String> lookup_state(String... values) {
-      HashSet<String> keys = new HashSet<>();
-      for(String value : values) {
-        keys.addAll(task_state.getKeys(value));
-      }
-      return keys;
-    }
-
-    public TaskSetQuery where_state_eq(String... values) {
-      if (this.keys == null) {
-        this.keys = lookup_state(values);
-      } else {
-        this.keys = BinaryOperators.intersect(this.keys, lookup_state(values));
-      }
-      return this;
-    }
-  }
-
-  /**************************************************
-  Query Engine (task_factory/)
-  **************************************************/
-
-  public TaskFactorySetQuery select_taskfactory() {
-    return new TaskFactorySetQuery();
-  }
-
-  public class TaskFactoryListHolder {
-    private final ArrayList<TaskFactory> list;
-
-    private TaskFactoryListHolder(HashSet<String> keys, String scope) {
-      if (keys == null) {
-        this.list = taskfactorys_of(fetch_all("task_factory/" + scope));
-      } else {
-        this.list = taskfactorys_of(fetch(keys));
-      }
-    }
-
-    private TaskFactoryListHolder(ArrayList<TaskFactory> list) {
-      this.list = list;
-    }
-
-    public TaskFactoryListHolder inline_filter(Predicate<TaskFactory> filter) {
-      Iterator<TaskFactory> it = list.iterator();
-      while (it.hasNext()) {
-        if (filter.test(it.next())) {
-          it.remove();
+        public CartItemSetQuery where_customizations_eq(final String... values) {
+            if (this.keys == null) {
+                this.keys = lookup_customizations(values);
+            } else {
+                this.keys = BinaryOperators.intersect(this.keys, lookup_customizations(values));
+            }
+            return this;
         }
-      }
-      return this;
-    }
 
-    public TaskFactoryListHolder limit(int count) {
-      Iterator<TaskFactory> it = list.iterator();
-      int at = 0;
-      while (it.hasNext()) {
-        it.next();
-        if (at >= count) {
-          it.remove();
+        public CartItemSetQuery where_product_eq(final String... values) {
+            if (this.keys == null) {
+                this.keys = lookup_product(values);
+            } else {
+                this.keys = BinaryOperators.intersect(this.keys, lookup_product(values));
+            }
+            return this;
         }
-        at++;
-      }
-      return this;
     }
 
-    public TaskFactoryListHolder inline_apply(Consumer<TaskFactory> consumer) {
-      Iterator<TaskFactory> it = list.iterator();
-      while (it.hasNext()) {
-        consumer.accept(it.next());
-      }
-      return this;
-    }
+    public class CartListHolder {
+        private final ArrayList<Cart> list;
 
-    public TaskFactoryListHolder fork() {
-      return new TaskFactoryListHolder(this.list);
-    }
-
-    public HashMap<String, ArrayList<TaskFactory>> groupBy(Function<TaskFactory, String> f) {
-      StringGroupBy<TaskFactory> map = new StringGroupBy<>();
-      Iterator<TaskFactory> it = list.iterator();
-      while (it.hasNext()) {
-        TaskFactory v = it.next();
-        String key = f.apply(v);
-        map.add(key, v);
-      }
-      return map.index;
-    }
-
-    public TaskFactoryListHolder inline_order_lexographically_asc_by(String... keys) {
-      Collections.sort(this.list, new LexographicalOrder<TaskFactory>(keys, true, true));
-      return this;
-    }
-
-    public TaskFactoryListHolder inline_order_lexographically_desc_by(String... keys) {
-      Collections.sort(this.list, new LexographicalOrder<TaskFactory>(keys, false, true));
-      return this;
-    }
-
-    public TaskFactoryListHolder inline_order_lexographically_by(boolean asc, boolean caseSensitive, String... keys) {
-      Collections.sort(this.list, new LexographicalOrder<TaskFactory>(keys, asc, caseSensitive));
-      return this;
-    }
-
-    public TaskFactoryListHolder inline_order_by(Comparator<TaskFactory> comparator) {
-      Collections.sort(this.list, comparator);
-      return this;
-    }
-
-    public int count() {
-      return this.list.size();
-    }
-    public TaskFactory first() {
-      if (this.list.size() == 0) {
-        return null;
-      }
-      return this.list.get(0);
-    }
-    public ArrayList<TaskFactory> done() {
-      return this.list;
-    }
-  }
-
-  public class TaskFactorySetQuery {
-    private String scope;
-    private HashSet<String> keys;
-
-    private TaskFactorySetQuery() {
-      this.scope = "";
-      this.keys = null;
-    }
-
-    public TaskFactoryListHolder to_list() {
-      return new TaskFactoryListHolder(this.keys, this.scope);
-    }
-
-    public ArrayList<TaskFactory> done() {
-      return new TaskFactoryListHolder(this.keys, this.scope).done();
-    }
-
-    public int count() {
-      if (this.keys == null) {
-        return to_list().count();
-      } else {
-        return this.keys.size();
-      }
-    }
-
-    public TaskFactorySetQuery scope(String scope) {
-      this.scope += scope + "/";
-      return this;
-    }
-  }
-
-  /**************************************************
-  Query Engine (tax-baton/)
-  **************************************************/
-
-  public TaxBatonSetQuery select_taxbaton() {
-    return new TaxBatonSetQuery();
-  }
-
-  public class TaxBatonListHolder {
-    private final ArrayList<TaxBaton> list;
-
-    private TaxBatonListHolder(HashSet<String> keys, String scope) {
-      if (keys == null) {
-        this.list = taxbatons_of(fetch_all("tax-baton/" + scope));
-      } else {
-        this.list = taxbatons_of(fetch(keys));
-      }
-    }
-
-    private TaxBatonListHolder(ArrayList<TaxBaton> list) {
-      this.list = list;
-    }
-
-    public TaxBatonListHolder inline_filter(Predicate<TaxBaton> filter) {
-      Iterator<TaxBaton> it = list.iterator();
-      while (it.hasNext()) {
-        if (filter.test(it.next())) {
-          it.remove();
+        private CartListHolder(final ArrayList<Cart> list) {
+            this.list = list;
         }
-      }
-      return this;
-    }
 
-    public TaxBatonListHolder limit(int count) {
-      Iterator<TaxBaton> it = list.iterator();
-      int at = 0;
-      while (it.hasNext()) {
-        it.next();
-        if (at >= count) {
-          it.remove();
+        private CartListHolder(final HashSet<String> keys, final String scope) {
+            if (keys == null) {
+                this.list = carts_of(fetch_all("cart/" + scope));
+            } else {
+                this.list = carts_of(fetch(keys));
+            }
         }
-        at++;
-      }
-      return this;
-    }
 
-    public TaxBatonListHolder inline_apply(Consumer<TaxBaton> consumer) {
-      Iterator<TaxBaton> it = list.iterator();
-      while (it.hasNext()) {
-        consumer.accept(it.next());
-      }
-      return this;
-    }
-
-    public TaxBatonListHolder fork() {
-      return new TaxBatonListHolder(this.list);
-    }
-
-    public HashMap<String, ArrayList<TaxBaton>> groupBy(Function<TaxBaton, String> f) {
-      StringGroupBy<TaxBaton> map = new StringGroupBy<>();
-      Iterator<TaxBaton> it = list.iterator();
-      while (it.hasNext()) {
-        TaxBaton v = it.next();
-        String key = f.apply(v);
-        map.add(key, v);
-      }
-      return map.index;
-    }
-
-    public TaxBatonListHolder inline_order_lexographically_asc_by(String... keys) {
-      Collections.sort(this.list, new LexographicalOrder<TaxBaton>(keys, true, true));
-      return this;
-    }
-
-    public TaxBatonListHolder inline_order_lexographically_desc_by(String... keys) {
-      Collections.sort(this.list, new LexographicalOrder<TaxBaton>(keys, false, true));
-      return this;
-    }
-
-    public TaxBatonListHolder inline_order_lexographically_by(boolean asc, boolean caseSensitive, String... keys) {
-      Collections.sort(this.list, new LexographicalOrder<TaxBaton>(keys, asc, caseSensitive));
-      return this;
-    }
-
-    public TaxBatonListHolder inline_order_by(Comparator<TaxBaton> comparator) {
-      Collections.sort(this.list, comparator);
-      return this;
-    }
-
-    public int count() {
-      return this.list.size();
-    }
-    public TaxBaton first() {
-      if (this.list.size() == 0) {
-        return null;
-      }
-      return this.list.get(0);
-    }
-    public ArrayList<TaxBaton> done() {
-      return this.list;
-    }
-  }
-
-  public class TaxBatonSetQuery {
-    private String scope;
-    private HashSet<String> keys;
-
-    private TaxBatonSetQuery() {
-      this.scope = "";
-      this.keys = null;
-    }
-
-    public TaxBatonListHolder to_list() {
-      return new TaxBatonListHolder(this.keys, this.scope);
-    }
-
-    public ArrayList<TaxBaton> done() {
-      return new TaxBatonListHolder(this.keys, this.scope).done();
-    }
-
-    public int count() {
-      if (this.keys == null) {
-        return to_list().count();
-      } else {
-        return this.keys.size();
-      }
-    }
-
-    public TaxBatonSetQuery scope(String scope) {
-      this.scope += scope + "/";
-      return this;
-    }
-  }
-
-  /**************************************************
-  Query Engine (wake_input/)
-  **************************************************/
-
-  public WakeInputFileSetQuery select_wakeinputfile() {
-    return new WakeInputFileSetQuery();
-  }
-
-  public class WakeInputFileListHolder {
-    private final ArrayList<WakeInputFile> list;
-
-    private WakeInputFileListHolder(HashSet<String> keys, String scope) {
-      if (keys == null) {
-        this.list = wakeinputfiles_of(fetch_all("wake_input/" + scope));
-      } else {
-        this.list = wakeinputfiles_of(fetch(keys));
-      }
-    }
-
-    private WakeInputFileListHolder(ArrayList<WakeInputFile> list) {
-      this.list = list;
-    }
-
-    public WakeInputFileListHolder inline_filter(Predicate<WakeInputFile> filter) {
-      Iterator<WakeInputFile> it = list.iterator();
-      while (it.hasNext()) {
-        if (filter.test(it.next())) {
-          it.remove();
+        public int count() {
+            return this.list.size();
         }
-      }
-      return this;
-    }
 
-    public WakeInputFileListHolder limit(int count) {
-      Iterator<WakeInputFile> it = list.iterator();
-      int at = 0;
-      while (it.hasNext()) {
-        it.next();
-        if (at >= count) {
-          it.remove();
+        public ArrayList<Cart> done() {
+            return this.list;
         }
-        at++;
-      }
-      return this;
+
+        public Cart first() {
+            if (this.list.size() == 0) {
+                return null;
+            }
+            return this.list.get(0);
+        }
+
+        public CartListHolder fork() {
+            return new CartListHolder(this.list);
+        }
+
+        public HashMap<String, ArrayList<Cart>> groupBy(final Function<Cart, String> f) {
+            final StringGroupBy<Cart> map = new StringGroupBy<>();
+            final Iterator<Cart> it = this.list.iterator();
+            while (it.hasNext()) {
+                final Cart v = it.next();
+                final String key = f.apply(v);
+                map.add(key, v);
+            }
+            return map.index;
+        }
+
+        public CartListHolder inline_apply(final Consumer<Cart> consumer) {
+            final Iterator<Cart> it = this.list.iterator();
+            while (it.hasNext()) {
+                consumer.accept(it.next());
+            }
+            return this;
+        }
+
+        public CartListHolder inline_filter(final Predicate<Cart> filter) {
+            final Iterator<Cart> it = this.list.iterator();
+            while (it.hasNext()) {
+                if (filter.test(it.next())) {
+                    it.remove();
+                }
+            }
+            return this;
+        }
+
+        public CartListHolder inline_order_by(final Comparator<Cart> comparator) {
+            Collections.sort(this.list, comparator);
+            return this;
+        }
+
+        public CartListHolder inline_order_lexographically_asc_by(final String... keys) {
+            Collections.sort(this.list, new LexographicalOrder<Cart>(keys, true, true));
+            return this;
+        }
+
+        public CartListHolder inline_order_lexographically_by(final boolean asc, final boolean caseSensitive, final String... keys) {
+            Collections.sort(this.list, new LexographicalOrder<Cart>(keys, asc, caseSensitive));
+            return this;
+        }
+
+        public CartListHolder inline_order_lexographically_desc_by(final String... keys) {
+            Collections.sort(this.list, new LexographicalOrder<Cart>(keys, false, true));
+            return this;
+        }
+
+        public CartListHolder limit(final int count) {
+            final Iterator<Cart> it = this.list.iterator();
+            int at = 0;
+            while (it.hasNext()) {
+                it.next();
+                if (at >= count) {
+                    it.remove();
+                }
+                at++;
+            }
+            return this;
+        }
     }
 
-    public WakeInputFileListHolder inline_apply(Consumer<WakeInputFile> consumer) {
-      Iterator<WakeInputFile> it = list.iterator();
-      while (it.hasNext()) {
-        consumer.accept(it.next());
-      }
-      return this;
+    /**************************************************
+     * Projects (cart/)
+     **************************************************/
+
+    public class CartProjection_admin {
+        private final HashMap<String, String> data;
+
+        public CartProjection_admin(final ProjectionProvider pp) {
+            this.data = new HashMap<String, String>();
+            this.data.put("id", farm.bsg.data.types.TypeUUID.project(pp, "id"));
+            this.data.put("__token", farm.bsg.data.types.TypeString.project(pp, "__token"));
+            this.data.put("customer", farm.bsg.data.types.TypeString.project(pp, "customer"));
+            this.data.put("task", farm.bsg.data.types.TypeString.project(pp, "task"));
+            this.data.put("state", farm.bsg.data.types.TypeString.project(pp, "state"));
+        }
+
+        public PutResult apply(final Cart cart) {
+            return cart.validateAndApplyProjection(this.data);
+        }
     }
 
-    public WakeInputFileListHolder fork() {
-      return new WakeInputFileListHolder(this.list);
+    public class CartSetQuery {
+        private String          scope;
+        private HashSet<String> keys;
+
+        private CartSetQuery() {
+            this.scope = "";
+            this.keys = null;
+        }
+
+        public int count() {
+            if (this.keys == null) {
+                return to_list().count();
+            } else {
+                return this.keys.size();
+            }
+        }
+
+        public ArrayList<Cart> done() {
+            return new CartListHolder(this.keys, this.scope).done();
+        }
+
+        private HashSet<String> lookup_customer(final String... values) {
+            final HashSet<String> keys = new HashSet<>();
+            for (final String value : values) {
+                keys.addAll(QueryEngine.this.cart_customer.getKeys(value));
+            }
+            return keys;
+        }
+
+        private HashSet<String> lookup_task(final String... values) {
+            final HashSet<String> keys = new HashSet<>();
+            for (final String value : values) {
+                keys.addAll(QueryEngine.this.cart_task.getKeys(value));
+            }
+            return keys;
+        }
+
+        public CartSetQuery scope(final String scope) {
+            this.scope += scope + "/";
+            return this;
+        }
+
+        public CartListHolder to_list() {
+            return new CartListHolder(this.keys, this.scope);
+        }
+
+        public CartSetQuery where_customer_eq(final String... values) {
+            if (this.keys == null) {
+                this.keys = lookup_customer(values);
+            } else {
+                this.keys = BinaryOperators.intersect(this.keys, lookup_customer(values));
+            }
+            return this;
+        }
+
+        public CartSetQuery where_task_eq(final String... values) {
+            if (this.keys == null) {
+                this.keys = lookup_task(values);
+            } else {
+                this.keys = BinaryOperators.intersect(this.keys, lookup_task(values));
+            }
+            return this;
+        }
     }
 
-    public HashMap<String, ArrayList<WakeInputFile>> groupBy(Function<WakeInputFile, String> f) {
-      StringGroupBy<WakeInputFile> map = new StringGroupBy<>();
-      Iterator<WakeInputFile> it = list.iterator();
-      while (it.hasNext()) {
-        WakeInputFile v = it.next();
-        String key = f.apply(v);
-        map.add(key, v);
-      }
-      return map.index;
+    public class CheckListHolder {
+        private final ArrayList<Check> list;
+
+        private CheckListHolder(final ArrayList<Check> list) {
+            this.list = list;
+        }
+
+        private CheckListHolder(final HashSet<String> keys, final String scope) {
+            if (keys == null) {
+                this.list = checks_of(fetch_all("checks/" + scope));
+            } else {
+                this.list = checks_of(fetch(keys));
+            }
+        }
+
+        public int count() {
+            return this.list.size();
+        }
+
+        public ArrayList<Check> done() {
+            return this.list;
+        }
+
+        public Check first() {
+            if (this.list.size() == 0) {
+                return null;
+            }
+            return this.list.get(0);
+        }
+
+        public CheckListHolder fork() {
+            return new CheckListHolder(this.list);
+        }
+
+        public HashMap<String, ArrayList<Check>> groupBy(final Function<Check, String> f) {
+            final StringGroupBy<Check> map = new StringGroupBy<>();
+            final Iterator<Check> it = this.list.iterator();
+            while (it.hasNext()) {
+                final Check v = it.next();
+                final String key = f.apply(v);
+                map.add(key, v);
+            }
+            return map.index;
+        }
+
+        public CheckListHolder inline_apply(final Consumer<Check> consumer) {
+            final Iterator<Check> it = this.list.iterator();
+            while (it.hasNext()) {
+                consumer.accept(it.next());
+            }
+            return this;
+        }
+
+        public CheckListHolder inline_filter(final Predicate<Check> filter) {
+            final Iterator<Check> it = this.list.iterator();
+            while (it.hasNext()) {
+                if (filter.test(it.next())) {
+                    it.remove();
+                }
+            }
+            return this;
+        }
+
+        public CheckListHolder inline_order_by(final Comparator<Check> comparator) {
+            Collections.sort(this.list, comparator);
+            return this;
+        }
+
+        public CheckListHolder inline_order_lexographically_asc_by(final String... keys) {
+            Collections.sort(this.list, new LexographicalOrder<Check>(keys, true, true));
+            return this;
+        }
+
+        public CheckListHolder inline_order_lexographically_by(final boolean asc, final boolean caseSensitive, final String... keys) {
+            Collections.sort(this.list, new LexographicalOrder<Check>(keys, asc, caseSensitive));
+            return this;
+        }
+
+        public CheckListHolder inline_order_lexographically_desc_by(final String... keys) {
+            Collections.sort(this.list, new LexographicalOrder<Check>(keys, false, true));
+            return this;
+        }
+
+        public CheckListHolder limit(final int count) {
+            final Iterator<Check> it = this.list.iterator();
+            int at = 0;
+            while (it.hasNext()) {
+                it.next();
+                if (at >= count) {
+                    it.remove();
+                }
+                at++;
+            }
+            return this;
+        }
     }
 
-    public WakeInputFileListHolder inline_order_lexographically_asc_by(String... keys) {
-      Collections.sort(this.list, new LexographicalOrder<WakeInputFile>(keys, true, true));
-      return this;
+    /**************************************************
+     * Projects (checks/)
+     **************************************************/
+
+    public class CheckProjection_admin {
+        private final HashMap<String, String> data;
+
+        public CheckProjection_admin(final ProjectionProvider pp) {
+            this.data = new HashMap<String, String>();
+            this.data.put("id", farm.bsg.data.types.TypeUUID.project(pp, "id"));
+            this.data.put("__token", farm.bsg.data.types.TypeString.project(pp, "__token"));
+            this.data.put("ref", farm.bsg.data.types.TypeString.project(pp, "ref"));
+            this.data.put("person", farm.bsg.data.types.TypeString.project(pp, "person"));
+            this.data.put("generated", farm.bsg.data.types.TypeDateTime.project(pp, "generated"));
+            this.data.put("fiscal_day", farm.bsg.data.types.TypeString.project(pp, "fiscal_day"));
+            this.data.put("payment", farm.bsg.data.types.TypeNumber.project(pp, "payment"));
+            this.data.put("ready", farm.bsg.data.types.TypeString.project(pp, "ready"));
+            this.data.put("checksum", farm.bsg.data.types.TypeNumber.project(pp, "checksum"));
+        }
+
+        public PutResult apply(final Check check) {
+            return check.validateAndApplyProjection(this.data);
+        }
     }
 
-    public WakeInputFileListHolder inline_order_lexographically_desc_by(String... keys) {
-      Collections.sort(this.list, new LexographicalOrder<WakeInputFile>(keys, false, true));
-      return this;
+    public class CheckSetQuery {
+        private String          scope;
+        private HashSet<String> keys;
+
+        private CheckSetQuery() {
+            this.scope = "";
+            this.keys = null;
+        }
+
+        public int count() {
+            if (this.keys == null) {
+                return to_list().count();
+            } else {
+                return this.keys.size();
+            }
+        }
+
+        public ArrayList<Check> done() {
+            return new CheckListHolder(this.keys, this.scope).done();
+        }
+
+        private HashSet<String> lookup_fiscal_day(final String... values) {
+            final HashSet<String> keys = new HashSet<>();
+            for (final String value : values) {
+                keys.addAll(QueryEngine.this.check_fiscal_day.getKeys(value));
+            }
+            return keys;
+        }
+
+        private HashSet<String> lookup_person(final String... values) {
+            final HashSet<String> keys = new HashSet<>();
+            for (final String value : values) {
+                keys.addAll(QueryEngine.this.check_person.getKeys(value));
+            }
+            return keys;
+        }
+
+        private HashSet<String> lookup_ready(final String... values) {
+            final HashSet<String> keys = new HashSet<>();
+            for (final String value : values) {
+                keys.addAll(QueryEngine.this.check_ready.getKeys(value));
+            }
+            return keys;
+        }
+
+        public CheckSetQuery scope(final String scope) {
+            this.scope += scope + "/";
+            return this;
+        }
+
+        public CheckListHolder to_list() {
+            return new CheckListHolder(this.keys, this.scope);
+        }
+
+        public CheckSetQuery where_fiscal_day_eq(final String... values) {
+            if (this.keys == null) {
+                this.keys = lookup_fiscal_day(values);
+            } else {
+                this.keys = BinaryOperators.intersect(this.keys, lookup_fiscal_day(values));
+            }
+            return this;
+        }
+
+        public CheckSetQuery where_person_eq(final String... values) {
+            if (this.keys == null) {
+                this.keys = lookup_person(values);
+            } else {
+                this.keys = BinaryOperators.intersect(this.keys, lookup_person(values));
+            }
+            return this;
+        }
+
+        public CheckSetQuery where_ready_eq(final String... values) {
+            if (this.keys == null) {
+                this.keys = lookup_ready(values);
+            } else {
+                this.keys = BinaryOperators.intersect(this.keys, lookup_ready(values));
+            }
+            return this;
+        }
     }
 
-    public WakeInputFileListHolder inline_order_lexographically_by(boolean asc, boolean caseSensitive, String... keys) {
-      Collections.sort(this.list, new LexographicalOrder<WakeInputFile>(keys, asc, caseSensitive));
-      return this;
+    public class CustomerListHolder {
+        private final ArrayList<Customer> list;
+
+        private CustomerListHolder(final ArrayList<Customer> list) {
+            this.list = list;
+        }
+
+        private CustomerListHolder(final HashSet<String> keys, final String scope) {
+            if (keys == null) {
+                this.list = customers_of(fetch_all("customer/" + scope));
+            } else {
+                this.list = customers_of(fetch(keys));
+            }
+        }
+
+        public int count() {
+            return this.list.size();
+        }
+
+        public ArrayList<Customer> done() {
+            return this.list;
+        }
+
+        public Customer first() {
+            if (this.list.size() == 0) {
+                return null;
+            }
+            return this.list.get(0);
+        }
+
+        public CustomerListHolder fork() {
+            return new CustomerListHolder(this.list);
+        }
+
+        public HashMap<String, ArrayList<Customer>> groupBy(final Function<Customer, String> f) {
+            final StringGroupBy<Customer> map = new StringGroupBy<>();
+            final Iterator<Customer> it = this.list.iterator();
+            while (it.hasNext()) {
+                final Customer v = it.next();
+                final String key = f.apply(v);
+                map.add(key, v);
+            }
+            return map.index;
+        }
+
+        public CustomerListHolder inline_apply(final Consumer<Customer> consumer) {
+            final Iterator<Customer> it = this.list.iterator();
+            while (it.hasNext()) {
+                consumer.accept(it.next());
+            }
+            return this;
+        }
+
+        public CustomerListHolder inline_filter(final Predicate<Customer> filter) {
+            final Iterator<Customer> it = this.list.iterator();
+            while (it.hasNext()) {
+                if (filter.test(it.next())) {
+                    it.remove();
+                }
+            }
+            return this;
+        }
+
+        public CustomerListHolder inline_order_by(final Comparator<Customer> comparator) {
+            Collections.sort(this.list, comparator);
+            return this;
+        }
+
+        public CustomerListHolder inline_order_lexographically_asc_by(final String... keys) {
+            Collections.sort(this.list, new LexographicalOrder<Customer>(keys, true, true));
+            return this;
+        }
+
+        public CustomerListHolder inline_order_lexographically_by(final boolean asc, final boolean caseSensitive, final String... keys) {
+            Collections.sort(this.list, new LexographicalOrder<Customer>(keys, asc, caseSensitive));
+            return this;
+        }
+
+        public CustomerListHolder inline_order_lexographically_desc_by(final String... keys) {
+            Collections.sort(this.list, new LexographicalOrder<Customer>(keys, false, true));
+            return this;
+        }
+
+        public CustomerListHolder limit(final int count) {
+            final Iterator<Customer> it = this.list.iterator();
+            int at = 0;
+            while (it.hasNext()) {
+                it.next();
+                if (at >= count) {
+                    it.remove();
+                }
+                at++;
+            }
+            return this;
+        }
     }
 
-    public WakeInputFileListHolder inline_order_by(Comparator<WakeInputFile> comparator) {
-      Collections.sort(this.list, comparator);
-      return this;
+    /**************************************************
+     * Projects (customer/)
+     **************************************************/
+
+    public class CustomerProjection_admin {
+        private final HashMap<String, String> data;
+
+        public CustomerProjection_admin(final ProjectionProvider pp) {
+            this.data = new HashMap<String, String>();
+            this.data.put("id", farm.bsg.data.types.TypeUUID.project(pp, "id"));
+            this.data.put("__token", farm.bsg.data.types.TypeString.project(pp, "__token"));
+            this.data.put("email", farm.bsg.data.types.TypeString.project(pp, "email"));
+            this.data.put("name", farm.bsg.data.types.TypeString.project(pp, "name"));
+            this.data.put("phone", farm.bsg.data.types.TypeString.project(pp, "phone"));
+            this.data.put("salt", farm.bsg.data.types.TypeString.project(pp, "salt"));
+            this.data.put("hash", farm.bsg.data.types.TypeString.project(pp, "hash"));
+            this.data.put("cookie", farm.bsg.data.types.TypeString.project(pp, "cookie"));
+            this.data.put("notification_token", farm.bsg.data.types.TypeString.project(pp, "notification_token"));
+            this.data.put("notification_uri", farm.bsg.data.types.TypeString.project(pp, "notification_uri"));
+        }
+
+        public PutResult apply(final Customer customer) {
+            return customer.validateAndApplyProjection(this.data);
+        }
     }
 
-    public int count() {
-      return this.list.size();
-    }
-    public WakeInputFile first() {
-      if (this.list.size() == 0) {
-        return null;
-      }
-      return this.list.get(0);
-    }
-    public ArrayList<WakeInputFile> done() {
-      return this.list;
-    }
-  }
+    public class CustomerSetQuery {
+        private String          scope;
+        private HashSet<String> keys;
 
-  public class WakeInputFileSetQuery {
-    private String scope;
-    private HashSet<String> keys;
+        private CustomerSetQuery() {
+            this.scope = "";
+            this.keys = null;
+        }
 
-    private WakeInputFileSetQuery() {
-      this.scope = "";
-      this.keys = null;
-    }
+        public int count() {
+            if (this.keys == null) {
+                return to_list().count();
+            } else {
+                return this.keys.size();
+            }
+        }
 
-    public WakeInputFileListHolder to_list() {
-      return new WakeInputFileListHolder(this.keys, this.scope);
-    }
+        public ArrayList<Customer> done() {
+            return new CustomerListHolder(this.keys, this.scope).done();
+        }
 
-    public ArrayList<WakeInputFile> done() {
-      return new WakeInputFileListHolder(this.keys, this.scope).done();
-    }
+        private HashSet<String> lookup_cookie(final String... values) {
+            final HashSet<String> keys = new HashSet<>();
+            for (final String value : values) {
+                keys.addAll(QueryEngine.this.customer_cookie.getKeys(value));
+            }
+            return keys;
+        }
 
-    public int count() {
-      if (this.keys == null) {
-        return to_list().count();
-      } else {
-        return this.keys.size();
-      }
-    }
+        private HashSet<String> lookup_email(final String... values) {
+            final HashSet<String> keys = new HashSet<>();
+            for (final String value : values) {
+                keys.addAll(QueryEngine.this.customer_email.getKeys(value));
+            }
+            return keys;
+        }
 
-    public WakeInputFileSetQuery scope(String scope) {
-      this.scope += scope + "/";
-      return this;
-    }
+        private HashSet<String> lookup_notification_token(final String... values) {
+            final HashSet<String> keys = new HashSet<>();
+            for (final String value : values) {
+                keys.addAll(QueryEngine.this.customer_notification_token.getKeys(value));
+            }
+            return keys;
+        }
 
-    private HashSet<String> lookup_filename(String... values) {
-      HashSet<String> keys = new HashSet<>();
-      for(String value : values) {
-        keys.addAll(wakeinputfile_filename.getKeys(value));
-      }
-      return keys;
-    }
+        private HashSet<String> lookup_phone(final String... values) {
+            final HashSet<String> keys = new HashSet<>();
+            for (final String value : values) {
+                keys.addAll(QueryEngine.this.customer_phone.getKeys(value));
+            }
+            return keys;
+        }
 
-    public WakeInputFileSetQuery where_filename_eq(String... values) {
-      if (this.keys == null) {
-        this.keys = lookup_filename(values);
-      } else {
-        this.keys = BinaryOperators.intersect(this.keys, lookup_filename(values));
-      }
-      return this;
-    }
-  }
+        public CustomerSetQuery scope(final String scope) {
+            this.scope += scope + "/";
+            return this;
+        }
 
-  /**************************************************
-  Projects (cart/)
-  **************************************************/
+        public CustomerListHolder to_list() {
+            return new CustomerListHolder(this.keys, this.scope);
+        }
 
-  public class CartProjection_admin {
-    private final HashMap<String, String> data;
-    
-    public CartProjection_admin(ProjectionProvider pp) {
-      this.data = new HashMap<String, String>();
-      this.data.put("id", farm.bsg.data.types.TypeUUID.project(pp, "id"));
-      this.data.put("__token", farm.bsg.data.types.TypeString.project(pp, "__token"));
-      this.data.put("customer", farm.bsg.data.types.TypeString.project(pp, "customer"));
-      this.data.put("task", farm.bsg.data.types.TypeString.project(pp, "task"));
-      this.data.put("converted", farm.bsg.data.types.TypeBoolean.project(pp, "converted"));
-      this.data.put("closed", farm.bsg.data.types.TypeBoolean.project(pp, "closed"));
-    }
+        public CustomerSetQuery where_cookie_eq(final String... values) {
+            if (this.keys == null) {
+                this.keys = lookup_cookie(values);
+            } else {
+                this.keys = BinaryOperators.intersect(this.keys, lookup_cookie(values));
+            }
+            return this;
+        }
 
-    public PutResult apply(Cart cart) {
-      return cart.validateAndApplyProjection(this.data);
-    }
-  }
+        public CustomerSetQuery where_email_eq(final String... values) {
+            if (this.keys == null) {
+                this.keys = lookup_email(values);
+            } else {
+                this.keys = BinaryOperators.intersect(this.keys, lookup_email(values));
+            }
+            return this;
+        }
 
-  public CartProjection_admin projection_cart_admin_of(ProjectionProvider pp) {
-    return new CartProjection_admin(pp);
-  }
+        public CustomerSetQuery where_notification_token_eq(final String... values) {
+            if (this.keys == null) {
+                this.keys = lookup_notification_token(values);
+            } else {
+                this.keys = BinaryOperators.intersect(this.keys, lookup_notification_token(values));
+            }
+            return this;
+        }
 
-
-  /**************************************************
-  Projects (cart-item/)
-  **************************************************/
-
-  public class CartItemProjection_admin {
-    private final HashMap<String, String> data;
-    
-    public CartItemProjection_admin(ProjectionProvider pp) {
-      this.data = new HashMap<String, String>();
-      this.data.put("id", farm.bsg.data.types.TypeUUID.project(pp, "id"));
-      this.data.put("__token", farm.bsg.data.types.TypeString.project(pp, "__token"));
-      this.data.put("cart", farm.bsg.data.types.TypeString.project(pp, "cart"));
-      this.data.put("product", farm.bsg.data.types.TypeString.project(pp, "product"));
-      this.data.put("quantity", farm.bsg.data.types.TypeNumber.project(pp, "quantity"));
-      this.data.put("customizations", farm.bsg.data.types.TypeString.project(pp, "customizations"));
+        public CustomerSetQuery where_phone_eq(final String... values) {
+            if (this.keys == null) {
+                this.keys = lookup_phone(values);
+            } else {
+                this.keys = BinaryOperators.intersect(this.keys, lookup_phone(values));
+            }
+            return this;
+        }
     }
 
-    public PutResult apply(CartItem cartitem) {
-      return cartitem.validateAndApplyProjection(this.data);
-    }
-  }
+    public class HabitListHolder {
+        private final ArrayList<Habit> list;
 
-  public CartItemProjection_admin projection_cartitem_admin_of(ProjectionProvider pp) {
-    return new CartItemProjection_admin(pp);
-  }
+        private HabitListHolder(final ArrayList<Habit> list) {
+            this.list = list;
+        }
 
+        private HabitListHolder(final HashSet<String> keys, final String scope) {
+            if (keys == null) {
+                this.list = habits_of(fetch_all("habits/" + scope));
+            } else {
+                this.list = habits_of(fetch(keys));
+            }
+        }
 
-  /**************************************************
-  Projects (checks/)
-  **************************************************/
+        public int count() {
+            return this.list.size();
+        }
 
-  public class CheckProjection_admin {
-    private final HashMap<String, String> data;
-    
-    public CheckProjection_admin(ProjectionProvider pp) {
-      this.data = new HashMap<String, String>();
-      this.data.put("id", farm.bsg.data.types.TypeUUID.project(pp, "id"));
-      this.data.put("__token", farm.bsg.data.types.TypeString.project(pp, "__token"));
-      this.data.put("ref", farm.bsg.data.types.TypeString.project(pp, "ref"));
-      this.data.put("person", farm.bsg.data.types.TypeString.project(pp, "person"));
-      this.data.put("generated", farm.bsg.data.types.TypeDateTime.project(pp, "generated"));
-      this.data.put("fiscal_day", farm.bsg.data.types.TypeString.project(pp, "fiscal_day"));
-      this.data.put("payment", farm.bsg.data.types.TypeNumber.project(pp, "payment"));
-      this.data.put("ready", farm.bsg.data.types.TypeString.project(pp, "ready"));
-      this.data.put("checksum", farm.bsg.data.types.TypeNumber.project(pp, "checksum"));
-    }
+        public ArrayList<Habit> done() {
+            return this.list;
+        }
 
-    public PutResult apply(Check check) {
-      return check.validateAndApplyProjection(this.data);
-    }
-  }
+        public Habit first() {
+            if (this.list.size() == 0) {
+                return null;
+            }
+            return this.list.get(0);
+        }
 
-  public CheckProjection_admin projection_check_admin_of(ProjectionProvider pp) {
-    return new CheckProjection_admin(pp);
-  }
+        public HabitListHolder fork() {
+            return new HabitListHolder(this.list);
+        }
 
+        public HashMap<String, ArrayList<Habit>> groupBy(final Function<Habit, String> f) {
+            final StringGroupBy<Habit> map = new StringGroupBy<>();
+            final Iterator<Habit> it = this.list.iterator();
+            while (it.hasNext()) {
+                final Habit v = it.next();
+                final String key = f.apply(v);
+                map.add(key, v);
+            }
+            return map.index;
+        }
 
-  /**************************************************
-  Projects (customer/)
-  **************************************************/
+        public HabitListHolder inline_apply(final Consumer<Habit> consumer) {
+            final Iterator<Habit> it = this.list.iterator();
+            while (it.hasNext()) {
+                consumer.accept(it.next());
+            }
+            return this;
+        }
 
-  public class CustomerProjection_admin {
-    private final HashMap<String, String> data;
-    
-    public CustomerProjection_admin(ProjectionProvider pp) {
-      this.data = new HashMap<String, String>();
-      this.data.put("id", farm.bsg.data.types.TypeUUID.project(pp, "id"));
-      this.data.put("__token", farm.bsg.data.types.TypeString.project(pp, "__token"));
-      this.data.put("email", farm.bsg.data.types.TypeString.project(pp, "email"));
-      this.data.put("name", farm.bsg.data.types.TypeString.project(pp, "name"));
-      this.data.put("phone", farm.bsg.data.types.TypeString.project(pp, "phone"));
-      this.data.put("salt", farm.bsg.data.types.TypeString.project(pp, "salt"));
-      this.data.put("hash", farm.bsg.data.types.TypeString.project(pp, "hash"));
-      this.data.put("cookie", farm.bsg.data.types.TypeString.project(pp, "cookie"));
-      this.data.put("notification_token", farm.bsg.data.types.TypeString.project(pp, "notification_token"));
-      this.data.put("notification_uri", farm.bsg.data.types.TypeString.project(pp, "notification_uri"));
-    }
+        public HabitListHolder inline_filter(final Predicate<Habit> filter) {
+            final Iterator<Habit> it = this.list.iterator();
+            while (it.hasNext()) {
+                if (filter.test(it.next())) {
+                    it.remove();
+                }
+            }
+            return this;
+        }
 
-    public PutResult apply(Customer customer) {
-      return customer.validateAndApplyProjection(this.data);
-    }
-  }
+        public HabitListHolder inline_order_by(final Comparator<Habit> comparator) {
+            Collections.sort(this.list, comparator);
+            return this;
+        }
 
-  public CustomerProjection_admin projection_customer_admin_of(ProjectionProvider pp) {
-    return new CustomerProjection_admin(pp);
-  }
+        public HabitListHolder inline_order_lexographically_asc_by(final String... keys) {
+            Collections.sort(this.list, new LexographicalOrder<Habit>(keys, true, true));
+            return this;
+        }
 
+        public HabitListHolder inline_order_lexographically_by(final boolean asc, final boolean caseSensitive, final String... keys) {
+            Collections.sort(this.list, new LexographicalOrder<Habit>(keys, asc, caseSensitive));
+            return this;
+        }
 
-  /**************************************************
-  Projects (habits/)
-  **************************************************/
+        public HabitListHolder inline_order_lexographically_desc_by(final String... keys) {
+            Collections.sort(this.list, new LexographicalOrder<Habit>(keys, false, true));
+            return this;
+        }
 
-  public class HabitProjection_admin {
-    private final HashMap<String, String> data;
-    
-    public HabitProjection_admin(ProjectionProvider pp) {
-      this.data = new HashMap<String, String>();
-      this.data.put("id", farm.bsg.data.types.TypeUUID.project(pp, "id"));
-      this.data.put("__token", farm.bsg.data.types.TypeString.project(pp, "__token"));
-      this.data.put("who", farm.bsg.data.types.TypeString.project(pp, "who"));
-      this.data.put("last_done", farm.bsg.data.types.TypeString.project(pp, "last_done"));
-      this.data.put("unlock_time", farm.bsg.data.types.TypeString.project(pp, "unlock_time"));
-      this.data.put("warn_time", farm.bsg.data.types.TypeString.project(pp, "warn_time"));
-      this.data.put("name", farm.bsg.data.types.TypeString.project(pp, "name"));
-      this.data.put("has_arg", farm.bsg.data.types.TypeString.project(pp, "has_arg"));
-      this.data.put("last_arg_given", farm.bsg.data.types.TypeString.project(pp, "last_arg_given"));
-      this.data.put("history", farm.bsg.data.types.TypeString.project(pp, "history"));
-    }
-
-    public PutResult apply(Habit habit) {
-      return habit.validateAndApplyProjection(this.data);
-    }
-  }
-
-  public HabitProjection_admin projection_habit_admin_of(ProjectionProvider pp) {
-    return new HabitProjection_admin(pp);
-  }
-
-
-  public class HabitProjection_edit {
-    private final HashMap<String, String> data;
-    
-    public HabitProjection_edit(ProjectionProvider pp) {
-      this.data = new HashMap<String, String>();
-      this.data.put("unlock_time", farm.bsg.data.types.TypeString.project(pp, "unlock_time"));
-      this.data.put("warn_time", farm.bsg.data.types.TypeString.project(pp, "warn_time"));
-      this.data.put("name", farm.bsg.data.types.TypeString.project(pp, "name"));
-      this.data.put("has_arg", farm.bsg.data.types.TypeString.project(pp, "has_arg"));
+        public HabitListHolder limit(final int count) {
+            final Iterator<Habit> it = this.list.iterator();
+            int at = 0;
+            while (it.hasNext()) {
+                it.next();
+                if (at >= count) {
+                    it.remove();
+                }
+                at++;
+            }
+            return this;
+        }
     }
 
-    public PutResult apply(Habit habit) {
-      return habit.validateAndApplyProjection(this.data);
-    }
-  }
+    /**************************************************
+     * Projects (habits/)
+     **************************************************/
 
-  public HabitProjection_edit projection_habit_edit_of(ProjectionProvider pp) {
-    return new HabitProjection_edit(pp);
-  }
+    public class HabitProjection_admin {
+        private final HashMap<String, String> data;
 
+        public HabitProjection_admin(final ProjectionProvider pp) {
+            this.data = new HashMap<String, String>();
+            this.data.put("id", farm.bsg.data.types.TypeUUID.project(pp, "id"));
+            this.data.put("__token", farm.bsg.data.types.TypeString.project(pp, "__token"));
+            this.data.put("who", farm.bsg.data.types.TypeString.project(pp, "who"));
+            this.data.put("last_done", farm.bsg.data.types.TypeString.project(pp, "last_done"));
+            this.data.put("unlock_time", farm.bsg.data.types.TypeString.project(pp, "unlock_time"));
+            this.data.put("warn_time", farm.bsg.data.types.TypeString.project(pp, "warn_time"));
+            this.data.put("name", farm.bsg.data.types.TypeString.project(pp, "name"));
+            this.data.put("has_arg", farm.bsg.data.types.TypeString.project(pp, "has_arg"));
+            this.data.put("last_arg_given", farm.bsg.data.types.TypeString.project(pp, "last_arg_given"));
+            this.data.put("history", farm.bsg.data.types.TypeString.project(pp, "history"));
+        }
 
-  /**************************************************
-  Projects (payroll/)
-  **************************************************/
-
-  public class PayrollEntryProjection_admin {
-    private final HashMap<String, String> data;
-    
-    public PayrollEntryProjection_admin(ProjectionProvider pp) {
-      this.data = new HashMap<String, String>();
-      this.data.put("id", farm.bsg.data.types.TypeUUID.project(pp, "id"));
-      this.data.put("__token", farm.bsg.data.types.TypeString.project(pp, "__token"));
-      this.data.put("person", farm.bsg.data.types.TypeString.project(pp, "person"));
-      this.data.put("reported", farm.bsg.data.types.TypeDateTime.project(pp, "reported"));
-      this.data.put("fiscal_day", farm.bsg.data.types.TypeString.project(pp, "fiscal_day"));
-      this.data.put("mileage", farm.bsg.data.types.TypeNumber.project(pp, "mileage"));
-      this.data.put("hours_worked", farm.bsg.data.types.TypeNumber.project(pp, "hours_worked"));
-      this.data.put("pto_used", farm.bsg.data.types.TypeNumber.project(pp, "pto_used"));
-      this.data.put("sick_leave_used", farm.bsg.data.types.TypeNumber.project(pp, "sick_leave_used"));
-      this.data.put("hourly_wage_compesation", farm.bsg.data.types.TypeNumber.project(pp, "hourly_wage_compesation"));
-      this.data.put("mileage_compensation", farm.bsg.data.types.TypeNumber.project(pp, "mileage_compensation"));
-      this.data.put("owed", farm.bsg.data.types.TypeNumber.project(pp, "owed"));
-      this.data.put("tax_withholding", farm.bsg.data.types.TypeNumber.project(pp, "tax_withholding"));
-      this.data.put("taxes", farm.bsg.data.types.TypeNumber.project(pp, "taxes"));
-      this.data.put("benefits", farm.bsg.data.types.TypeNumber.project(pp, "benefits"));
-      this.data.put("is_performance_related_bonus", farm.bsg.data.types.TypeBoolean.project(pp, "is_performance_related_bonus"));
-      this.data.put("check", farm.bsg.data.types.TypeString.project(pp, "check"));
-      this.data.put("unpaid", farm.bsg.data.types.TypeString.project(pp, "unpaid"));
+        public PutResult apply(final Habit habit) {
+            return habit.validateAndApplyProjection(this.data);
+        }
     }
 
-    public PutResult apply(PayrollEntry payrollentry) {
-      return payrollentry.validateAndApplyProjection(this.data);
-    }
-  }
+    public class HabitProjection_edit {
+        private final HashMap<String, String> data;
 
-  public PayrollEntryProjection_admin projection_payrollentry_admin_of(ProjectionProvider pp) {
-    return new PayrollEntryProjection_admin(pp);
-  }
+        public HabitProjection_edit(final ProjectionProvider pp) {
+            this.data = new HashMap<String, String>();
+            this.data.put("unlock_time", farm.bsg.data.types.TypeString.project(pp, "unlock_time"));
+            this.data.put("warn_time", farm.bsg.data.types.TypeString.project(pp, "warn_time"));
+            this.data.put("name", farm.bsg.data.types.TypeString.project(pp, "name"));
+            this.data.put("has_arg", farm.bsg.data.types.TypeString.project(pp, "has_arg"));
+        }
 
-
-  public class PayrollEntryProjection_edit {
-    private final HashMap<String, String> data;
-    
-    public PayrollEntryProjection_edit(ProjectionProvider pp) {
-      this.data = new HashMap<String, String>();
-      this.data.put("mileage", farm.bsg.data.types.TypeNumber.project(pp, "mileage"));
-      this.data.put("hours_worked", farm.bsg.data.types.TypeNumber.project(pp, "hours_worked"));
-      this.data.put("pto_used", farm.bsg.data.types.TypeNumber.project(pp, "pto_used"));
-      this.data.put("sick_leave_used", farm.bsg.data.types.TypeNumber.project(pp, "sick_leave_used"));
+        public PutResult apply(final Habit habit) {
+            return habit.validateAndApplyProjection(this.data);
+        }
     }
 
-    public PutResult apply(PayrollEntry payrollentry) {
-      return payrollentry.validateAndApplyProjection(this.data);
-    }
-  }
+    public class HabitSetQuery {
+        private String                scope;
+        private final HashSet<String> keys;
 
-  public PayrollEntryProjection_edit projection_payrollentry_edit_of(ProjectionProvider pp) {
-    return new PayrollEntryProjection_edit(pp);
-  }
+        private HabitSetQuery() {
+            this.scope = "";
+            this.keys = null;
+        }
 
+        public int count() {
+            if (this.keys == null) {
+                return to_list().count();
+            } else {
+                return this.keys.size();
+            }
+        }
 
-  /**************************************************
-  Projects (person/)
-  **************************************************/
+        public ArrayList<Habit> done() {
+            return new HabitListHolder(this.keys, this.scope).done();
+        }
 
-  public class PersonProjection_admin {
-    private final HashMap<String, String> data;
-    
-    public PersonProjection_admin(ProjectionProvider pp) {
-      this.data = new HashMap<String, String>();
-      this.data.put("id", farm.bsg.data.types.TypeUUID.project(pp, "id"));
-      this.data.put("__token", farm.bsg.data.types.TypeString.project(pp, "__token"));
-      this.data.put("login", farm.bsg.data.types.TypeString.project(pp, "login"));
-      this.data.put("name", farm.bsg.data.types.TypeString.project(pp, "name"));
-      this.data.put("phone", farm.bsg.data.types.TypeString.project(pp, "phone"));
-      this.data.put("email", farm.bsg.data.types.TypeString.project(pp, "email"));
-      this.data.put("address_1", farm.bsg.data.types.TypeString.project(pp, "address_1"));
-      this.data.put("address_2", farm.bsg.data.types.TypeString.project(pp, "address_2"));
-      this.data.put("city", farm.bsg.data.types.TypeString.project(pp, "city"));
-      this.data.put("state", farm.bsg.data.types.TypeString.project(pp, "state"));
-      this.data.put("postal", farm.bsg.data.types.TypeString.project(pp, "postal"));
-      this.data.put("country", farm.bsg.data.types.TypeString.project(pp, "country"));
-      this.data.put("salt", farm.bsg.data.types.TypeString.project(pp, "salt"));
-      this.data.put("hash", farm.bsg.data.types.TypeString.project(pp, "hash"));
-      this.data.put("cookie", farm.bsg.data.types.TypeString.project(pp, "cookie"));
-      this.data.put("super_cookie", farm.bsg.data.types.TypeString.project(pp, "super_cookie"));
-      this.data.put("notification_token", farm.bsg.data.types.TypeString.project(pp, "notification_token"));
-      this.data.put("notification_uri", farm.bsg.data.types.TypeString.project(pp, "notification_uri"));
-      this.data.put("fiscal_timezone", farm.bsg.data.types.TypeString.project(pp, "fiscal_timezone"));
-      this.data.put("default_mileage", farm.bsg.data.types.TypeNumber.project(pp, "default_mileage"));
-      this.data.put("hourly_wage_compesation", farm.bsg.data.types.TypeNumber.project(pp, "hourly_wage_compesation"));
-      this.data.put("mileage_compensation", farm.bsg.data.types.TypeNumber.project(pp, "mileage_compensation"));
-      this.data.put("bonus_target", farm.bsg.data.types.TypeNumber.project(pp, "bonus_target"));
-      this.data.put("min_performance_multiplier", farm.bsg.data.types.TypeNumber.project(pp, "min_performance_multiplier"));
-      this.data.put("max_performance_multiplier", farm.bsg.data.types.TypeNumber.project(pp, "max_performance_multiplier"));
-      this.data.put("monthly_benefits", farm.bsg.data.types.TypeNumber.project(pp, "monthly_benefits"));
-      this.data.put("tax_withholding", farm.bsg.data.types.TypeNumber.project(pp, "tax_withholding"));
-      this.data.put("permissions_and_roles", farm.bsg.data.types.TypeStringTokenList.project(pp, "permissions_and_roles"));
+        public HabitSetQuery scope(final String scope) {
+            this.scope += scope + "/";
+            return this;
+        }
+
+        public HabitListHolder to_list() {
+            return new HabitListHolder(this.keys, this.scope);
+        }
     }
 
-    public PutResult apply(Person person) {
-      return person.validateAndApplyProjection(this.data);
-    }
-  }
+    public class PayrollEntryListHolder {
+        private final ArrayList<PayrollEntry> list;
 
-  public PersonProjection_admin projection_person_admin_of(ProjectionProvider pp) {
-    return new PersonProjection_admin(pp);
-  }
+        private PayrollEntryListHolder(final ArrayList<PayrollEntry> list) {
+            this.list = list;
+        }
 
+        private PayrollEntryListHolder(final HashSet<String> keys, final String scope) {
+            if (keys == null) {
+                this.list = payrollentrys_of(fetch_all("payroll/" + scope));
+            } else {
+                this.list = payrollentrys_of(fetch(keys));
+            }
+        }
 
-  public class PersonProjection_contact_info {
-    private final HashMap<String, String> data;
-    
-    public PersonProjection_contact_info(ProjectionProvider pp) {
-      this.data = new HashMap<String, String>();
-      this.data.put("name", farm.bsg.data.types.TypeString.project(pp, "name"));
-      this.data.put("phone", farm.bsg.data.types.TypeString.project(pp, "phone"));
-      this.data.put("email", farm.bsg.data.types.TypeString.project(pp, "email"));
-      this.data.put("address_1", farm.bsg.data.types.TypeString.project(pp, "address_1"));
-      this.data.put("address_2", farm.bsg.data.types.TypeString.project(pp, "address_2"));
-      this.data.put("city", farm.bsg.data.types.TypeString.project(pp, "city"));
-      this.data.put("state", farm.bsg.data.types.TypeString.project(pp, "state"));
-      this.data.put("postal", farm.bsg.data.types.TypeString.project(pp, "postal"));
-      this.data.put("country", farm.bsg.data.types.TypeString.project(pp, "country"));
-    }
+        public int count() {
+            return this.list.size();
+        }
 
-    public PutResult apply(Person person) {
-      return person.validateAndApplyProjection(this.data);
-    }
-  }
+        public ArrayList<PayrollEntry> done() {
+            return this.list;
+        }
 
-  public PersonProjection_contact_info projection_person_contact_info_of(ProjectionProvider pp) {
-    return new PersonProjection_contact_info(pp);
-  }
+        public PayrollEntry first() {
+            if (this.list.size() == 0) {
+                return null;
+            }
+            return this.list.get(0);
+        }
 
+        public PayrollEntryListHolder fork() {
+            return new PayrollEntryListHolder(this.list);
+        }
 
-  /**************************************************
-  Projects (product/)
-  **************************************************/
+        public HashMap<String, ArrayList<PayrollEntry>> groupBy(final Function<PayrollEntry, String> f) {
+            final StringGroupBy<PayrollEntry> map = new StringGroupBy<>();
+            final Iterator<PayrollEntry> it = this.list.iterator();
+            while (it.hasNext()) {
+                final PayrollEntry v = it.next();
+                final String key = f.apply(v);
+                map.add(key, v);
+            }
+            return map.index;
+        }
 
-  public class ProductProjection_admin {
-    private final HashMap<String, String> data;
-    
-    public ProductProjection_admin(ProjectionProvider pp) {
-      this.data = new HashMap<String, String>();
-      this.data.put("id", farm.bsg.data.types.TypeUUID.project(pp, "id"));
-      this.data.put("__token", farm.bsg.data.types.TypeString.project(pp, "__token"));
-      this.data.put("name", farm.bsg.data.types.TypeString.project(pp, "name"));
-      this.data.put("description", farm.bsg.data.types.TypeString.project(pp, "description"));
-      this.data.put("category", farm.bsg.data.types.TypeString.project(pp, "category"));
-      this.data.put("customizations", farm.bsg.data.types.TypeString.project(pp, "customizations"));
-      this.data.put("price", farm.bsg.data.types.TypeNumber.project(pp, "price"));
-      this.data.put("old_price", farm.bsg.data.types.TypeNumber.project(pp, "old_price"));
-      this.data.put("image", farm.bsg.data.types.TypeBytesInBase64.project(pp, "image"));
-      this.data.put("image_content_type", farm.bsg.data.types.TypeString.project(pp, "image_content_type"));
-      this.data.put("image_hash", farm.bsg.data.types.TypeString.project(pp, "image_hash"));
-    }
+        public PayrollEntryListHolder inline_apply(final Consumer<PayrollEntry> consumer) {
+            final Iterator<PayrollEntry> it = this.list.iterator();
+            while (it.hasNext()) {
+                consumer.accept(it.next());
+            }
+            return this;
+        }
 
-    public PutResult apply(Product product) {
-      return product.validateAndApplyProjection(this.data);
-    }
-  }
+        public PayrollEntryListHolder inline_filter(final Predicate<PayrollEntry> filter) {
+            final Iterator<PayrollEntry> it = this.list.iterator();
+            while (it.hasNext()) {
+                if (filter.test(it.next())) {
+                    it.remove();
+                }
+            }
+            return this;
+        }
 
-  public ProductProjection_admin projection_product_admin_of(ProjectionProvider pp) {
-    return new ProductProjection_admin(pp);
-  }
+        public PayrollEntryListHolder inline_order_by(final Comparator<PayrollEntry> comparator) {
+            Collections.sort(this.list, comparator);
+            return this;
+        }
 
+        public PayrollEntryListHolder inline_order_lexographically_asc_by(final String... keys) {
+            Collections.sort(this.list, new LexographicalOrder<PayrollEntry>(keys, true, true));
+            return this;
+        }
 
-  /**************************************************
-  Projects (site/)
-  **************************************************/
+        public PayrollEntryListHolder inline_order_lexographically_by(final boolean asc, final boolean caseSensitive, final String... keys) {
+            Collections.sort(this.list, new LexographicalOrder<PayrollEntry>(keys, asc, caseSensitive));
+            return this;
+        }
 
-  public class SitePropertiesProjection_admin {
-    private final HashMap<String, String> data;
-    
-    public SitePropertiesProjection_admin(ProjectionProvider pp) {
-      this.data = new HashMap<String, String>();
-      this.data.put("id", farm.bsg.data.types.TypeUUID.project(pp, "id"));
-      this.data.put("__token", farm.bsg.data.types.TypeString.project(pp, "__token"));
-      this.data.put("domain", farm.bsg.data.types.TypeString.project(pp, "domain"));
-      this.data.put("product_name", farm.bsg.data.types.TypeString.project(pp, "product_name"));
-      this.data.put("fb_page_token", farm.bsg.data.types.TypeString.project(pp, "fb_page_token"));
-      this.data.put("twilio_phone_number", farm.bsg.data.types.TypeString.project(pp, "twilio_phone_number"));
-      this.data.put("twilio_username", farm.bsg.data.types.TypeString.project(pp, "twilio_username"));
-      this.data.put("twilio_password", farm.bsg.data.types.TypeString.project(pp, "twilio_password"));
-      this.data.put("admin_phone", farm.bsg.data.types.TypeString.project(pp, "admin_phone"));
-      this.data.put("product_imaging_thumbprint_size", farm.bsg.data.types.TypeNumber.project(pp, "product_imaging_thumbprint_size"));
-      this.data.put("product_imaging_normal_size", farm.bsg.data.types.TypeNumber.project(pp, "product_imaging_normal_size"));
-      this.data.put("description", farm.bsg.data.types.TypeString.project(pp, "description"));
-    }
+        public PayrollEntryListHolder inline_order_lexographically_desc_by(final String... keys) {
+            Collections.sort(this.list, new LexographicalOrder<PayrollEntry>(keys, false, true));
+            return this;
+        }
 
-    public PutResult apply(SiteProperties siteproperties) {
-      return siteproperties.validateAndApplyProjection(this.data);
-    }
-  }
-
-  public SitePropertiesProjection_admin projection_siteproperties_admin_of(ProjectionProvider pp) {
-    return new SitePropertiesProjection_admin(pp);
-  }
-
-
-  /**************************************************
-  Projects (subscriber/)
-  **************************************************/
-
-  public class SubscriberProjection_admin {
-    private final HashMap<String, String> data;
-    
-    public SubscriberProjection_admin(ProjectionProvider pp) {
-      this.data = new HashMap<String, String>();
-      this.data.put("id", farm.bsg.data.types.TypeUUID.project(pp, "id"));
-      this.data.put("__token", farm.bsg.data.types.TypeString.project(pp, "__token"));
-      this.data.put("source", farm.bsg.data.types.TypeString.project(pp, "source"));
-      this.data.put("from", farm.bsg.data.types.TypeString.project(pp, "from"));
-      this.data.put("destination", farm.bsg.data.types.TypeString.project(pp, "destination"));
-      this.data.put("subscription", farm.bsg.data.types.TypeString.project(pp, "subscription"));
-      this.data.put("debug", farm.bsg.data.types.TypeString.project(pp, "debug"));
+        public PayrollEntryListHolder limit(final int count) {
+            final Iterator<PayrollEntry> it = this.list.iterator();
+            int at = 0;
+            while (it.hasNext()) {
+                it.next();
+                if (at >= count) {
+                    it.remove();
+                }
+                at++;
+            }
+            return this;
+        }
     }
 
-    public PutResult apply(Subscriber subscriber) {
-      return subscriber.validateAndApplyProjection(this.data);
-    }
-  }
+    /**************************************************
+     * Projects (payroll/)
+     **************************************************/
 
-  public SubscriberProjection_admin projection_subscriber_admin_of(ProjectionProvider pp) {
-    return new SubscriberProjection_admin(pp);
-  }
+    public class PayrollEntryProjection_admin {
+        private final HashMap<String, String> data;
 
+        public PayrollEntryProjection_admin(final ProjectionProvider pp) {
+            this.data = new HashMap<String, String>();
+            this.data.put("id", farm.bsg.data.types.TypeUUID.project(pp, "id"));
+            this.data.put("__token", farm.bsg.data.types.TypeString.project(pp, "__token"));
+            this.data.put("person", farm.bsg.data.types.TypeString.project(pp, "person"));
+            this.data.put("reported", farm.bsg.data.types.TypeDateTime.project(pp, "reported"));
+            this.data.put("fiscal_day", farm.bsg.data.types.TypeString.project(pp, "fiscal_day"));
+            this.data.put("mileage", farm.bsg.data.types.TypeNumber.project(pp, "mileage"));
+            this.data.put("hours_worked", farm.bsg.data.types.TypeNumber.project(pp, "hours_worked"));
+            this.data.put("pto_used", farm.bsg.data.types.TypeNumber.project(pp, "pto_used"));
+            this.data.put("sick_leave_used", farm.bsg.data.types.TypeNumber.project(pp, "sick_leave_used"));
+            this.data.put("hourly_wage_compesation", farm.bsg.data.types.TypeNumber.project(pp, "hourly_wage_compesation"));
+            this.data.put("mileage_compensation", farm.bsg.data.types.TypeNumber.project(pp, "mileage_compensation"));
+            this.data.put("owed", farm.bsg.data.types.TypeNumber.project(pp, "owed"));
+            this.data.put("tax_withholding", farm.bsg.data.types.TypeNumber.project(pp, "tax_withholding"));
+            this.data.put("taxes", farm.bsg.data.types.TypeNumber.project(pp, "taxes"));
+            this.data.put("benefits", farm.bsg.data.types.TypeNumber.project(pp, "benefits"));
+            this.data.put("is_performance_related_bonus", farm.bsg.data.types.TypeBoolean.project(pp, "is_performance_related_bonus"));
+            this.data.put("check", farm.bsg.data.types.TypeString.project(pp, "check"));
+            this.data.put("unpaid", farm.bsg.data.types.TypeString.project(pp, "unpaid"));
+        }
 
-  /**************************************************
-  Projects (subscription/)
-  **************************************************/
-
-  public class SubscriptionProjection_admin {
-    private final HashMap<String, String> data;
-    
-    public SubscriptionProjection_admin(ProjectionProvider pp) {
-      this.data = new HashMap<String, String>();
-      this.data.put("id", farm.bsg.data.types.TypeUUID.project(pp, "id"));
-      this.data.put("__token", farm.bsg.data.types.TypeString.project(pp, "__token"));
-      this.data.put("name", farm.bsg.data.types.TypeString.project(pp, "name"));
-      this.data.put("description", farm.bsg.data.types.TypeString.project(pp, "description"));
-      this.data.put("subscribe_keyword", farm.bsg.data.types.TypeString.project(pp, "subscribe_keyword"));
-      this.data.put("subscribe_message", farm.bsg.data.types.TypeString.project(pp, "subscribe_message"));
-      this.data.put("unsubscribe_keyword", farm.bsg.data.types.TypeString.project(pp, "unsubscribe_keyword"));
-      this.data.put("unsubscribe_message", farm.bsg.data.types.TypeString.project(pp, "unsubscribe_message"));
-      this.data.put("event", farm.bsg.data.types.TypeString.project(pp, "event"));
-    }
-
-    public PutResult apply(Subscription subscription) {
-      return subscription.validateAndApplyProjection(this.data);
-    }
-  }
-
-  public SubscriptionProjection_admin projection_subscription_admin_of(ProjectionProvider pp) {
-    return new SubscriptionProjection_admin(pp);
-  }
-
-
-  /**************************************************
-  Projects (task/)
-  **************************************************/
-
-  public class TaskProjection_admin {
-    private final HashMap<String, String> data;
-    
-    public TaskProjection_admin(ProjectionProvider pp) {
-      this.data = new HashMap<String, String>();
-      this.data.put("id", farm.bsg.data.types.TypeUUID.project(pp, "id"));
-      this.data.put("__token", farm.bsg.data.types.TypeString.project(pp, "__token"));
-      this.data.put("owner", farm.bsg.data.types.TypeString.project(pp, "owner"));
-      this.data.put("cart_id", farm.bsg.data.types.TypeNumber.project(pp, "cart_id"));
-      this.data.put("name", farm.bsg.data.types.TypeString.project(pp, "name"));
-      this.data.put("description", farm.bsg.data.types.TypeString.project(pp, "description"));
-      this.data.put("priority", farm.bsg.data.types.TypeNumber.project(pp, "priority"));
-      this.data.put("due_date", farm.bsg.data.types.TypeDateTime.project(pp, "due_date"));
-      this.data.put("created", farm.bsg.data.types.TypeDateTime.project(pp, "created"));
-      this.data.put("started", farm.bsg.data.types.TypeDateTime.project(pp, "started"));
-      this.data.put("closed", farm.bsg.data.types.TypeDateTime.project(pp, "closed"));
-      this.data.put("notification_token_for_closed", farm.bsg.data.types.TypeString.project(pp, "notification_token_for_closed"));
-      this.data.put("notification_short_text_for_closed", farm.bsg.data.types.TypeString.project(pp, "notification_short_text_for_closed"));
-      this.data.put("state", farm.bsg.data.types.TypeString.project(pp, "state"));
+        public PutResult apply(final PayrollEntry payrollentry) {
+            return payrollentry.validateAndApplyProjection(this.data);
+        }
     }
 
-    public PutResult apply(Task task) {
-      return task.validateAndApplyProjection(this.data);
-    }
-  }
+    public class PayrollEntryProjection_edit {
+        private final HashMap<String, String> data;
 
-  public TaskProjection_admin projection_task_admin_of(ProjectionProvider pp) {
-    return new TaskProjection_admin(pp);
-  }
+        public PayrollEntryProjection_edit(final ProjectionProvider pp) {
+            this.data = new HashMap<String, String>();
+            this.data.put("mileage", farm.bsg.data.types.TypeNumber.project(pp, "mileage"));
+            this.data.put("hours_worked", farm.bsg.data.types.TypeNumber.project(pp, "hours_worked"));
+            this.data.put("pto_used", farm.bsg.data.types.TypeNumber.project(pp, "pto_used"));
+            this.data.put("sick_leave_used", farm.bsg.data.types.TypeNumber.project(pp, "sick_leave_used"));
+        }
 
-
-  /**************************************************
-  Projects (task_factory/)
-  **************************************************/
-
-  public class TaskFactoryProjection_admin {
-    private final HashMap<String, String> data;
-    
-    public TaskFactoryProjection_admin(ProjectionProvider pp) {
-      this.data = new HashMap<String, String>();
-      this.data.put("id", farm.bsg.data.types.TypeUUID.project(pp, "id"));
-      this.data.put("__token", farm.bsg.data.types.TypeString.project(pp, "__token"));
-      this.data.put("name", farm.bsg.data.types.TypeString.project(pp, "name"));
-      this.data.put("description", farm.bsg.data.types.TypeString.project(pp, "description"));
-      this.data.put("current_task", farm.bsg.data.types.TypeString.project(pp, "current_task"));
-      this.data.put("priority", farm.bsg.data.types.TypeNumber.project(pp, "priority"));
-      this.data.put("frequency", farm.bsg.data.types.TypeNumber.project(pp, "frequency"));
-      this.data.put("slack", farm.bsg.data.types.TypeNumber.project(pp, "slack"));
-      this.data.put("month_filter", farm.bsg.data.types.TypeMonthFilter.project(pp, "month_filter"));
-      this.data.put("day_filter", farm.bsg.data.types.TypeDayFilter.project(pp, "day_filter"));
+        public PutResult apply(final PayrollEntry payrollentry) {
+            return payrollentry.validateAndApplyProjection(this.data);
+        }
     }
 
-    public PutResult apply(TaskFactory taskfactory) {
-      return taskfactory.validateAndApplyProjection(this.data);
-    }
-  }
+    public class PayrollEntrySetQuery {
+        private String          scope;
+        private HashSet<String> keys;
 
-  public TaskFactoryProjection_admin projection_taskfactory_admin_of(ProjectionProvider pp) {
-    return new TaskFactoryProjection_admin(pp);
-  }
+        private PayrollEntrySetQuery() {
+            this.scope = "";
+            this.keys = null;
+        }
 
+        public int count() {
+            if (this.keys == null) {
+                return to_list().count();
+            } else {
+                return this.keys.size();
+            }
+        }
 
-  public class TaskFactoryProjection_edit {
-    private final HashMap<String, String> data;
-    
-    public TaskFactoryProjection_edit(ProjectionProvider pp) {
-      this.data = new HashMap<String, String>();
-      this.data.put("name", farm.bsg.data.types.TypeString.project(pp, "name"));
-      this.data.put("description", farm.bsg.data.types.TypeString.project(pp, "description"));
-      this.data.put("priority", farm.bsg.data.types.TypeNumber.project(pp, "priority"));
-      this.data.put("frequency", farm.bsg.data.types.TypeNumber.project(pp, "frequency"));
-      this.data.put("slack", farm.bsg.data.types.TypeNumber.project(pp, "slack"));
-      this.data.put("month_filter", farm.bsg.data.types.TypeMonthFilter.project(pp, "month_filter"));
-      this.data.put("day_filter", farm.bsg.data.types.TypeDayFilter.project(pp, "day_filter"));
-    }
+        public ArrayList<PayrollEntry> done() {
+            return new PayrollEntryListHolder(this.keys, this.scope).done();
+        }
 
-    public PutResult apply(TaskFactory taskfactory) {
-      return taskfactory.validateAndApplyProjection(this.data);
-    }
-  }
+        private HashSet<String> lookup_check(final String... values) {
+            final HashSet<String> keys = new HashSet<>();
+            for (final String value : values) {
+                keys.addAll(QueryEngine.this.payrollentry_check.getKeys(value));
+            }
+            return keys;
+        }
 
-  public TaskFactoryProjection_edit projection_taskfactory_edit_of(ProjectionProvider pp) {
-    return new TaskFactoryProjection_edit(pp);
-  }
+        private HashSet<String> lookup_unpaid(final String... values) {
+            final HashSet<String> keys = new HashSet<>();
+            for (final String value : values) {
+                keys.addAll(QueryEngine.this.payrollentry_unpaid.getKeys(value));
+            }
+            return keys;
+        }
 
+        public PayrollEntrySetQuery scope(final String scope) {
+            this.scope += scope + "/";
+            return this;
+        }
 
-  /**************************************************
-  Projects (tax-baton/)
-  **************************************************/
+        public PayrollEntryListHolder to_list() {
+            return new PayrollEntryListHolder(this.keys, this.scope);
+        }
 
-  public class TaxBatonProjection_admin {
-    private final HashMap<String, String> data;
-    
-    public TaxBatonProjection_admin(ProjectionProvider pp) {
-      this.data = new HashMap<String, String>();
-      this.data.put("id", farm.bsg.data.types.TypeUUID.project(pp, "id"));
-      this.data.put("__token", farm.bsg.data.types.TypeString.project(pp, "__token"));
-      this.data.put("code", farm.bsg.data.types.TypeString.project(pp, "code"));
-    }
+        public PayrollEntrySetQuery where_check_eq(final String... values) {
+            if (this.keys == null) {
+                this.keys = lookup_check(values);
+            } else {
+                this.keys = BinaryOperators.intersect(this.keys, lookup_check(values));
+            }
+            return this;
+        }
 
-    public PutResult apply(TaxBaton taxbaton) {
-      return taxbaton.validateAndApplyProjection(this.data);
-    }
-  }
-
-  public TaxBatonProjection_admin projection_taxbaton_admin_of(ProjectionProvider pp) {
-    return new TaxBatonProjection_admin(pp);
-  }
-
-
-  /**************************************************
-  Projects (wake_input/)
-  **************************************************/
-
-  public class WakeInputFileProjection_admin {
-    private final HashMap<String, String> data;
-    
-    public WakeInputFileProjection_admin(ProjectionProvider pp) {
-      this.data = new HashMap<String, String>();
-      this.data.put("id", farm.bsg.data.types.TypeUUID.project(pp, "id"));
-      this.data.put("__token", farm.bsg.data.types.TypeString.project(pp, "__token"));
-      this.data.put("filename", farm.bsg.data.types.TypeString.project(pp, "filename"));
-      this.data.put("content_type", farm.bsg.data.types.TypeString.project(pp, "content_type"));
-      this.data.put("description", farm.bsg.data.types.TypeString.project(pp, "description"));
-      this.data.put("contents", farm.bsg.data.types.TypeBytesInBase64.project(pp, "contents"));
+        public PayrollEntrySetQuery where_unpaid_eq(final String... values) {
+            if (this.keys == null) {
+                this.keys = lookup_unpaid(values);
+            } else {
+                this.keys = BinaryOperators.intersect(this.keys, lookup_unpaid(values));
+            }
+            return this;
+        }
     }
 
-    public PutResult apply(WakeInputFile wakeinputfile) {
-      return wakeinputfile.validateAndApplyProjection(this.data);
+    public class PersonListHolder {
+        private final ArrayList<Person> list;
+
+        private PersonListHolder(final ArrayList<Person> list) {
+            this.list = list;
+        }
+
+        private PersonListHolder(final HashSet<String> keys, final String scope) {
+            if (keys == null) {
+                this.list = persons_of(fetch_all("person/" + scope));
+            } else {
+                this.list = persons_of(fetch(keys));
+            }
+        }
+
+        public int count() {
+            return this.list.size();
+        }
+
+        public ArrayList<Person> done() {
+            return this.list;
+        }
+
+        public Person first() {
+            if (this.list.size() == 0) {
+                return null;
+            }
+            return this.list.get(0);
+        }
+
+        public PersonListHolder fork() {
+            return new PersonListHolder(this.list);
+        }
+
+        public HashMap<String, ArrayList<Person>> groupBy(final Function<Person, String> f) {
+            final StringGroupBy<Person> map = new StringGroupBy<>();
+            final Iterator<Person> it = this.list.iterator();
+            while (it.hasNext()) {
+                final Person v = it.next();
+                final String key = f.apply(v);
+                map.add(key, v);
+            }
+            return map.index;
+        }
+
+        public PersonListHolder inline_apply(final Consumer<Person> consumer) {
+            final Iterator<Person> it = this.list.iterator();
+            while (it.hasNext()) {
+                consumer.accept(it.next());
+            }
+            return this;
+        }
+
+        public PersonListHolder inline_filter(final Predicate<Person> filter) {
+            final Iterator<Person> it = this.list.iterator();
+            while (it.hasNext()) {
+                if (filter.test(it.next())) {
+                    it.remove();
+                }
+            }
+            return this;
+        }
+
+        public PersonListHolder inline_order_by(final Comparator<Person> comparator) {
+            Collections.sort(this.list, comparator);
+            return this;
+        }
+
+        public PersonListHolder inline_order_lexographically_asc_by(final String... keys) {
+            Collections.sort(this.list, new LexographicalOrder<Person>(keys, true, true));
+            return this;
+        }
+
+        public PersonListHolder inline_order_lexographically_by(final boolean asc, final boolean caseSensitive, final String... keys) {
+            Collections.sort(this.list, new LexographicalOrder<Person>(keys, asc, caseSensitive));
+            return this;
+        }
+
+        public PersonListHolder inline_order_lexographically_desc_by(final String... keys) {
+            Collections.sort(this.list, new LexographicalOrder<Person>(keys, false, true));
+            return this;
+        }
+
+        public PersonListHolder limit(final int count) {
+            final Iterator<Person> it = this.list.iterator();
+            int at = 0;
+            while (it.hasNext()) {
+                it.next();
+                if (at >= count) {
+                    it.remove();
+                }
+                at++;
+            }
+            return this;
+        }
     }
-  }
 
-  public WakeInputFileProjection_admin projection_wakeinputfile_admin_of(ProjectionProvider pp) {
-    return new WakeInputFileProjection_admin(pp);
-  }
+    /**************************************************
+     * Projects (person/)
+     **************************************************/
 
+    public class PersonProjection_admin {
+        private final HashMap<String, String> data;
 
-  /**************************************************
-  Writing Back to DB (cart/)
-  **************************************************/
+        public PersonProjection_admin(final ProjectionProvider pp) {
+            this.data = new HashMap<String, String>();
+            this.data.put("id", farm.bsg.data.types.TypeUUID.project(pp, "id"));
+            this.data.put("__token", farm.bsg.data.types.TypeString.project(pp, "__token"));
+            this.data.put("login", farm.bsg.data.types.TypeString.project(pp, "login"));
+            this.data.put("name", farm.bsg.data.types.TypeString.project(pp, "name"));
+            this.data.put("phone", farm.bsg.data.types.TypeString.project(pp, "phone"));
+            this.data.put("email", farm.bsg.data.types.TypeString.project(pp, "email"));
+            this.data.put("address_1", farm.bsg.data.types.TypeString.project(pp, "address_1"));
+            this.data.put("address_2", farm.bsg.data.types.TypeString.project(pp, "address_2"));
+            this.data.put("city", farm.bsg.data.types.TypeString.project(pp, "city"));
+            this.data.put("state", farm.bsg.data.types.TypeString.project(pp, "state"));
+            this.data.put("postal", farm.bsg.data.types.TypeString.project(pp, "postal"));
+            this.data.put("country", farm.bsg.data.types.TypeString.project(pp, "country"));
+            this.data.put("salt", farm.bsg.data.types.TypeString.project(pp, "salt"));
+            this.data.put("hash", farm.bsg.data.types.TypeString.project(pp, "hash"));
+            this.data.put("cookie", farm.bsg.data.types.TypeString.project(pp, "cookie"));
+            this.data.put("super_cookie", farm.bsg.data.types.TypeString.project(pp, "super_cookie"));
+            this.data.put("notification_token", farm.bsg.data.types.TypeString.project(pp, "notification_token"));
+            this.data.put("notification_uri", farm.bsg.data.types.TypeString.project(pp, "notification_uri"));
+            this.data.put("fiscal_timezone", farm.bsg.data.types.TypeString.project(pp, "fiscal_timezone"));
+            this.data.put("default_mileage", farm.bsg.data.types.TypeNumber.project(pp, "default_mileage"));
+            this.data.put("hourly_wage_compesation", farm.bsg.data.types.TypeNumber.project(pp, "hourly_wage_compesation"));
+            this.data.put("mileage_compensation", farm.bsg.data.types.TypeNumber.project(pp, "mileage_compensation"));
+            this.data.put("bonus_target", farm.bsg.data.types.TypeNumber.project(pp, "bonus_target"));
+            this.data.put("min_performance_multiplier", farm.bsg.data.types.TypeNumber.project(pp, "min_performance_multiplier"));
+            this.data.put("max_performance_multiplier", farm.bsg.data.types.TypeNumber.project(pp, "max_performance_multiplier"));
+            this.data.put("monthly_benefits", farm.bsg.data.types.TypeNumber.project(pp, "monthly_benefits"));
+            this.data.put("tax_withholding", farm.bsg.data.types.TypeNumber.project(pp, "tax_withholding"));
+            this.data.put("permissions_and_roles", farm.bsg.data.types.TypeStringTokenList.project(pp, "permissions_and_roles"));
+        }
 
-  public PutResult put(Cart cart) {
-    return storage.put(cart.getStorageKey(), new Value(cart.toJson()), false);
-  }
+        public PutResult apply(final Person person) {
+            return person.validateAndApplyProjection(this.data);
+        }
+    }
 
-  public PutResult del(Cart cart) {
-    return storage.put(cart.getStorageKey(), null, false);
-  }
+    public class PersonProjection_contact_info {
+        private final HashMap<String, String> data;
 
-  /**************************************************
-  Writing Back to DB (cart-item/)
-  **************************************************/
+        public PersonProjection_contact_info(final ProjectionProvider pp) {
+            this.data = new HashMap<String, String>();
+            this.data.put("name", farm.bsg.data.types.TypeString.project(pp, "name"));
+            this.data.put("phone", farm.bsg.data.types.TypeString.project(pp, "phone"));
+            this.data.put("email", farm.bsg.data.types.TypeString.project(pp, "email"));
+            this.data.put("address_1", farm.bsg.data.types.TypeString.project(pp, "address_1"));
+            this.data.put("address_2", farm.bsg.data.types.TypeString.project(pp, "address_2"));
+            this.data.put("city", farm.bsg.data.types.TypeString.project(pp, "city"));
+            this.data.put("state", farm.bsg.data.types.TypeString.project(pp, "state"));
+            this.data.put("postal", farm.bsg.data.types.TypeString.project(pp, "postal"));
+            this.data.put("country", farm.bsg.data.types.TypeString.project(pp, "country"));
+        }
 
-  public PutResult put(CartItem cartitem) {
-    return storage.put(cartitem.getStorageKey(), new Value(cartitem.toJson()), false);
-  }
+        public PutResult apply(final Person person) {
+            return person.validateAndApplyProjection(this.data);
+        }
+    }
 
-  public PutResult del(CartItem cartitem) {
-    return storage.put(cartitem.getStorageKey(), null, false);
-  }
+    public class PersonSetQuery {
+        private String          scope;
+        private HashSet<String> keys;
 
-  /**************************************************
-  Writing Back to DB (checks/)
-  **************************************************/
+        private PersonSetQuery() {
+            this.scope = "";
+            this.keys = null;
+        }
 
-  public PutResult put(Check check) {
-    return storage.put(check.getStorageKey(), new Value(check.toJson()), false);
-  }
+        public int count() {
+            if (this.keys == null) {
+                return to_list().count();
+            } else {
+                return this.keys.size();
+            }
+        }
 
-  public PutResult del(Check check) {
-    return storage.put(check.getStorageKey(), null, false);
-  }
+        public ArrayList<Person> done() {
+            return new PersonListHolder(this.keys, this.scope).done();
+        }
 
-  /**************************************************
-  Writing Back to DB (customer/)
-  **************************************************/
+        private HashSet<String> lookup_cookie(final String... values) {
+            final HashSet<String> keys = new HashSet<>();
+            for (final String value : values) {
+                keys.addAll(QueryEngine.this.person_cookie.getKeys(value));
+            }
+            return keys;
+        }
 
-  public PutResult put(Customer customer) {
-    return storage.put(customer.getStorageKey(), new Value(customer.toJson()), false);
-  }
+        private HashSet<String> lookup_login(final String... values) {
+            final HashSet<String> keys = new HashSet<>();
+            for (final String value : values) {
+                keys.addAll(QueryEngine.this.person_login.getKeys(value));
+            }
+            return keys;
+        }
 
-  public PutResult del(Customer customer) {
-    return storage.put(customer.getStorageKey(), null, false);
-  }
+        private HashSet<String> lookup_notification_token(final String... values) {
+            final HashSet<String> keys = new HashSet<>();
+            for (final String value : values) {
+                keys.addAll(QueryEngine.this.person_notification_token.getKeys(value));
+            }
+            return keys;
+        }
 
-  /**************************************************
-  Writing Back to DB (habits/)
-  **************************************************/
+        private HashSet<String> lookup_phone(final String... values) {
+            final HashSet<String> keys = new HashSet<>();
+            for (final String value : values) {
+                keys.addAll(QueryEngine.this.person_phone.getKeys(value));
+            }
+            return keys;
+        }
 
-  public PutResult put(Habit habit) {
-    return storage.put(habit.getStorageKey(), new Value(habit.toJson()), false);
-  }
+        private HashSet<String> lookup_super_cookie(final String... values) {
+            final HashSet<String> keys = new HashSet<>();
+            for (final String value : values) {
+                keys.addAll(QueryEngine.this.person_super_cookie.getKeys(value));
+            }
+            return keys;
+        }
 
-  public PutResult del(Habit habit) {
-    return storage.put(habit.getStorageKey(), null, false);
-  }
+        public PersonSetQuery scope(final String scope) {
+            this.scope += scope + "/";
+            return this;
+        }
 
-  /**************************************************
-  Writing Back to DB (payroll/)
-  **************************************************/
+        public PersonListHolder to_list() {
+            return new PersonListHolder(this.keys, this.scope);
+        }
 
-  public PutResult put(PayrollEntry payrollentry) {
-    return storage.put(payrollentry.getStorageKey(), new Value(payrollentry.toJson()), false);
-  }
+        public PersonSetQuery where_cookie_eq(final String... values) {
+            if (this.keys == null) {
+                this.keys = lookup_cookie(values);
+            } else {
+                this.keys = BinaryOperators.intersect(this.keys, lookup_cookie(values));
+            }
+            return this;
+        }
 
-  public PutResult del(PayrollEntry payrollentry) {
-    return storage.put(payrollentry.getStorageKey(), null, false);
-  }
+        public PersonSetQuery where_login_eq(final String... values) {
+            if (this.keys == null) {
+                this.keys = lookup_login(values);
+            } else {
+                this.keys = BinaryOperators.intersect(this.keys, lookup_login(values));
+            }
+            return this;
+        }
 
-  /**************************************************
-  Writing Back to DB (person/)
-  **************************************************/
+        public PersonSetQuery where_notification_token_eq(final String... values) {
+            if (this.keys == null) {
+                this.keys = lookup_notification_token(values);
+            } else {
+                this.keys = BinaryOperators.intersect(this.keys, lookup_notification_token(values));
+            }
+            return this;
+        }
 
-  public PutResult put(Person person) {
-    return storage.put(person.getStorageKey(), new Value(person.toJson()), false);
-  }
+        public PersonSetQuery where_phone_eq(final String... values) {
+            if (this.keys == null) {
+                this.keys = lookup_phone(values);
+            } else {
+                this.keys = BinaryOperators.intersect(this.keys, lookup_phone(values));
+            }
+            return this;
+        }
 
-  public PutResult del(Person person) {
-    return storage.put(person.getStorageKey(), null, false);
-  }
+        public PersonSetQuery where_super_cookie_eq(final String... values) {
+            if (this.keys == null) {
+                this.keys = lookup_super_cookie(values);
+            } else {
+                this.keys = BinaryOperators.intersect(this.keys, lookup_super_cookie(values));
+            }
+            return this;
+        }
+    }
 
-  /**************************************************
-  Writing Back to DB (product/)
-  **************************************************/
+    public class ProductListHolder {
+        private final ArrayList<Product> list;
 
-  public PutResult put(Product product) {
-    return storage.put(product.getStorageKey(), new Value(product.toJson()), false);
-  }
+        private ProductListHolder(final ArrayList<Product> list) {
+            this.list = list;
+        }
 
-  public PutResult del(Product product) {
-    return storage.put(product.getStorageKey(), null, false);
-  }
+        private ProductListHolder(final HashSet<String> keys, final String scope) {
+            if (keys == null) {
+                this.list = products_of(fetch_all("product/" + scope));
+            } else {
+                this.list = products_of(fetch(keys));
+            }
+        }
 
-  /**************************************************
-  Writing Back to DB (site/)
-  **************************************************/
+        public int count() {
+            return this.list.size();
+        }
 
-  public PutResult put(SiteProperties siteproperties) {
-    return storage.put(siteproperties.getStorageKey(), new Value(siteproperties.toJson()), false);
-  }
+        public ArrayList<Product> done() {
+            return this.list;
+        }
 
-  public PutResult del(SiteProperties siteproperties) {
-    return storage.put(siteproperties.getStorageKey(), null, false);
-  }
+        public Product first() {
+            if (this.list.size() == 0) {
+                return null;
+            }
+            return this.list.get(0);
+        }
 
-  /**************************************************
-  Writing Back to DB (subscriber/)
-  **************************************************/
+        public ProductListHolder fork() {
+            return new ProductListHolder(this.list);
+        }
 
-  public PutResult put(Subscriber subscriber) {
-    return storage.put(subscriber.getStorageKey(), new Value(subscriber.toJson()), false);
-  }
+        public HashMap<String, ArrayList<Product>> groupBy(final Function<Product, String> f) {
+            final StringGroupBy<Product> map = new StringGroupBy<>();
+            final Iterator<Product> it = this.list.iterator();
+            while (it.hasNext()) {
+                final Product v = it.next();
+                final String key = f.apply(v);
+                map.add(key, v);
+            }
+            return map.index;
+        }
 
-  public PutResult del(Subscriber subscriber) {
-    return storage.put(subscriber.getStorageKey(), null, false);
-  }
+        public ProductListHolder inline_apply(final Consumer<Product> consumer) {
+            final Iterator<Product> it = this.list.iterator();
+            while (it.hasNext()) {
+                consumer.accept(it.next());
+            }
+            return this;
+        }
 
-  /**************************************************
-  Writing Back to DB (subscription/)
-  **************************************************/
+        public ProductListHolder inline_filter(final Predicate<Product> filter) {
+            final Iterator<Product> it = this.list.iterator();
+            while (it.hasNext()) {
+                if (filter.test(it.next())) {
+                    it.remove();
+                }
+            }
+            return this;
+        }
 
-  public PutResult put(Subscription subscription) {
-    return storage.put(subscription.getStorageKey(), new Value(subscription.toJson()), false);
-  }
+        public ProductListHolder inline_order_by(final Comparator<Product> comparator) {
+            Collections.sort(this.list, comparator);
+            return this;
+        }
 
-  public PutResult del(Subscription subscription) {
-    return storage.put(subscription.getStorageKey(), null, false);
-  }
+        public ProductListHolder inline_order_lexographically_asc_by(final String... keys) {
+            Collections.sort(this.list, new LexographicalOrder<Product>(keys, true, true));
+            return this;
+        }
 
-  /**************************************************
-  Writing Back to DB (task/)
-  **************************************************/
+        public ProductListHolder inline_order_lexographically_by(final boolean asc, final boolean caseSensitive, final String... keys) {
+            Collections.sort(this.list, new LexographicalOrder<Product>(keys, asc, caseSensitive));
+            return this;
+        }
 
-  public PutResult put(Task task) {
-    return storage.put(task.getStorageKey(), new Value(task.toJson()), false);
-  }
+        public ProductListHolder inline_order_lexographically_desc_by(final String... keys) {
+            Collections.sort(this.list, new LexographicalOrder<Product>(keys, false, true));
+            return this;
+        }
 
-  public PutResult del(Task task) {
-    return storage.put(task.getStorageKey(), null, false);
-  }
+        public ProductListHolder limit(final int count) {
+            final Iterator<Product> it = this.list.iterator();
+            int at = 0;
+            while (it.hasNext()) {
+                it.next();
+                if (at >= count) {
+                    it.remove();
+                }
+                at++;
+            }
+            return this;
+        }
+    }
 
-  /**************************************************
-  Writing Back to DB (task_factory/)
-  **************************************************/
+    /**************************************************
+     * Projects (product/)
+     **************************************************/
 
-  public PutResult put(TaskFactory taskfactory) {
-    return storage.put(taskfactory.getStorageKey(), new Value(taskfactory.toJson()), false);
-  }
+    public class ProductProjection_admin {
+        private final HashMap<String, String> data;
 
-  public PutResult del(TaskFactory taskfactory) {
-    return storage.put(taskfactory.getStorageKey(), null, false);
-  }
+        public ProductProjection_admin(final ProjectionProvider pp) {
+            this.data = new HashMap<String, String>();
+            this.data.put("id", farm.bsg.data.types.TypeUUID.project(pp, "id"));
+            this.data.put("__token", farm.bsg.data.types.TypeString.project(pp, "__token"));
+            this.data.put("name", farm.bsg.data.types.TypeString.project(pp, "name"));
+            this.data.put("description", farm.bsg.data.types.TypeString.project(pp, "description"));
+            this.data.put("category", farm.bsg.data.types.TypeString.project(pp, "category"));
+            this.data.put("customizations", farm.bsg.data.types.TypeString.project(pp, "customizations"));
+            this.data.put("price", farm.bsg.data.types.TypeNumber.project(pp, "price"));
+            this.data.put("old_price", farm.bsg.data.types.TypeNumber.project(pp, "old_price"));
+            this.data.put("image", farm.bsg.data.types.TypeBytesInBase64.project(pp, "image"));
+            this.data.put("image_content_type", farm.bsg.data.types.TypeString.project(pp, "image_content_type"));
+            this.data.put("image_hash", farm.bsg.data.types.TypeString.project(pp, "image_hash"));
+        }
 
-  /**************************************************
-  Writing Back to DB (tax-baton/)
-  **************************************************/
+        public PutResult apply(final Product product) {
+            return product.validateAndApplyProjection(this.data);
+        }
+    }
 
-  public PutResult put(TaxBaton taxbaton) {
-    return storage.put(taxbaton.getStorageKey(), new Value(taxbaton.toJson()), false);
-  }
+    public class ProductSetQuery {
+        private String                scope;
+        private final HashSet<String> keys;
 
-  public PutResult del(TaxBaton taxbaton) {
-    return storage.put(taxbaton.getStorageKey(), null, false);
-  }
+        private ProductSetQuery() {
+            this.scope = "";
+            this.keys = null;
+        }
 
-  /**************************************************
-  Writing Back to DB (wake_input/)
-  **************************************************/
+        public int count() {
+            if (this.keys == null) {
+                return to_list().count();
+            } else {
+                return this.keys.size();
+            }
+        }
 
-  public PutResult put(WakeInputFile wakeinputfile) {
-    return storage.put(wakeinputfile.getStorageKey(), new Value(wakeinputfile.toJson()), false);
-  }
+        public ArrayList<Product> done() {
+            return new ProductListHolder(this.keys, this.scope).done();
+        }
 
-  public PutResult del(WakeInputFile wakeinputfile) {
-    return storage.put(wakeinputfile.getStorageKey(), null, false);
-  }
+        public ProductSetQuery scope(final String scope) {
+            this.scope += scope + "/";
+            return this;
+        }
+
+        public ProductListHolder to_list() {
+            return new ProductListHolder(this.keys, this.scope);
+        }
+    }
+
+    public class SitePropertiesListHolder {
+        private final ArrayList<SiteProperties> list;
+
+        private SitePropertiesListHolder(final ArrayList<SiteProperties> list) {
+            this.list = list;
+        }
+
+        private SitePropertiesListHolder(final HashSet<String> keys, final String scope) {
+            if (keys == null) {
+                this.list = sitepropertiess_of(fetch_all("site/" + scope));
+            } else {
+                this.list = sitepropertiess_of(fetch(keys));
+            }
+        }
+
+        public int count() {
+            return this.list.size();
+        }
+
+        public ArrayList<SiteProperties> done() {
+            return this.list;
+        }
+
+        public SiteProperties first() {
+            if (this.list.size() == 0) {
+                return null;
+            }
+            return this.list.get(0);
+        }
+
+        public SitePropertiesListHolder fork() {
+            return new SitePropertiesListHolder(this.list);
+        }
+
+        public HashMap<String, ArrayList<SiteProperties>> groupBy(final Function<SiteProperties, String> f) {
+            final StringGroupBy<SiteProperties> map = new StringGroupBy<>();
+            final Iterator<SiteProperties> it = this.list.iterator();
+            while (it.hasNext()) {
+                final SiteProperties v = it.next();
+                final String key = f.apply(v);
+                map.add(key, v);
+            }
+            return map.index;
+        }
+
+        public SitePropertiesListHolder inline_apply(final Consumer<SiteProperties> consumer) {
+            final Iterator<SiteProperties> it = this.list.iterator();
+            while (it.hasNext()) {
+                consumer.accept(it.next());
+            }
+            return this;
+        }
+
+        public SitePropertiesListHolder inline_filter(final Predicate<SiteProperties> filter) {
+            final Iterator<SiteProperties> it = this.list.iterator();
+            while (it.hasNext()) {
+                if (filter.test(it.next())) {
+                    it.remove();
+                }
+            }
+            return this;
+        }
+
+        public SitePropertiesListHolder inline_order_by(final Comparator<SiteProperties> comparator) {
+            Collections.sort(this.list, comparator);
+            return this;
+        }
+
+        public SitePropertiesListHolder inline_order_lexographically_asc_by(final String... keys) {
+            Collections.sort(this.list, new LexographicalOrder<SiteProperties>(keys, true, true));
+            return this;
+        }
+
+        public SitePropertiesListHolder inline_order_lexographically_by(final boolean asc, final boolean caseSensitive, final String... keys) {
+            Collections.sort(this.list, new LexographicalOrder<SiteProperties>(keys, asc, caseSensitive));
+            return this;
+        }
+
+        public SitePropertiesListHolder inline_order_lexographically_desc_by(final String... keys) {
+            Collections.sort(this.list, new LexographicalOrder<SiteProperties>(keys, false, true));
+            return this;
+        }
+
+        public SitePropertiesListHolder limit(final int count) {
+            final Iterator<SiteProperties> it = this.list.iterator();
+            int at = 0;
+            while (it.hasNext()) {
+                it.next();
+                if (at >= count) {
+                    it.remove();
+                }
+                at++;
+            }
+            return this;
+        }
+    }
+
+    /**************************************************
+     * Projects (site/)
+     **************************************************/
+
+    public class SitePropertiesProjection_admin {
+        private final HashMap<String, String> data;
+
+        public SitePropertiesProjection_admin(final ProjectionProvider pp) {
+            this.data = new HashMap<String, String>();
+            this.data.put("id", farm.bsg.data.types.TypeUUID.project(pp, "id"));
+            this.data.put("__token", farm.bsg.data.types.TypeString.project(pp, "__token"));
+            this.data.put("domain", farm.bsg.data.types.TypeString.project(pp, "domain"));
+            this.data.put("product_name", farm.bsg.data.types.TypeString.project(pp, "product_name"));
+            this.data.put("fb_page_token", farm.bsg.data.types.TypeString.project(pp, "fb_page_token"));
+            this.data.put("twilio_phone_number", farm.bsg.data.types.TypeString.project(pp, "twilio_phone_number"));
+            this.data.put("twilio_username", farm.bsg.data.types.TypeString.project(pp, "twilio_username"));
+            this.data.put("twilio_password", farm.bsg.data.types.TypeString.project(pp, "twilio_password"));
+            this.data.put("admin_phone", farm.bsg.data.types.TypeString.project(pp, "admin_phone"));
+            this.data.put("product_imaging_thumbprint_size", farm.bsg.data.types.TypeNumber.project(pp, "product_imaging_thumbprint_size"));
+            this.data.put("product_imaging_normal_size", farm.bsg.data.types.TypeNumber.project(pp, "product_imaging_normal_size"));
+            this.data.put("description", farm.bsg.data.types.TypeString.project(pp, "description"));
+            this.data.put("business_hours", farm.bsg.data.types.TypeString.project(pp, "business_hours"));
+            this.data.put("business_phone", farm.bsg.data.types.TypeString.project(pp, "business_phone"));
+            this.data.put("business_timezone", farm.bsg.data.types.TypeString.project(pp, "business_timezone"));
+            this.data.put("fulfilment_strategy", farm.bsg.data.types.TypeString.project(pp, "fulfilment_strategy"));
+            this.data.put("delivery_radius", farm.bsg.data.types.TypeNumber.project(pp, "delivery_radius"));
+            this.data.put("pickup_rule", farm.bsg.data.types.TypeString.project(pp, "pickup_rule"));
+            this.data.put("business_address1", farm.bsg.data.types.TypeString.project(pp, "business_address1"));
+            this.data.put("business_address2", farm.bsg.data.types.TypeString.project(pp, "business_address2"));
+            this.data.put("business_city", farm.bsg.data.types.TypeString.project(pp, "business_city"));
+            this.data.put("business_state", farm.bsg.data.types.TypeString.project(pp, "business_state"));
+            this.data.put("business_postal", farm.bsg.data.types.TypeString.project(pp, "business_postal"));
+        }
+
+        public PutResult apply(final SiteProperties siteproperties) {
+            return siteproperties.validateAndApplyProjection(this.data);
+        }
+    }
+
+    public class SitePropertiesSetQuery {
+        private String                scope;
+        private final HashSet<String> keys;
+
+        private SitePropertiesSetQuery() {
+            this.scope = "";
+            this.keys = null;
+        }
+
+        public int count() {
+            if (this.keys == null) {
+                return to_list().count();
+            } else {
+                return this.keys.size();
+            }
+        }
+
+        public ArrayList<SiteProperties> done() {
+            return new SitePropertiesListHolder(this.keys, this.scope).done();
+        }
+
+        public SitePropertiesSetQuery scope(final String scope) {
+            this.scope += scope + "/";
+            return this;
+        }
+
+        public SitePropertiesListHolder to_list() {
+            return new SitePropertiesListHolder(this.keys, this.scope);
+        }
+    }
+
+    public class SubscriberListHolder {
+        private final ArrayList<Subscriber> list;
+
+        private SubscriberListHolder(final ArrayList<Subscriber> list) {
+            this.list = list;
+        }
+
+        private SubscriberListHolder(final HashSet<String> keys, final String scope) {
+            if (keys == null) {
+                this.list = subscribers_of(fetch_all("subscriber/" + scope));
+            } else {
+                this.list = subscribers_of(fetch(keys));
+            }
+        }
+
+        public int count() {
+            return this.list.size();
+        }
+
+        public ArrayList<Subscriber> done() {
+            return this.list;
+        }
+
+        public Subscriber first() {
+            if (this.list.size() == 0) {
+                return null;
+            }
+            return this.list.get(0);
+        }
+
+        public SubscriberListHolder fork() {
+            return new SubscriberListHolder(this.list);
+        }
+
+        public HashMap<String, ArrayList<Subscriber>> groupBy(final Function<Subscriber, String> f) {
+            final StringGroupBy<Subscriber> map = new StringGroupBy<>();
+            final Iterator<Subscriber> it = this.list.iterator();
+            while (it.hasNext()) {
+                final Subscriber v = it.next();
+                final String key = f.apply(v);
+                map.add(key, v);
+            }
+            return map.index;
+        }
+
+        public SubscriberListHolder inline_apply(final Consumer<Subscriber> consumer) {
+            final Iterator<Subscriber> it = this.list.iterator();
+            while (it.hasNext()) {
+                consumer.accept(it.next());
+            }
+            return this;
+        }
+
+        public SubscriberListHolder inline_filter(final Predicate<Subscriber> filter) {
+            final Iterator<Subscriber> it = this.list.iterator();
+            while (it.hasNext()) {
+                if (filter.test(it.next())) {
+                    it.remove();
+                }
+            }
+            return this;
+        }
+
+        public SubscriberListHolder inline_order_by(final Comparator<Subscriber> comparator) {
+            Collections.sort(this.list, comparator);
+            return this;
+        }
+
+        public SubscriberListHolder inline_order_lexographically_asc_by(final String... keys) {
+            Collections.sort(this.list, new LexographicalOrder<Subscriber>(keys, true, true));
+            return this;
+        }
+
+        public SubscriberListHolder inline_order_lexographically_by(final boolean asc, final boolean caseSensitive, final String... keys) {
+            Collections.sort(this.list, new LexographicalOrder<Subscriber>(keys, asc, caseSensitive));
+            return this;
+        }
+
+        public SubscriberListHolder inline_order_lexographically_desc_by(final String... keys) {
+            Collections.sort(this.list, new LexographicalOrder<Subscriber>(keys, false, true));
+            return this;
+        }
+
+        public SubscriberListHolder limit(final int count) {
+            final Iterator<Subscriber> it = this.list.iterator();
+            int at = 0;
+            while (it.hasNext()) {
+                it.next();
+                if (at >= count) {
+                    it.remove();
+                }
+                at++;
+            }
+            return this;
+        }
+    }
+
+    /**************************************************
+     * Projects (subscriber/)
+     **************************************************/
+
+    public class SubscriberProjection_admin {
+        private final HashMap<String, String> data;
+
+        public SubscriberProjection_admin(final ProjectionProvider pp) {
+            this.data = new HashMap<String, String>();
+            this.data.put("id", farm.bsg.data.types.TypeUUID.project(pp, "id"));
+            this.data.put("__token", farm.bsg.data.types.TypeString.project(pp, "__token"));
+            this.data.put("source", farm.bsg.data.types.TypeString.project(pp, "source"));
+            this.data.put("from", farm.bsg.data.types.TypeString.project(pp, "from"));
+            this.data.put("destination", farm.bsg.data.types.TypeString.project(pp, "destination"));
+            this.data.put("subscription", farm.bsg.data.types.TypeString.project(pp, "subscription"));
+            this.data.put("debug", farm.bsg.data.types.TypeString.project(pp, "debug"));
+        }
+
+        public PutResult apply(final Subscriber subscriber) {
+            return subscriber.validateAndApplyProjection(this.data);
+        }
+    }
+
+    public class SubscriberSetQuery {
+        private String          scope;
+        private HashSet<String> keys;
+
+        private SubscriberSetQuery() {
+            this.scope = "";
+            this.keys = null;
+        }
+
+        public int count() {
+            if (this.keys == null) {
+                return to_list().count();
+            } else {
+                return this.keys.size();
+            }
+        }
+
+        public ArrayList<Subscriber> done() {
+            return new SubscriberListHolder(this.keys, this.scope).done();
+        }
+
+        private HashSet<String> lookup_subscription(final String... values) {
+            final HashSet<String> keys = new HashSet<>();
+            for (final String value : values) {
+                keys.addAll(QueryEngine.this.subscriber_subscription.getKeys(value));
+            }
+            return keys;
+        }
+
+        public SubscriberSetQuery scope(final String scope) {
+            this.scope += scope + "/";
+            return this;
+        }
+
+        public SubscriberListHolder to_list() {
+            return new SubscriberListHolder(this.keys, this.scope);
+        }
+
+        public SubscriberSetQuery where_subscription_eq(final String... values) {
+            if (this.keys == null) {
+                this.keys = lookup_subscription(values);
+            } else {
+                this.keys = BinaryOperators.intersect(this.keys, lookup_subscription(values));
+            }
+            return this;
+        }
+    }
+
+    public class SubscriptionListHolder {
+        private final ArrayList<Subscription> list;
+
+        private SubscriptionListHolder(final ArrayList<Subscription> list) {
+            this.list = list;
+        }
+
+        private SubscriptionListHolder(final HashSet<String> keys, final String scope) {
+            if (keys == null) {
+                this.list = subscriptions_of(fetch_all("subscription/" + scope));
+            } else {
+                this.list = subscriptions_of(fetch(keys));
+            }
+        }
+
+        public int count() {
+            return this.list.size();
+        }
+
+        public ArrayList<Subscription> done() {
+            return this.list;
+        }
+
+        public Subscription first() {
+            if (this.list.size() == 0) {
+                return null;
+            }
+            return this.list.get(0);
+        }
+
+        public SubscriptionListHolder fork() {
+            return new SubscriptionListHolder(this.list);
+        }
+
+        public HashMap<String, ArrayList<Subscription>> groupBy(final Function<Subscription, String> f) {
+            final StringGroupBy<Subscription> map = new StringGroupBy<>();
+            final Iterator<Subscription> it = this.list.iterator();
+            while (it.hasNext()) {
+                final Subscription v = it.next();
+                final String key = f.apply(v);
+                map.add(key, v);
+            }
+            return map.index;
+        }
+
+        public SubscriptionListHolder inline_apply(final Consumer<Subscription> consumer) {
+            final Iterator<Subscription> it = this.list.iterator();
+            while (it.hasNext()) {
+                consumer.accept(it.next());
+            }
+            return this;
+        }
+
+        public SubscriptionListHolder inline_filter(final Predicate<Subscription> filter) {
+            final Iterator<Subscription> it = this.list.iterator();
+            while (it.hasNext()) {
+                if (filter.test(it.next())) {
+                    it.remove();
+                }
+            }
+            return this;
+        }
+
+        public SubscriptionListHolder inline_order_by(final Comparator<Subscription> comparator) {
+            Collections.sort(this.list, comparator);
+            return this;
+        }
+
+        public SubscriptionListHolder inline_order_lexographically_asc_by(final String... keys) {
+            Collections.sort(this.list, new LexographicalOrder<Subscription>(keys, true, true));
+            return this;
+        }
+
+        public SubscriptionListHolder inline_order_lexographically_by(final boolean asc, final boolean caseSensitive, final String... keys) {
+            Collections.sort(this.list, new LexographicalOrder<Subscription>(keys, asc, caseSensitive));
+            return this;
+        }
+
+        public SubscriptionListHolder inline_order_lexographically_desc_by(final String... keys) {
+            Collections.sort(this.list, new LexographicalOrder<Subscription>(keys, false, true));
+            return this;
+        }
+
+        public SubscriptionListHolder limit(final int count) {
+            final Iterator<Subscription> it = this.list.iterator();
+            int at = 0;
+            while (it.hasNext()) {
+                it.next();
+                if (at >= count) {
+                    it.remove();
+                }
+                at++;
+            }
+            return this;
+        }
+    }
+
+    /**************************************************
+     * Projects (subscription/)
+     **************************************************/
+
+    public class SubscriptionProjection_admin {
+        private final HashMap<String, String> data;
+
+        public SubscriptionProjection_admin(final ProjectionProvider pp) {
+            this.data = new HashMap<String, String>();
+            this.data.put("id", farm.bsg.data.types.TypeUUID.project(pp, "id"));
+            this.data.put("__token", farm.bsg.data.types.TypeString.project(pp, "__token"));
+            this.data.put("name", farm.bsg.data.types.TypeString.project(pp, "name"));
+            this.data.put("description", farm.bsg.data.types.TypeString.project(pp, "description"));
+            this.data.put("subscribe_keyword", farm.bsg.data.types.TypeString.project(pp, "subscribe_keyword"));
+            this.data.put("subscribe_message", farm.bsg.data.types.TypeString.project(pp, "subscribe_message"));
+            this.data.put("unsubscribe_keyword", farm.bsg.data.types.TypeString.project(pp, "unsubscribe_keyword"));
+            this.data.put("unsubscribe_message", farm.bsg.data.types.TypeString.project(pp, "unsubscribe_message"));
+            this.data.put("event", farm.bsg.data.types.TypeString.project(pp, "event"));
+        }
+
+        public PutResult apply(final Subscription subscription) {
+            return subscription.validateAndApplyProjection(this.data);
+        }
+    }
+
+    public class SubscriptionSetQuery {
+        private String          scope;
+        private HashSet<String> keys;
+
+        private SubscriptionSetQuery() {
+            this.scope = "";
+            this.keys = null;
+        }
+
+        public int count() {
+            if (this.keys == null) {
+                return to_list().count();
+            } else {
+                return this.keys.size();
+            }
+        }
+
+        public ArrayList<Subscription> done() {
+            return new SubscriptionListHolder(this.keys, this.scope).done();
+        }
+
+        private HashSet<String> lookup_event(final String... values) {
+            final HashSet<String> keys = new HashSet<>();
+            for (final String value : values) {
+                keys.addAll(QueryEngine.this.subscription_event.getKeys(value));
+            }
+            return keys;
+        }
+
+        public SubscriptionSetQuery scope(final String scope) {
+            this.scope += scope + "/";
+            return this;
+        }
+
+        public SubscriptionListHolder to_list() {
+            return new SubscriptionListHolder(this.keys, this.scope);
+        }
+
+        public SubscriptionSetQuery where_event_eq(final String... values) {
+            if (this.keys == null) {
+                this.keys = lookup_event(values);
+            } else {
+                this.keys = BinaryOperators.intersect(this.keys, lookup_event(values));
+            }
+            return this;
+        }
+    }
+
+    public class TaskFactoryListHolder {
+        private final ArrayList<TaskFactory> list;
+
+        private TaskFactoryListHolder(final ArrayList<TaskFactory> list) {
+            this.list = list;
+        }
+
+        private TaskFactoryListHolder(final HashSet<String> keys, final String scope) {
+            if (keys == null) {
+                this.list = taskfactorys_of(fetch_all("task_factory/" + scope));
+            } else {
+                this.list = taskfactorys_of(fetch(keys));
+            }
+        }
+
+        public int count() {
+            return this.list.size();
+        }
+
+        public ArrayList<TaskFactory> done() {
+            return this.list;
+        }
+
+        public TaskFactory first() {
+            if (this.list.size() == 0) {
+                return null;
+            }
+            return this.list.get(0);
+        }
+
+        public TaskFactoryListHolder fork() {
+            return new TaskFactoryListHolder(this.list);
+        }
+
+        public HashMap<String, ArrayList<TaskFactory>> groupBy(final Function<TaskFactory, String> f) {
+            final StringGroupBy<TaskFactory> map = new StringGroupBy<>();
+            final Iterator<TaskFactory> it = this.list.iterator();
+            while (it.hasNext()) {
+                final TaskFactory v = it.next();
+                final String key = f.apply(v);
+                map.add(key, v);
+            }
+            return map.index;
+        }
+
+        public TaskFactoryListHolder inline_apply(final Consumer<TaskFactory> consumer) {
+            final Iterator<TaskFactory> it = this.list.iterator();
+            while (it.hasNext()) {
+                consumer.accept(it.next());
+            }
+            return this;
+        }
+
+        public TaskFactoryListHolder inline_filter(final Predicate<TaskFactory> filter) {
+            final Iterator<TaskFactory> it = this.list.iterator();
+            while (it.hasNext()) {
+                if (filter.test(it.next())) {
+                    it.remove();
+                }
+            }
+            return this;
+        }
+
+        public TaskFactoryListHolder inline_order_by(final Comparator<TaskFactory> comparator) {
+            Collections.sort(this.list, comparator);
+            return this;
+        }
+
+        public TaskFactoryListHolder inline_order_lexographically_asc_by(final String... keys) {
+            Collections.sort(this.list, new LexographicalOrder<TaskFactory>(keys, true, true));
+            return this;
+        }
+
+        public TaskFactoryListHolder inline_order_lexographically_by(final boolean asc, final boolean caseSensitive, final String... keys) {
+            Collections.sort(this.list, new LexographicalOrder<TaskFactory>(keys, asc, caseSensitive));
+            return this;
+        }
+
+        public TaskFactoryListHolder inline_order_lexographically_desc_by(final String... keys) {
+            Collections.sort(this.list, new LexographicalOrder<TaskFactory>(keys, false, true));
+            return this;
+        }
+
+        public TaskFactoryListHolder limit(final int count) {
+            final Iterator<TaskFactory> it = this.list.iterator();
+            int at = 0;
+            while (it.hasNext()) {
+                it.next();
+                if (at >= count) {
+                    it.remove();
+                }
+                at++;
+            }
+            return this;
+        }
+    }
+
+    /**************************************************
+     * Projects (task_factory/)
+     **************************************************/
+
+    public class TaskFactoryProjection_admin {
+        private final HashMap<String, String> data;
+
+        public TaskFactoryProjection_admin(final ProjectionProvider pp) {
+            this.data = new HashMap<String, String>();
+            this.data.put("id", farm.bsg.data.types.TypeUUID.project(pp, "id"));
+            this.data.put("__token", farm.bsg.data.types.TypeString.project(pp, "__token"));
+            this.data.put("name", farm.bsg.data.types.TypeString.project(pp, "name"));
+            this.data.put("description", farm.bsg.data.types.TypeString.project(pp, "description"));
+            this.data.put("current_task", farm.bsg.data.types.TypeString.project(pp, "current_task"));
+            this.data.put("priority", farm.bsg.data.types.TypeNumber.project(pp, "priority"));
+            this.data.put("frequency", farm.bsg.data.types.TypeNumber.project(pp, "frequency"));
+            this.data.put("slack", farm.bsg.data.types.TypeNumber.project(pp, "slack"));
+            this.data.put("month_filter", farm.bsg.data.types.TypeMonthFilter.project(pp, "month_filter"));
+            this.data.put("day_filter", farm.bsg.data.types.TypeDayFilter.project(pp, "day_filter"));
+        }
+
+        public PutResult apply(final TaskFactory taskfactory) {
+            return taskfactory.validateAndApplyProjection(this.data);
+        }
+    }
+
+    public class TaskFactoryProjection_edit {
+        private final HashMap<String, String> data;
+
+        public TaskFactoryProjection_edit(final ProjectionProvider pp) {
+            this.data = new HashMap<String, String>();
+            this.data.put("name", farm.bsg.data.types.TypeString.project(pp, "name"));
+            this.data.put("description", farm.bsg.data.types.TypeString.project(pp, "description"));
+            this.data.put("priority", farm.bsg.data.types.TypeNumber.project(pp, "priority"));
+            this.data.put("frequency", farm.bsg.data.types.TypeNumber.project(pp, "frequency"));
+            this.data.put("slack", farm.bsg.data.types.TypeNumber.project(pp, "slack"));
+            this.data.put("month_filter", farm.bsg.data.types.TypeMonthFilter.project(pp, "month_filter"));
+            this.data.put("day_filter", farm.bsg.data.types.TypeDayFilter.project(pp, "day_filter"));
+        }
+
+        public PutResult apply(final TaskFactory taskfactory) {
+            return taskfactory.validateAndApplyProjection(this.data);
+        }
+    }
+
+    public class TaskFactorySetQuery {
+        private String                scope;
+        private final HashSet<String> keys;
+
+        private TaskFactorySetQuery() {
+            this.scope = "";
+            this.keys = null;
+        }
+
+        public int count() {
+            if (this.keys == null) {
+                return to_list().count();
+            } else {
+                return this.keys.size();
+            }
+        }
+
+        public ArrayList<TaskFactory> done() {
+            return new TaskFactoryListHolder(this.keys, this.scope).done();
+        }
+
+        public TaskFactorySetQuery scope(final String scope) {
+            this.scope += scope + "/";
+            return this;
+        }
+
+        public TaskFactoryListHolder to_list() {
+            return new TaskFactoryListHolder(this.keys, this.scope);
+        }
+    }
+
+    public class TaskListHolder {
+        private final ArrayList<Task> list;
+
+        private TaskListHolder(final ArrayList<Task> list) {
+            this.list = list;
+        }
+
+        private TaskListHolder(final HashSet<String> keys, final String scope) {
+            if (keys == null) {
+                this.list = tasks_of(fetch_all("task/" + scope));
+            } else {
+                this.list = tasks_of(fetch(keys));
+            }
+        }
+
+        public int count() {
+            return this.list.size();
+        }
+
+        public ArrayList<Task> done() {
+            return this.list;
+        }
+
+        public Task first() {
+            if (this.list.size() == 0) {
+                return null;
+            }
+            return this.list.get(0);
+        }
+
+        public TaskListHolder fork() {
+            return new TaskListHolder(this.list);
+        }
+
+        public HashMap<String, ArrayList<Task>> groupBy(final Function<Task, String> f) {
+            final StringGroupBy<Task> map = new StringGroupBy<>();
+            final Iterator<Task> it = this.list.iterator();
+            while (it.hasNext()) {
+                final Task v = it.next();
+                final String key = f.apply(v);
+                map.add(key, v);
+            }
+            return map.index;
+        }
+
+        public TaskListHolder inline_apply(final Consumer<Task> consumer) {
+            final Iterator<Task> it = this.list.iterator();
+            while (it.hasNext()) {
+                consumer.accept(it.next());
+            }
+            return this;
+        }
+
+        public TaskListHolder inline_filter(final Predicate<Task> filter) {
+            final Iterator<Task> it = this.list.iterator();
+            while (it.hasNext()) {
+                if (filter.test(it.next())) {
+                    it.remove();
+                }
+            }
+            return this;
+        }
+
+        public TaskListHolder inline_order_by(final Comparator<Task> comparator) {
+            Collections.sort(this.list, comparator);
+            return this;
+        }
+
+        public TaskListHolder inline_order_lexographically_asc_by(final String... keys) {
+            Collections.sort(this.list, new LexographicalOrder<Task>(keys, true, true));
+            return this;
+        }
+
+        public TaskListHolder inline_order_lexographically_by(final boolean asc, final boolean caseSensitive, final String... keys) {
+            Collections.sort(this.list, new LexographicalOrder<Task>(keys, asc, caseSensitive));
+            return this;
+        }
+
+        public TaskListHolder inline_order_lexographically_desc_by(final String... keys) {
+            Collections.sort(this.list, new LexographicalOrder<Task>(keys, false, true));
+            return this;
+        }
+
+        public TaskListHolder limit(final int count) {
+            final Iterator<Task> it = this.list.iterator();
+            int at = 0;
+            while (it.hasNext()) {
+                it.next();
+                if (at >= count) {
+                    it.remove();
+                }
+                at++;
+            }
+            return this;
+        }
+    }
+
+    /**************************************************
+     * Projects (task/)
+     **************************************************/
+
+    public class TaskProjection_admin {
+        private final HashMap<String, String> data;
+
+        public TaskProjection_admin(final ProjectionProvider pp) {
+            this.data = new HashMap<String, String>();
+            this.data.put("id", farm.bsg.data.types.TypeUUID.project(pp, "id"));
+            this.data.put("__token", farm.bsg.data.types.TypeString.project(pp, "__token"));
+            this.data.put("owner", farm.bsg.data.types.TypeString.project(pp, "owner"));
+            this.data.put("cart_id", farm.bsg.data.types.TypeString.project(pp, "cart_id"));
+            this.data.put("name", farm.bsg.data.types.TypeString.project(pp, "name"));
+            this.data.put("description", farm.bsg.data.types.TypeString.project(pp, "description"));
+            this.data.put("priority", farm.bsg.data.types.TypeNumber.project(pp, "priority"));
+            this.data.put("due_date", farm.bsg.data.types.TypeDateTime.project(pp, "due_date"));
+            this.data.put("created", farm.bsg.data.types.TypeDateTime.project(pp, "created"));
+            this.data.put("started", farm.bsg.data.types.TypeDateTime.project(pp, "started"));
+            this.data.put("closed", farm.bsg.data.types.TypeDateTime.project(pp, "closed"));
+            this.data.put("notification_token_for_closed", farm.bsg.data.types.TypeString.project(pp, "notification_token_for_closed"));
+            this.data.put("notification_short_text_for_closed", farm.bsg.data.types.TypeString.project(pp, "notification_short_text_for_closed"));
+            this.data.put("state", farm.bsg.data.types.TypeString.project(pp, "state"));
+        }
+
+        public PutResult apply(final Task task) {
+            return task.validateAndApplyProjection(this.data);
+        }
+    }
+
+    public class TaskSetQuery {
+        private String          scope;
+        private HashSet<String> keys;
+
+        private TaskSetQuery() {
+            this.scope = "";
+            this.keys = null;
+        }
+
+        public int count() {
+            if (this.keys == null) {
+                return to_list().count();
+            } else {
+                return this.keys.size();
+            }
+        }
+
+        public ArrayList<Task> done() {
+            return new TaskListHolder(this.keys, this.scope).done();
+        }
+
+        private HashSet<String> lookup_owner(final String... values) {
+            final HashSet<String> keys = new HashSet<>();
+            for (final String value : values) {
+                keys.addAll(QueryEngine.this.task_owner.getKeys(value));
+            }
+            return keys;
+        }
+
+        private HashSet<String> lookup_state(final String... values) {
+            final HashSet<String> keys = new HashSet<>();
+            for (final String value : values) {
+                keys.addAll(QueryEngine.this.task_state.getKeys(value));
+            }
+            return keys;
+        }
+
+        public TaskSetQuery scope(final String scope) {
+            this.scope += scope + "/";
+            return this;
+        }
+
+        public TaskListHolder to_list() {
+            return new TaskListHolder(this.keys, this.scope);
+        }
+
+        public TaskSetQuery where_owner_eq(final String... values) {
+            if (this.keys == null) {
+                this.keys = lookup_owner(values);
+            } else {
+                this.keys = BinaryOperators.intersect(this.keys, lookup_owner(values));
+            }
+            return this;
+        }
+
+        public TaskSetQuery where_state_eq(final String... values) {
+            if (this.keys == null) {
+                this.keys = lookup_state(values);
+            } else {
+                this.keys = BinaryOperators.intersect(this.keys, lookup_state(values));
+            }
+            return this;
+        }
+    }
+
+    public class TaxBatonListHolder {
+        private final ArrayList<TaxBaton> list;
+
+        private TaxBatonListHolder(final ArrayList<TaxBaton> list) {
+            this.list = list;
+        }
+
+        private TaxBatonListHolder(final HashSet<String> keys, final String scope) {
+            if (keys == null) {
+                this.list = taxbatons_of(fetch_all("tax-baton/" + scope));
+            } else {
+                this.list = taxbatons_of(fetch(keys));
+            }
+        }
+
+        public int count() {
+            return this.list.size();
+        }
+
+        public ArrayList<TaxBaton> done() {
+            return this.list;
+        }
+
+        public TaxBaton first() {
+            if (this.list.size() == 0) {
+                return null;
+            }
+            return this.list.get(0);
+        }
+
+        public TaxBatonListHolder fork() {
+            return new TaxBatonListHolder(this.list);
+        }
+
+        public HashMap<String, ArrayList<TaxBaton>> groupBy(final Function<TaxBaton, String> f) {
+            final StringGroupBy<TaxBaton> map = new StringGroupBy<>();
+            final Iterator<TaxBaton> it = this.list.iterator();
+            while (it.hasNext()) {
+                final TaxBaton v = it.next();
+                final String key = f.apply(v);
+                map.add(key, v);
+            }
+            return map.index;
+        }
+
+        public TaxBatonListHolder inline_apply(final Consumer<TaxBaton> consumer) {
+            final Iterator<TaxBaton> it = this.list.iterator();
+            while (it.hasNext()) {
+                consumer.accept(it.next());
+            }
+            return this;
+        }
+
+        public TaxBatonListHolder inline_filter(final Predicate<TaxBaton> filter) {
+            final Iterator<TaxBaton> it = this.list.iterator();
+            while (it.hasNext()) {
+                if (filter.test(it.next())) {
+                    it.remove();
+                }
+            }
+            return this;
+        }
+
+        public TaxBatonListHolder inline_order_by(final Comparator<TaxBaton> comparator) {
+            Collections.sort(this.list, comparator);
+            return this;
+        }
+
+        public TaxBatonListHolder inline_order_lexographically_asc_by(final String... keys) {
+            Collections.sort(this.list, new LexographicalOrder<TaxBaton>(keys, true, true));
+            return this;
+        }
+
+        public TaxBatonListHolder inline_order_lexographically_by(final boolean asc, final boolean caseSensitive, final String... keys) {
+            Collections.sort(this.list, new LexographicalOrder<TaxBaton>(keys, asc, caseSensitive));
+            return this;
+        }
+
+        public TaxBatonListHolder inline_order_lexographically_desc_by(final String... keys) {
+            Collections.sort(this.list, new LexographicalOrder<TaxBaton>(keys, false, true));
+            return this;
+        }
+
+        public TaxBatonListHolder limit(final int count) {
+            final Iterator<TaxBaton> it = this.list.iterator();
+            int at = 0;
+            while (it.hasNext()) {
+                it.next();
+                if (at >= count) {
+                    it.remove();
+                }
+                at++;
+            }
+            return this;
+        }
+    }
+
+    /**************************************************
+     * Projects (tax-baton/)
+     **************************************************/
+
+    public class TaxBatonProjection_admin {
+        private final HashMap<String, String> data;
+
+        public TaxBatonProjection_admin(final ProjectionProvider pp) {
+            this.data = new HashMap<String, String>();
+            this.data.put("id", farm.bsg.data.types.TypeUUID.project(pp, "id"));
+            this.data.put("__token", farm.bsg.data.types.TypeString.project(pp, "__token"));
+            this.data.put("code", farm.bsg.data.types.TypeString.project(pp, "code"));
+        }
+
+        public PutResult apply(final TaxBaton taxbaton) {
+            return taxbaton.validateAndApplyProjection(this.data);
+        }
+    }
+
+    public class TaxBatonSetQuery {
+        private String                scope;
+        private final HashSet<String> keys;
+
+        private TaxBatonSetQuery() {
+            this.scope = "";
+            this.keys = null;
+        }
+
+        public int count() {
+            if (this.keys == null) {
+                return to_list().count();
+            } else {
+                return this.keys.size();
+            }
+        }
+
+        public ArrayList<TaxBaton> done() {
+            return new TaxBatonListHolder(this.keys, this.scope).done();
+        }
+
+        public TaxBatonSetQuery scope(final String scope) {
+            this.scope += scope + "/";
+            return this;
+        }
+
+        public TaxBatonListHolder to_list() {
+            return new TaxBatonListHolder(this.keys, this.scope);
+        }
+    }
+
+    public class WakeInputFileListHolder {
+        private final ArrayList<WakeInputFile> list;
+
+        private WakeInputFileListHolder(final ArrayList<WakeInputFile> list) {
+            this.list = list;
+        }
+
+        private WakeInputFileListHolder(final HashSet<String> keys, final String scope) {
+            if (keys == null) {
+                this.list = wakeinputfiles_of(fetch_all("wake_input/" + scope));
+            } else {
+                this.list = wakeinputfiles_of(fetch(keys));
+            }
+        }
+
+        public int count() {
+            return this.list.size();
+        }
+
+        public ArrayList<WakeInputFile> done() {
+            return this.list;
+        }
+
+        public WakeInputFile first() {
+            if (this.list.size() == 0) {
+                return null;
+            }
+            return this.list.get(0);
+        }
+
+        public WakeInputFileListHolder fork() {
+            return new WakeInputFileListHolder(this.list);
+        }
+
+        public HashMap<String, ArrayList<WakeInputFile>> groupBy(final Function<WakeInputFile, String> f) {
+            final StringGroupBy<WakeInputFile> map = new StringGroupBy<>();
+            final Iterator<WakeInputFile> it = this.list.iterator();
+            while (it.hasNext()) {
+                final WakeInputFile v = it.next();
+                final String key = f.apply(v);
+                map.add(key, v);
+            }
+            return map.index;
+        }
+
+        public WakeInputFileListHolder inline_apply(final Consumer<WakeInputFile> consumer) {
+            final Iterator<WakeInputFile> it = this.list.iterator();
+            while (it.hasNext()) {
+                consumer.accept(it.next());
+            }
+            return this;
+        }
+
+        public WakeInputFileListHolder inline_filter(final Predicate<WakeInputFile> filter) {
+            final Iterator<WakeInputFile> it = this.list.iterator();
+            while (it.hasNext()) {
+                if (filter.test(it.next())) {
+                    it.remove();
+                }
+            }
+            return this;
+        }
+
+        public WakeInputFileListHolder inline_order_by(final Comparator<WakeInputFile> comparator) {
+            Collections.sort(this.list, comparator);
+            return this;
+        }
+
+        public WakeInputFileListHolder inline_order_lexographically_asc_by(final String... keys) {
+            Collections.sort(this.list, new LexographicalOrder<WakeInputFile>(keys, true, true));
+            return this;
+        }
+
+        public WakeInputFileListHolder inline_order_lexographically_by(final boolean asc, final boolean caseSensitive, final String... keys) {
+            Collections.sort(this.list, new LexographicalOrder<WakeInputFile>(keys, asc, caseSensitive));
+            return this;
+        }
+
+        public WakeInputFileListHolder inline_order_lexographically_desc_by(final String... keys) {
+            Collections.sort(this.list, new LexographicalOrder<WakeInputFile>(keys, false, true));
+            return this;
+        }
+
+        public WakeInputFileListHolder limit(final int count) {
+            final Iterator<WakeInputFile> it = this.list.iterator();
+            int at = 0;
+            while (it.hasNext()) {
+                it.next();
+                if (at >= count) {
+                    it.remove();
+                }
+                at++;
+            }
+            return this;
+        }
+    }
+
+    /**************************************************
+     * Projects (wake_input/)
+     **************************************************/
+
+    public class WakeInputFileProjection_admin {
+        private final HashMap<String, String> data;
+
+        public WakeInputFileProjection_admin(final ProjectionProvider pp) {
+            this.data = new HashMap<String, String>();
+            this.data.put("id", farm.bsg.data.types.TypeUUID.project(pp, "id"));
+            this.data.put("__token", farm.bsg.data.types.TypeString.project(pp, "__token"));
+            this.data.put("filename", farm.bsg.data.types.TypeString.project(pp, "filename"));
+            this.data.put("content_type", farm.bsg.data.types.TypeString.project(pp, "content_type"));
+            this.data.put("description", farm.bsg.data.types.TypeString.project(pp, "description"));
+            this.data.put("contents", farm.bsg.data.types.TypeBytesInBase64.project(pp, "contents"));
+        }
+
+        public PutResult apply(final WakeInputFile wakeinputfile) {
+            return wakeinputfile.validateAndApplyProjection(this.data);
+        }
+    }
+
+    public class WakeInputFileSetQuery {
+        private String          scope;
+        private HashSet<String> keys;
+
+        private WakeInputFileSetQuery() {
+            this.scope = "";
+            this.keys = null;
+        }
+
+        public int count() {
+            if (this.keys == null) {
+                return to_list().count();
+            } else {
+                return this.keys.size();
+            }
+        }
+
+        public ArrayList<WakeInputFile> done() {
+            return new WakeInputFileListHolder(this.keys, this.scope).done();
+        }
+
+        private HashSet<String> lookup_filename(final String... values) {
+            final HashSet<String> keys = new HashSet<>();
+            for (final String value : values) {
+                keys.addAll(QueryEngine.this.wakeinputfile_filename.getKeys(value));
+            }
+            return keys;
+        }
+
+        public WakeInputFileSetQuery scope(final String scope) {
+            this.scope += scope + "/";
+            return this;
+        }
+
+        public WakeInputFileListHolder to_list() {
+            return new WakeInputFileListHolder(this.keys, this.scope);
+        }
+
+        public WakeInputFileSetQuery where_filename_eq(final String... values) {
+            if (this.keys == null) {
+                this.keys = lookup_filename(values);
+            } else {
+                this.keys = BinaryOperators.intersect(this.keys, lookup_filename(values));
+            }
+            return this;
+        }
+    }
+
+    public final MultiPrefixLogger        indexing;
+
+    // INDEX[Cart]
+    public final KeyIndex                 cart_customer;               // BY[customer]
+
+    public final KeyIndex                 cart_task;                   // BY[task]
+
+    // INDEX[CartItem]
+    public final KeyIndex                 cartitem_cart;               // BY[cart]
+
+    public final KeyIndex                 cartitem_product;            // BY[product]
+
+    public final KeyIndex                 cartitem_customizations;     // BY[customizations]
+
+    // INDEX[Check]
+    public final KeyIndex                 check_person;                // BY[person]
+
+    public final KeyIndex                 check_fiscal_day;            // BY[fiscal_day]
+
+    public final KeyIndex                 check_ready;                 // BY[ready]
+
+    // INDEX[Customer]
+    public final KeyIndex                 customer_email;              // BY[email]
+
+    public final KeyIndex                 customer_phone;              // BY[phone]
+
+    public final KeyIndex                 customer_cookie;             // BY[cookie]
+
+    public final KeyIndex                 customer_notification_token; // BY[notification_token]
+
+    // INDEX[PayrollEntry]
+    public final KeyIndex                 payrollentry_check;          // BY[check]
+
+    public final KeyIndex                 payrollentry_unpaid;         // BY[unpaid]
+
+    // INDEX[Person]
+    public final KeyIndex                 person_login;                // BY[login]
+
+    public final KeyIndex                 person_phone;                // BY[phone]
+
+    public final KeyIndex                 person_cookie;               // BY[cookie]
+
+    public final KeyIndex                 person_super_cookie;         // BY[super_cookie]
+
+    public final KeyIndex                 person_notification_token;   // BY[notification_token]
+
+    // INDEX[Subscriber]
+    public final KeyIndex                 subscriber_subscription;     // BY[subscription]
+
+    // INDEX[Subscription]
+    public final KeyIndex                 subscription_event;          // BY[event]
+
+    // INDEX[Task]
+    public final KeyIndex                 task_owner;                  // BY[owner]
+
+    public final KeyIndex                 task_state;                  // BY[state]
+
+    // INDEX[WakeInputFile]
+    public final KeyIndex                 wakeinputfile_filename;      // BY[filename]
+
+    public final StorageEngine            storage;
+
+    public final ExecutorService          executor;
+
+    public final ScheduledExecutorService scheduler;
+
+    public final UriBlobCache             publicBlobCache;
+
+    public QueryEngine(final PersistenceLogger persistence) throws Exception {
+        final InMemoryStorage memory = new InMemoryStorage();
+        this.executor = Executors.newFixedThreadPool(2);
+        this.scheduler = Executors.newSingleThreadScheduledExecutor();
+        this.publicBlobCache = new UriBlobCache();
+        this.indexing = new MultiPrefixLogger();
+        this.cart_customer = this.indexing.add("cart/", new KeyIndex("customer", false));
+        this.cart_task = this.indexing.add("cart/", new KeyIndex("task", false));
+        this.cartitem_cart = this.indexing.add("cart-item/", new KeyIndex("cart", false));
+        this.cartitem_product = this.indexing.add("cart-item/", new KeyIndex("product", false));
+        this.cartitem_customizations = this.indexing.add("cart-item/", new KeyIndex("customizations", false));
+        this.check_person = this.indexing.add("checks/", new KeyIndex("person", false));
+        this.check_fiscal_day = this.indexing.add("checks/", new KeyIndex("fiscal_day", false));
+        this.check_ready = this.indexing.add("checks/", new KeyIndex("ready", false));
+        this.customer_email = this.indexing.add("customer/", new KeyIndex("email", true));
+        this.customer_phone = this.indexing.add("customer/", new KeyIndex("phone", false));
+        this.customer_cookie = this.indexing.add("customer/", new KeyIndex("cookie", false));
+        this.customer_notification_token = this.indexing.add("customer/", new KeyIndex("notification_token", false));
+        this.payrollentry_check = this.indexing.add("payroll/", new KeyIndex("check", false));
+        this.payrollentry_unpaid = this.indexing.add("payroll/", new KeyIndex("unpaid", false));
+        this.person_login = this.indexing.add("person/", new KeyIndex("login", true));
+        this.person_phone = this.indexing.add("person/", new KeyIndex("phone", false));
+        this.person_cookie = this.indexing.add("person/", new KeyIndex("cookie", false));
+        this.person_super_cookie = this.indexing.add("person/", new KeyIndex("super_cookie", false));
+        this.person_notification_token = this.indexing.add("person/", new KeyIndex("notification_token", false));
+        this.indexing.add("product/", new farm.bsg.models.PublicSiteBuilder(this));
+        this.subscriber_subscription = this.indexing.add("subscriber/", new KeyIndex("subscription", false));
+        this.subscription_event = this.indexing.add("subscription/", new KeyIndex("event", false));
+        this.task_owner = this.indexing.add("task/", new KeyIndex("owner", false));
+        this.task_state = this.indexing.add("task/", new KeyIndex("state", false));
+        this.wakeinputfile_filename = this.indexing.add("wake_input/", new KeyIndex("filename", true));
+        this.indexing.add("wake_input/", new farm.bsg.models.PublicSiteBuilder(this));
+        this.storage = new StorageEngine(memory, this.indexing, persistence);
+    }
+
+    /**************************************************
+     * Basic Operations (look up, type transfer, keys, immutable copies) (cart/)
+     **************************************************/
+
+    public Cart cart_by_id(final String id, final boolean create) {
+        final Value v = this.storage.get("cart/" + id);
+        if (v == null && !create) {
+            return null;
+        }
+        final Cart result = cart_of(v);
+        result.set("id", id);
+        return result;
+    }
+
+    private Cart cart_of(final Value v) {
+        final Cart item = new Cart();
+        if (v != null) {
+            item.injectValue(v);
+        }
+        return item;
+    }
+
+    /**************************************************
+     * Basic Operations (look up, type transfer, keys, immutable copies) (cart-item/)
+     **************************************************/
+
+    public CartItem cartitem_by_id(final String id, final boolean create) {
+        final Value v = this.storage.get("cart-item/" + id);
+        if (v == null && !create) {
+            return null;
+        }
+        final CartItem result = cartitem_of(v);
+        result.set("id", id);
+        return result;
+    }
+
+    private CartItem cartitem_of(final Value v) {
+        final CartItem item = new CartItem();
+        if (v != null) {
+            item.injectValue(v);
+        }
+        return item;
+    }
+
+    private ArrayList<CartItem> cartitems_of(final ArrayList<Value> values) {
+        final ArrayList<CartItem> list = new ArrayList<>(values.size());
+        for (final Value v : values) {
+            list.add(cartitem_of(v));
+        }
+        return list;
+    }
+
+    private ArrayList<Cart> carts_of(final ArrayList<Value> values) {
+        final ArrayList<Cart> list = new ArrayList<>(values.size());
+        for (final Value v : values) {
+            list.add(cart_of(v));
+        }
+        return list;
+    }
+
+    /**************************************************
+     * Basic Operations (look up, type transfer, keys, immutable copies) (checks/)
+     **************************************************/
+
+    public Check check_by_id(final String id, final boolean create) {
+        final Value v = this.storage.get("checks/" + id);
+        if (v == null && !create) {
+            return null;
+        }
+        final Check result = check_of(v);
+        result.set("id", id);
+        return result;
+    }
+
+    private Check check_of(final Value v) {
+        final Check item = new Check();
+        if (v != null) {
+            item.injectValue(v);
+        }
+        return item;
+    }
+
+    private ArrayList<Check> checks_of(final ArrayList<Value> values) {
+        final ArrayList<Check> list = new ArrayList<>(values.size());
+        for (final Value v : values) {
+            list.add(check_of(v));
+        }
+        return list;
+    }
+
+    /**************************************************
+     * Basic Operations (look up, type transfer, keys, immutable copies) (customer/)
+     **************************************************/
+
+    public Customer customer_by_id(final String id, final boolean create) {
+        final Value v = this.storage.get("customer/" + id);
+        if (v == null && !create) {
+            return null;
+        }
+        final Customer result = customer_of(v);
+        result.set("id", id);
+        return result;
+    }
+
+    private Customer customer_of(final Value v) {
+        final Customer item = new Customer();
+        if (v != null) {
+            item.injectValue(v);
+        }
+        return item;
+    }
+
+    private ArrayList<Customer> customers_of(final ArrayList<Value> values) {
+        final ArrayList<Customer> list = new ArrayList<>(values.size());
+        for (final Value v : values) {
+            list.add(customer_of(v));
+        }
+        return list;
+    }
+
+    public PutResult del(final Cart cart) {
+        return this.storage.put(cart.getStorageKey(), null, false);
+    }
+
+    public PutResult del(final CartItem cartitem) {
+        return this.storage.put(cartitem.getStorageKey(), null, false);
+    }
+
+    public PutResult del(final Check check) {
+        return this.storage.put(check.getStorageKey(), null, false);
+    }
+
+    public PutResult del(final Customer customer) {
+        return this.storage.put(customer.getStorageKey(), null, false);
+    }
+
+    public PutResult del(final Habit habit) {
+        return this.storage.put(habit.getStorageKey(), null, false);
+    }
+
+    public PutResult del(final PayrollEntry payrollentry) {
+        return this.storage.put(payrollentry.getStorageKey(), null, false);
+    }
+
+    public PutResult del(final Person person) {
+        return this.storage.put(person.getStorageKey(), null, false);
+    }
+
+    public PutResult del(final Product product) {
+        return this.storage.put(product.getStorageKey(), null, false);
+    }
+
+    public PutResult del(final SiteProperties siteproperties) {
+        return this.storage.put(siteproperties.getStorageKey(), null, false);
+    }
+
+    public PutResult del(final Subscriber subscriber) {
+        return this.storage.put(subscriber.getStorageKey(), null, false);
+    }
+
+    public PutResult del(final Subscription subscription) {
+        return this.storage.put(subscription.getStorageKey(), null, false);
+    }
+
+    public PutResult del(final Task task) {
+        return this.storage.put(task.getStorageKey(), null, false);
+    }
+
+    /**************************************************
+     * Indexing (habits/)
+     **************************************************/
+
+    public PutResult del(final TaskFactory taskfactory) {
+        return this.storage.put(taskfactory.getStorageKey(), null, false);
+    }
+
+    public PutResult del(final TaxBaton taxbaton) {
+        return this.storage.put(taxbaton.getStorageKey(), null, false);
+    }
+
+    public PutResult del(final WakeInputFile wakeinputfile) {
+        return this.storage.put(wakeinputfile.getStorageKey(), null, false);
+    }
+
+    private ArrayList<Value> fetch(final HashSet<String> keys) {
+        final ArrayList<Value> values = new ArrayList<>();
+        if (keys == null) {
+            return values;
+        }
+        for (final String key : keys) {
+            final Value value = this.storage.get(key);
+            if (value != null) {
+                values.add(value);
+            }
+        }
+        return values;
+    }
+
+    private ArrayList<Value> fetch_all(final String prefix) {
+        final ArrayList<Value> values = new ArrayList<>();
+        values.addAll(this.storage.scan(prefix).values());
+        return values;
+    }
+
+    /**************************************************
+     * Indexing (cart/)
+     **************************************************/
+
+    public HashSet<String> get_cart_customer_index_keys() {
+        return this.cart_customer.getIndexKeys();
+    }
+
+    public HashSet<String> get_cart_task_index_keys() {
+        return this.cart_task.getIndexKeys();
+    }
+
+    /**************************************************
+     * Indexing (product/)
+     **************************************************/
+
+    /**************************************************
+     * Indexing (site/)
+     **************************************************/
+
+    /**************************************************
+     * Indexing (cart-item/)
+     **************************************************/
+
+    public HashSet<String> get_cartitem_cart_index_keys() {
+        return this.cartitem_cart.getIndexKeys();
+    }
+
+    public HashSet<String> get_cartitem_customizations_index_keys() {
+        return this.cartitem_customizations.getIndexKeys();
+    }
+
+    public HashSet<String> get_cartitem_product_index_keys() {
+        return this.cartitem_product.getIndexKeys();
+    }
+
+    public HashSet<String> get_check_fiscal_day_index_keys() {
+        return this.check_fiscal_day.getIndexKeys();
+    }
+
+    /**************************************************
+     * Indexing (task_factory/)
+     **************************************************/
+
+    /**************************************************
+     * Indexing (tax-baton/)
+     **************************************************/
+
+    /**************************************************
+     * Indexing (checks/)
+     **************************************************/
+
+    public HashSet<String> get_check_person_index_keys() {
+        return this.check_person.getIndexKeys();
+    }
+
+    public HashSet<String> get_check_ready_index_keys() {
+        return this.check_ready.getIndexKeys();
+    }
+
+    public HashSet<String> get_customer_cookie_index_keys() {
+        return this.customer_cookie.getIndexKeys();
+    }
+
+    /**************************************************
+     * Indexing (customer/)
+     **************************************************/
+
+    public HashSet<String> get_customer_email_index_keys() {
+        return this.customer_email.getIndexKeys();
+    }
+
+    public HashSet<String> get_customer_notification_token_index_keys() {
+        return this.customer_notification_token.getIndexKeys();
+    }
+
+    public HashSet<String> get_customer_phone_index_keys() {
+        return this.customer_phone.getIndexKeys();
+    }
+
+    /**************************************************
+     * Indexing (payroll/)
+     **************************************************/
+
+    public HashSet<String> get_payrollentry_check_index_keys() {
+        return this.payrollentry_check.getIndexKeys();
+    }
+
+    public HashSet<String> get_payrollentry_unpaid_index_keys() {
+        return this.payrollentry_unpaid.getIndexKeys();
+    }
+
+    public HashSet<String> get_person_cookie_index_keys() {
+        return this.person_cookie.getIndexKeys();
+    }
+
+    /**************************************************
+     * Indexing (person/)
+     **************************************************/
+
+    public HashSet<String> get_person_login_index_keys() {
+        return this.person_login.getIndexKeys();
+    }
+
+    public HashSet<String> get_person_notification_token_index_keys() {
+        return this.person_notification_token.getIndexKeys();
+    }
+
+    public HashSet<String> get_person_phone_index_keys() {
+        return this.person_phone.getIndexKeys();
+    }
+
+    public HashSet<String> get_person_super_cookie_index_keys() {
+        return this.person_super_cookie.getIndexKeys();
+    }
+
+    /**************************************************
+     * Indexing (subscriber/)
+     **************************************************/
+
+    public HashSet<String> get_subscriber_subscription_index_keys() {
+        return this.subscriber_subscription.getIndexKeys();
+    }
+
+    /**************************************************
+     * Indexing (subscription/)
+     **************************************************/
+
+    public HashSet<String> get_subscription_event_index_keys() {
+        return this.subscription_event.getIndexKeys();
+    }
+
+    /**************************************************
+     * Indexing (task/)
+     **************************************************/
+
+    public HashSet<String> get_task_owner_index_keys() {
+        return this.task_owner.getIndexKeys();
+    }
+
+    public HashSet<String> get_task_state_index_keys() {
+        return this.task_state.getIndexKeys();
+    }
+
+    /**************************************************
+     * Indexing (wake_input/)
+     **************************************************/
+
+    public HashSet<String> get_wakeinputfile_filename_index_keys() {
+        return this.wakeinputfile_filename.getIndexKeys();
+    }
+
+    /**************************************************
+     * Basic Operations (look up, type transfer, keys, immutable copies) (habits/)
+     **************************************************/
+
+    public Habit habit_by_id(final String id, final boolean create) {
+        final Value v = this.storage.get("habits/" + id);
+        if (v == null && !create) {
+            return null;
+        }
+        final Habit result = habit_of(v);
+        result.set("id", id);
+        return result;
+    }
+
+    private Habit habit_of(final Value v) {
+        final Habit item = new Habit();
+        if (v != null) {
+            item.injectValue(v);
+        }
+        return item;
+    }
+
+    private ArrayList<Habit> habits_of(final ArrayList<Value> values) {
+        final ArrayList<Habit> list = new ArrayList<>(values.size());
+        for (final Value v : values) {
+            list.add(habit_of(v));
+        }
+        return list;
+    }
+
+    public String make_key_cart(final String id) {
+        final StringBuilder key = new StringBuilder();
+        key.append("cart/");
+        key.append(id);
+        return key.toString();
+    }
+
+    public String make_key_cartitem(final String id) {
+        final StringBuilder key = new StringBuilder();
+        key.append("cart-item/");
+        key.append(id);
+        return key.toString();
+    }
+
+    public String make_key_check(final String id) {
+        final StringBuilder key = new StringBuilder();
+        key.append("checks/");
+        key.append(id);
+        return key.toString();
+    }
+
+    public String make_key_customer(final String id) {
+        final StringBuilder key = new StringBuilder();
+        key.append("customer/");
+        key.append(id);
+        return key.toString();
+    }
+
+    public String make_key_habit(final String who, final String id) {
+        final StringBuilder key = new StringBuilder();
+        key.append("habits/");
+        key.append(who);
+        key.append("/");
+        key.append(id);
+        return key.toString();
+    }
+
+    public String make_key_payrollentry(final String id) {
+        final StringBuilder key = new StringBuilder();
+        key.append("payroll/");
+        key.append(id);
+        return key.toString();
+    }
+
+    public String make_key_person(final String id) {
+        final StringBuilder key = new StringBuilder();
+        key.append("person/");
+        key.append(id);
+        return key.toString();
+    }
+
+    public String make_key_product(final String id) {
+        final StringBuilder key = new StringBuilder();
+        key.append("product/");
+        key.append(id);
+        return key.toString();
+    }
+
+    public String make_key_subscriber(final String id) {
+        final StringBuilder key = new StringBuilder();
+        key.append("subscriber/");
+        key.append(id);
+        return key.toString();
+    }
+
+    public String make_key_subscription(final String id) {
+        final StringBuilder key = new StringBuilder();
+        key.append("subscription/");
+        key.append(id);
+        return key.toString();
+    }
+
+    public String make_key_task(final String id) {
+        final StringBuilder key = new StringBuilder();
+        key.append("task/");
+        key.append(id);
+        return key.toString();
+    }
+
+    public String make_key_taskfactory(final String id) {
+        final StringBuilder key = new StringBuilder();
+        key.append("task_factory/");
+        key.append(id);
+        return key.toString();
+    }
+
+    public String make_key_taxbaton(final String id) {
+        final StringBuilder key = new StringBuilder();
+        key.append("tax-baton/");
+        key.append(id);
+        return key.toString();
+    }
+
+    public String make_key_wakeinputfile(final String id) {
+        final StringBuilder key = new StringBuilder();
+        key.append("wake_input/");
+        key.append(id);
+        return key.toString();
+    }
+
+    /**************************************************
+     * Basic Operations (look up, type transfer, keys, immutable copies) (payroll/)
+     **************************************************/
+
+    public PayrollEntry payrollentry_by_id(final String id, final boolean create) {
+        final Value v = this.storage.get("payroll/" + id);
+        if (v == null && !create) {
+            return null;
+        }
+        final PayrollEntry result = payrollentry_of(v);
+        result.set("id", id);
+        return result;
+    }
+
+    private PayrollEntry payrollentry_of(final Value v) {
+        final PayrollEntry item = new PayrollEntry();
+        if (v != null) {
+            item.injectValue(v);
+        }
+        return item;
+    }
+
+    private ArrayList<PayrollEntry> payrollentrys_of(final ArrayList<Value> values) {
+        final ArrayList<PayrollEntry> list = new ArrayList<>(values.size());
+        for (final Value v : values) {
+            list.add(payrollentry_of(v));
+        }
+        return list;
+    }
+
+    /**************************************************
+     * Basic Operations (look up, type transfer, keys, immutable copies) (person/)
+     **************************************************/
+
+    public Person person_by_id(final String id, final boolean create) {
+        final Value v = this.storage.get("person/" + id);
+        if (v == null && !create) {
+            return null;
+        }
+        final Person result = person_of(v);
+        result.set("id", id);
+        return result;
+    }
+
+    private Person person_of(final Value v) {
+        final Person item = new Person();
+        if (v != null) {
+            item.injectValue(v);
+        }
+        return item;
+    }
+
+    private ArrayList<Person> persons_of(final ArrayList<Value> values) {
+        final ArrayList<Person> list = new ArrayList<>(values.size());
+        for (final Value v : values) {
+            list.add(person_of(v));
+        }
+        return list;
+    }
+
+    /**************************************************
+     * Basic Operations (look up, type transfer, keys, immutable copies) (product/)
+     **************************************************/
+
+    public Product product_by_id(final String id, final boolean create) {
+        final Value v = this.storage.get("product/" + id);
+        if (v == null && !create) {
+            return null;
+        }
+        final Product result = product_of(v);
+        result.set("id", id);
+        return result;
+    }
+
+    private Product product_of(final Value v) {
+        final Product item = new Product();
+        if (v != null) {
+            item.injectValue(v);
+        }
+        return item;
+    }
+
+    private ArrayList<Product> products_of(final ArrayList<Value> values) {
+        final ArrayList<Product> list = new ArrayList<>(values.size());
+        for (final Value v : values) {
+            list.add(product_of(v));
+        }
+        return list;
+    }
+
+    public CartProjection_admin projection_cart_admin_of(final ProjectionProvider pp) {
+        return new CartProjection_admin(pp);
+    }
+
+    public CartItemProjection_admin projection_cartitem_admin_of(final ProjectionProvider pp) {
+        return new CartItemProjection_admin(pp);
+    }
+
+    public CheckProjection_admin projection_check_admin_of(final ProjectionProvider pp) {
+        return new CheckProjection_admin(pp);
+    }
+
+    public CustomerProjection_admin projection_customer_admin_of(final ProjectionProvider pp) {
+        return new CustomerProjection_admin(pp);
+    }
+
+    public HabitProjection_admin projection_habit_admin_of(final ProjectionProvider pp) {
+        return new HabitProjection_admin(pp);
+    }
+
+    public HabitProjection_edit projection_habit_edit_of(final ProjectionProvider pp) {
+        return new HabitProjection_edit(pp);
+    }
+
+    public PayrollEntryProjection_admin projection_payrollentry_admin_of(final ProjectionProvider pp) {
+        return new PayrollEntryProjection_admin(pp);
+    }
+
+    public PayrollEntryProjection_edit projection_payrollentry_edit_of(final ProjectionProvider pp) {
+        return new PayrollEntryProjection_edit(pp);
+    }
+
+    public PersonProjection_admin projection_person_admin_of(final ProjectionProvider pp) {
+        return new PersonProjection_admin(pp);
+    }
+
+    public PersonProjection_contact_info projection_person_contact_info_of(final ProjectionProvider pp) {
+        return new PersonProjection_contact_info(pp);
+    }
+
+    public ProductProjection_admin projection_product_admin_of(final ProjectionProvider pp) {
+        return new ProductProjection_admin(pp);
+    }
+
+    public SitePropertiesProjection_admin projection_siteproperties_admin_of(final ProjectionProvider pp) {
+        return new SitePropertiesProjection_admin(pp);
+    }
+
+    public SubscriberProjection_admin projection_subscriber_admin_of(final ProjectionProvider pp) {
+        return new SubscriberProjection_admin(pp);
+    }
+
+    public SubscriptionProjection_admin projection_subscription_admin_of(final ProjectionProvider pp) {
+        return new SubscriptionProjection_admin(pp);
+    }
+
+    public TaskProjection_admin projection_task_admin_of(final ProjectionProvider pp) {
+        return new TaskProjection_admin(pp);
+    }
+
+    public TaskFactoryProjection_admin projection_taskfactory_admin_of(final ProjectionProvider pp) {
+        return new TaskFactoryProjection_admin(pp);
+    }
+
+    public TaskFactoryProjection_edit projection_taskfactory_edit_of(final ProjectionProvider pp) {
+        return new TaskFactoryProjection_edit(pp);
+    }
+
+    public TaxBatonProjection_admin projection_taxbaton_admin_of(final ProjectionProvider pp) {
+        return new TaxBatonProjection_admin(pp);
+    }
+
+    public WakeInputFileProjection_admin projection_wakeinputfile_admin_of(final ProjectionProvider pp) {
+        return new WakeInputFileProjection_admin(pp);
+    }
+
+    /**************************************************
+     * Writing Back to DB (cart/)
+     **************************************************/
+
+    public PutResult put(final Cart cart) {
+        return this.storage.put(cart.getStorageKey(), new Value(cart.toJson()), false);
+    }
+
+    /**************************************************
+     * Writing Back to DB (cart-item/)
+     **************************************************/
+
+    public PutResult put(final CartItem cartitem) {
+        return this.storage.put(cartitem.getStorageKey(), new Value(cartitem.toJson()), false);
+    }
+
+    /**************************************************
+     * Writing Back to DB (checks/)
+     **************************************************/
+
+    public PutResult put(final Check check) {
+        return this.storage.put(check.getStorageKey(), new Value(check.toJson()), false);
+    }
+
+    /**************************************************
+     * Writing Back to DB (customer/)
+     **************************************************/
+
+    public PutResult put(final Customer customer) {
+        return this.storage.put(customer.getStorageKey(), new Value(customer.toJson()), false);
+    }
+
+    /**************************************************
+     * Writing Back to DB (habits/)
+     **************************************************/
+
+    public PutResult put(final Habit habit) {
+        return this.storage.put(habit.getStorageKey(), new Value(habit.toJson()), false);
+    }
+
+    /**************************************************
+     * Writing Back to DB (payroll/)
+     **************************************************/
+
+    public PutResult put(final PayrollEntry payrollentry) {
+        return this.storage.put(payrollentry.getStorageKey(), new Value(payrollentry.toJson()), false);
+    }
+
+    /**************************************************
+     * Writing Back to DB (person/)
+     **************************************************/
+
+    public PutResult put(final Person person) {
+        return this.storage.put(person.getStorageKey(), new Value(person.toJson()), false);
+    }
+
+    /**************************************************
+     * Writing Back to DB (product/)
+     **************************************************/
+
+    public PutResult put(final Product product) {
+        return this.storage.put(product.getStorageKey(), new Value(product.toJson()), false);
+    }
+
+    /**************************************************
+     * Writing Back to DB (site/)
+     **************************************************/
+
+    public PutResult put(final SiteProperties siteproperties) {
+        return this.storage.put(siteproperties.getStorageKey(), new Value(siteproperties.toJson()), false);
+    }
+
+    /**************************************************
+     * Writing Back to DB (subscriber/)
+     **************************************************/
+
+    public PutResult put(final Subscriber subscriber) {
+        return this.storage.put(subscriber.getStorageKey(), new Value(subscriber.toJson()), false);
+    }
+
+    /**************************************************
+     * Writing Back to DB (subscription/)
+     **************************************************/
+
+    public PutResult put(final Subscription subscription) {
+        return this.storage.put(subscription.getStorageKey(), new Value(subscription.toJson()), false);
+    }
+
+    /**************************************************
+     * Writing Back to DB (task/)
+     **************************************************/
+
+    public PutResult put(final Task task) {
+        return this.storage.put(task.getStorageKey(), new Value(task.toJson()), false);
+    }
+
+    /**************************************************
+     * Writing Back to DB (task_factory/)
+     **************************************************/
+
+    public PutResult put(final TaskFactory taskfactory) {
+        return this.storage.put(taskfactory.getStorageKey(), new Value(taskfactory.toJson()), false);
+    }
+
+    /**************************************************
+     * Writing Back to DB (tax-baton/)
+     **************************************************/
+
+    public PutResult put(final TaxBaton taxbaton) {
+        return this.storage.put(taxbaton.getStorageKey(), new Value(taxbaton.toJson()), false);
+    }
+
+    /**************************************************
+     * Writing Back to DB (wake_input/)
+     **************************************************/
+
+    public PutResult put(final WakeInputFile wakeinputfile) {
+        return this.storage.put(wakeinputfile.getStorageKey(), new Value(wakeinputfile.toJson()), false);
+    }
+
+    /**************************************************
+     * Query Engine (cart/)
+     **************************************************/
+
+    public CartSetQuery select_cart() {
+        return new CartSetQuery();
+    }
+
+    /**************************************************
+     * Query Engine (cart-item/)
+     **************************************************/
+
+    public CartItemSetQuery select_cartitem() {
+        return new CartItemSetQuery();
+    }
+
+    /**************************************************
+     * Query Engine (checks/)
+     **************************************************/
+
+    public CheckSetQuery select_check() {
+        return new CheckSetQuery();
+    }
+
+    /**************************************************
+     * Query Engine (customer/)
+     **************************************************/
+
+    public CustomerSetQuery select_customer() {
+        return new CustomerSetQuery();
+    }
+
+    /**************************************************
+     * Query Engine (habits/)
+     **************************************************/
+
+    public HabitSetQuery select_habit() {
+        return new HabitSetQuery();
+    }
+
+    /**************************************************
+     * Query Engine (payroll/)
+     **************************************************/
+
+    public PayrollEntrySetQuery select_payrollentry() {
+        return new PayrollEntrySetQuery();
+    }
+
+    /**************************************************
+     * Query Engine (person/)
+     **************************************************/
+
+    public PersonSetQuery select_person() {
+        return new PersonSetQuery();
+    }
+
+    /**************************************************
+     * Query Engine (product/)
+     **************************************************/
+
+    public ProductSetQuery select_product() {
+        return new ProductSetQuery();
+    }
+
+    /**************************************************
+     * Query Engine (site/)
+     **************************************************/
+
+    public SitePropertiesSetQuery select_siteproperties() {
+        return new SitePropertiesSetQuery();
+    }
+
+    /**************************************************
+     * Query Engine (subscriber/)
+     **************************************************/
+
+    public SubscriberSetQuery select_subscriber() {
+        return new SubscriberSetQuery();
+    }
+
+    /**************************************************
+     * Query Engine (subscription/)
+     **************************************************/
+
+    public SubscriptionSetQuery select_subscription() {
+        return new SubscriptionSetQuery();
+    }
+
+    /**************************************************
+     * Query Engine (task/)
+     **************************************************/
+
+    public TaskSetQuery select_task() {
+        return new TaskSetQuery();
+    }
+
+    /**************************************************
+     * Query Engine (task_factory/)
+     **************************************************/
+
+    public TaskFactorySetQuery select_taskfactory() {
+        return new TaskFactorySetQuery();
+    }
+
+    /**************************************************
+     * Query Engine (tax-baton/)
+     **************************************************/
+
+    public TaxBatonSetQuery select_taxbaton() {
+        return new TaxBatonSetQuery();
+    }
+
+    /**************************************************
+     * Query Engine (wake_input/)
+     **************************************************/
+
+    public WakeInputFileSetQuery select_wakeinputfile() {
+        return new WakeInputFileSetQuery();
+    }
+
+    /**************************************************
+     * Basic Operations (look up, type transfer, keys, immutable copies) (site/)
+     **************************************************/
+
+    public SiteProperties siteproperties_get() {
+        final Value v = this.storage.get("site/properties");
+        final SiteProperties result = siteproperties_of(v);
+        result.set("id", "properties");
+        return result;
+    }
+
+    private SiteProperties siteproperties_of(final Value v) {
+        final SiteProperties item = new SiteProperties();
+        if (v != null) {
+            item.injectValue(v);
+        }
+        return item;
+    }
+
+    private ArrayList<SiteProperties> sitepropertiess_of(final ArrayList<Value> values) {
+        final ArrayList<SiteProperties> list = new ArrayList<>(values.size());
+        for (final Value v : values) {
+            list.add(siteproperties_of(v));
+        }
+        return list;
+    }
+
+    /**************************************************
+     * Basic Operations (look up, type transfer, keys, immutable copies) (subscriber/)
+     **************************************************/
+
+    public Subscriber subscriber_by_id(final String id, final boolean create) {
+        final Value v = this.storage.get("subscriber/" + id);
+        if (v == null && !create) {
+            return null;
+        }
+        final Subscriber result = subscriber_of(v);
+        result.set("id", id);
+        return result;
+    }
+
+    private Subscriber subscriber_of(final Value v) {
+        final Subscriber item = new Subscriber();
+        if (v != null) {
+            item.injectValue(v);
+        }
+        return item;
+    }
+
+    private ArrayList<Subscriber> subscribers_of(final ArrayList<Value> values) {
+        final ArrayList<Subscriber> list = new ArrayList<>(values.size());
+        for (final Value v : values) {
+            list.add(subscriber_of(v));
+        }
+        return list;
+    }
+
+    /**************************************************
+     * Basic Operations (look up, type transfer, keys, immutable copies) (subscription/)
+     **************************************************/
+
+    public Subscription subscription_by_id(final String id, final boolean create) {
+        final Value v = this.storage.get("subscription/" + id);
+        if (v == null && !create) {
+            return null;
+        }
+        final Subscription result = subscription_of(v);
+        result.set("id", id);
+        return result;
+    }
+
+    private Subscription subscription_of(final Value v) {
+        final Subscription item = new Subscription();
+        if (v != null) {
+            item.injectValue(v);
+        }
+        return item;
+    }
+
+    private ArrayList<Subscription> subscriptions_of(final ArrayList<Value> values) {
+        final ArrayList<Subscription> list = new ArrayList<>(values.size());
+        for (final Value v : values) {
+            list.add(subscription_of(v));
+        }
+        return list;
+    }
+
+    /**************************************************
+     * Basic Operations (look up, type transfer, keys, immutable copies) (task/)
+     **************************************************/
+
+    public Task task_by_id(final String id, final boolean create) {
+        final Value v = this.storage.get("task/" + id);
+        if (v == null && !create) {
+            return null;
+        }
+        final Task result = task_of(v);
+        result.set("id", id);
+        return result;
+    }
+
+    private Task task_of(final Value v) {
+        final Task item = new Task();
+        if (v != null) {
+            item.injectValue(v);
+        }
+        return item;
+    }
+
+    /**************************************************
+     * Basic Operations (look up, type transfer, keys, immutable copies) (task_factory/)
+     **************************************************/
+
+    public TaskFactory taskfactory_by_id(final String id, final boolean create) {
+        final Value v = this.storage.get("task_factory/" + id);
+        if (v == null && !create) {
+            return null;
+        }
+        final TaskFactory result = taskfactory_of(v);
+        result.set("id", id);
+        return result;
+    }
+
+    private TaskFactory taskfactory_of(final Value v) {
+        final TaskFactory item = new TaskFactory();
+        if (v != null) {
+            item.injectValue(v);
+        }
+        return item;
+    }
+
+    private ArrayList<TaskFactory> taskfactorys_of(final ArrayList<Value> values) {
+        final ArrayList<TaskFactory> list = new ArrayList<>(values.size());
+        for (final Value v : values) {
+            list.add(taskfactory_of(v));
+        }
+        return list;
+    }
+
+    private ArrayList<Task> tasks_of(final ArrayList<Value> values) {
+        final ArrayList<Task> list = new ArrayList<>(values.size());
+        for (final Value v : values) {
+            list.add(task_of(v));
+        }
+        return list;
+    }
+
+    /**************************************************
+     * Basic Operations (look up, type transfer, keys, immutable copies) (tax-baton/)
+     **************************************************/
+
+    public TaxBaton taxbaton_by_id(final String id, final boolean create) {
+        final Value v = this.storage.get("tax-baton/" + id);
+        if (v == null && !create) {
+            return null;
+        }
+        final TaxBaton result = taxbaton_of(v);
+        result.set("id", id);
+        return result;
+    }
+
+    private TaxBaton taxbaton_of(final Value v) {
+        final TaxBaton item = new TaxBaton();
+        if (v != null) {
+            item.injectValue(v);
+        }
+        return item;
+    }
+
+    private ArrayList<TaxBaton> taxbatons_of(final ArrayList<Value> values) {
+        final ArrayList<TaxBaton> list = new ArrayList<>(values.size());
+        for (final Value v : values) {
+            list.add(taxbaton_of(v));
+        }
+        return list;
+    }
+
+    /**************************************************
+     * Basic Operations (look up, type transfer, keys, immutable copies) (wake_input/)
+     **************************************************/
+
+    public WakeInputFile wakeinputfile_by_id(final String id, final boolean create) {
+        final Value v = this.storage.get("wake_input/" + id);
+        if (v == null && !create) {
+            return null;
+        }
+        final WakeInputFile result = wakeinputfile_of(v);
+        result.set("id", id);
+        return result;
+    }
+
+    private WakeInputFile wakeinputfile_of(final Value v) {
+        final WakeInputFile item = new WakeInputFile();
+        if (v != null) {
+            item.injectValue(v);
+        }
+        return item;
+    }
+
+    private ArrayList<WakeInputFile> wakeinputfiles_of(final ArrayList<Value> values) {
+        final ArrayList<WakeInputFile> list = new ArrayList<>(values.size());
+        for (final Value v : values) {
+            list.add(wakeinputfile_of(v));
+        }
+        return list;
+    }
 }

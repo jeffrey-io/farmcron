@@ -48,49 +48,71 @@ public class Customers {
             super(request, CUSTOMER_JOIN);
         }
 
+        public String info() {
+            if (!this.request.hasCustomer) {
+                this.request.redirect(CUSTOMER_JOIN.href("success_url", CUSTOMER_INFO.href().value));
+                return null;
+            }
+            final Table table = Html.table("Order Id", "State", "Task");
+            for (final Cart cart : query().select_cart().where_customer_eq(this.request.customer.getId()).done()) {
+                String state = cart.get("state");
+                if ("wait".equals(state)) {
+                    // waiting for task to get completed
+                } else if ("processing".equals(state)) {
+
+                } else if ("done".equals(state)) {
+
+                } else {
+                    state = "Your current cart.";
+                }
+                table.row(cart.getId(), state, cart.get("task"));
+            }
+            return table.toHtml();
+        }
+
         public UriBlob join() {
             final HashMap<String, Object> root = new HashMap<>();
             String success_url = null;
-            if (request.hasNonNullQueryParam("success_url")) {
-                success_url = request.getParam("success_url");
+            if (this.request.hasNonNullQueryParam("success_url")) {
+                success_url = this.request.getParam("success_url");
                 root.put("success_url", success_url);
             }
             final UriBlob blob = query().publicBlobCache.get("/*join.html");
             if (blob == null) {
                 return null;
             }
-            String email = request.getParam("email");
+            final String email = this.request.getParam("email");
             String error = null;
             String phase = "normal";
-            if ("login".equals(request.getParam("command"))) {
-                String password = request.getParam("password");
-                final AuthResultCustomer authResult = engine.auth.authenticateCustomer(email, password);
+            if ("login".equals(this.request.getParam("command"))) {
+                final String password = this.request.getParam("password");
+                final AuthResultCustomer authResult = this.engine.auth.authenticateCustomer(email, password);
                 if (authResult.allowed) {
-                    request.setCookie(CustomerRequest.AUTH_COOKIE_NAME, authResult.cookie);
+                    this.request.setCookie(CustomerRequest.AUTH_COOKIE_NAME, authResult.cookie);
                     if (success_url != null) {
-                        request.redirect(new FinishedHref(success_url));
+                        this.request.redirect(new FinishedHref(success_url));
                     } else {
-                        request.redirect(CUSTOMER_INFO.href());
+                        this.request.redirect(CUSTOMER_INFO.href());
                     }
                     return null;
                 } else {
                     error = "Authorization failed, please check your email and password.";
                 }
             }
-            if ("create".equals(request.getParam("command"))) {
-                String password1 = request.getParam("password_1");
-                String password2 = request.getParam("password_2");
-                String name = request.getParam("name");
-                String policy = request.getParam("policy");
+            if ("create".equals(this.request.getParam("command"))) {
+                final String password1 = this.request.getParam("password_1");
+                final String password2 = this.request.getParam("password_2");
+                final String name = this.request.getParam("name");
+                final String policy = this.request.getParam("policy");
                 if (name != null) {
                     root.put("name", name);
                 }
-                String phone = request.getParam("phone");
+                final String phone = this.request.getParam("phone");
                 if (name != null) {
                     root.put("phone", phone);
                 }
 
-                ErrorListBuilder errorBuilder = new ErrorListBuilder();
+                final ErrorListBuilder errorBuilder = new ErrorListBuilder();
                 errorBuilder.accept(email == null || "".equals(email), "Please provide an email address.");
                 errorBuilder.accept(name == null || "".equals(name), "Please provide a name; we use your name to help staff identify orders.");
                 errorBuilder.accept(phone == null || "".equals(phone), "Please provide your phone number; we will use this to contact you about orders.");
@@ -100,7 +122,7 @@ public class Customers {
                     errorBuilder.accept(!password1.equals(password2), "Your passwords do not match.");
                 }
                 if (email != null) {
-                    boolean exists = engine.select_customer().where_email_eq(email).to_list().count() > 0;
+                    final boolean exists = this.engine.select_customer().where_email_eq(email).to_list().count() > 0;
                     errorBuilder.accept(exists, "That email already exists in our system. Please try to sign in or recover your password.");
                 }
                 errorBuilder.accept(!("agree".equals(policy)), "Please accept our Privacy and Terms of Use agreements.");
@@ -109,7 +131,7 @@ public class Customers {
                     error = errorBuilder.getErrors();
                 } else {
                     // it was a success, let's create it
-                    Customer customer = new Customer();
+                    final Customer customer = new Customer();
                     customer.generateAndSetId();
                     customer.set("email", email);
                     customer.setPassword(password1);
@@ -118,10 +140,10 @@ public class Customers {
                     query().put(customer);
                 }
             }
-            if ("recover".equals(request.getParam("command"))) {
+            if ("recover".equals(this.request.getParam("command"))) {
                 phase = "recover";
             }
-            if ("recover-execute".equals(request.getParam("command")) || request.hasNonNullQueryParam("token")) {
+            if ("recover-execute".equals(this.request.getParam("command")) || this.request.hasNonNullQueryParam("token")) {
                 phase = "token";
             }
             if (email != null) {
@@ -129,7 +151,7 @@ public class Customers {
             }
             root.put("has_error", error != null);
             root.put("error", error);
-            root.put("token", request.getParam("token"));
+            root.put("token", this.request.getParam("token"));
             root.put("is_" + phase, true);
             root.put("recovery_begin_url", CUSTOMER_JOIN.href("command", "recover", "email", email).value);
 
@@ -141,28 +163,6 @@ public class Customers {
                     throw new RuntimeException(ioe);
                 }
             });
-        }
-
-        public String info() {
-            if (!request.hasCustomer) {
-                request.redirect(CUSTOMER_JOIN.href("success_url", CUSTOMER_INFO.href().value));
-                return null;
-            }
-            Table table = Html.table("Order Id", "State");
-            for (Cart cart : query().select_cart().where_customer_eq(request.customer.getId()).done()) {
-                String state = cart.get("state");
-                if ("wait".equals(state)) {
-                    // waiting for task to get completed
-                } else if ("finished".equals(state)) {
-                    
-                } else if ("cancel".equals(state)) {
-                    
-                } else {
-                    state = "Your current cart.";
-                }
-                table.row(cart.getId(), state);
-            }
-            return table.toHtml();
         }
     }
 

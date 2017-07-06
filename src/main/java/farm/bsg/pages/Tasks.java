@@ -11,6 +11,7 @@ import farm.bsg.html.Html;
 import farm.bsg.html.HtmlPump;
 import farm.bsg.html.Link;
 import farm.bsg.html.Table;
+import farm.bsg.models.Cart;
 import farm.bsg.models.Task;
 import farm.bsg.ops.CounterCodeGen;
 import farm.bsg.pages.common.SessionPage;
@@ -129,7 +130,7 @@ public class Tasks extends SessionPage {
                     .add_if(ableToStart && task.canStart(), Html.link(TASKS_TRANSITION.href("id", task.getId(), "state", "started"), "{start}").btn_primary())//
                     .add_if(ableToClose && task.canClose(), Html.link(TASKS_TRANSITION.href("id", task.getId(), "state", "closed"), "{close}").btn_primary());
             final HtmlPump name = Html.block().add(task.get("name")).add(priorityRender((int) task.getAsDouble("priority")));
-            table.row(name, task.get("state"), task.get("due_date"), actions);
+            table.row(name + ":" + task.get("cart_id"), task.get("state"), task.get("due_date"), actions);
         }
 
         block.add(table);
@@ -146,16 +147,33 @@ public class Tasks extends SessionPage {
         final Task task = query().task_by_id(this.session.getParam("id"), false);
         if (task != null) {
             final String newState = this.session.getParam("state");
+            final String cartId = task.get("cart_id");
+            Cart cart = null;
+            boolean saveCart = false;
+            if (cartId != null) {
+                cart = query().cart_by_id(cartId, false);
+            }
             if ("started".equals(newState)) {
                 person().mustHave(Permission.StartTask);
+                if (cart != null) {
+                    cart.set("state", "processing");
+                    saveCart = true;
+                }
             }
             if ("closed".equals(newState)) {
                 person().mustHave(Permission.CloseTask);
+                if (cart != null) {
+                    cart.set("state", "done");
+                    saveCart = true;
+                }
             }
 
             if (newState != null) {
                 task.setState(newState);
                 query().put(task);
+                if (saveCart) {
+                    query().put(cart);
+                }
             }
         }
         redirect(TASKS.href());

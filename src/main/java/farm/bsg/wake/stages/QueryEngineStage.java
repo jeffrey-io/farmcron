@@ -20,7 +20,7 @@ import farm.bsg.wake.sources.Source;
 import farm.bsg.wake.sources.TagsFilteredSource;
 
 public class QueryEngineStage extends Stage {
-    
+
     private static final Logger LOG = Logs.of(QueryEngineStage.class);
 
     private static Source loadIfPossible(final WakeInputFile input, final QueryEngine engine) throws IOException {

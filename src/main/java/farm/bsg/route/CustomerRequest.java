@@ -32,14 +32,14 @@ public class CustomerRequest extends DelegateRequest {
         this.customer = auth.customer;
         if (this.cartId == null) {
             generateNewCartId();
-        } else if (auth.allowed && customer != null) {
-            Cart cart = this.engine.cart_by_id(this.cartId, false);
+        } else if (auth.allowed && this.customer != null) {
+            final Cart cart = this.engine.cart_by_id(this.cartId, false);
             if (cart != null) {
-                String whoOwnsCart = cart.get("customer");
+                final String whoOwnsCart = cart.get("customer");
                 if (whoOwnsCart == null || "".equals(whoOwnsCart)) {
-                    cart.set("customer", customer.getId());
+                    cart.set("customer", this.customer.getId());
                     engine.put(cart);
-                } else if (!customer.getId().equals(whoOwnsCart)) {
+                } else if (!this.customer.getId().equals(whoOwnsCart)) {
                     generateNewCartId();
                 }
             }

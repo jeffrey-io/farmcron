@@ -7,12 +7,11 @@ import farm.bsg.QueryEngine;
 import farm.bsg.route.SimpleURI;
 
 public class GenericPage {
-    public static final Handlebars compiler    = new Handlebars();
+    public static final Handlebars compiler = new Handlebars();
 
-    
-    protected final ProductEngine engine;
-    protected final String        href;
-    protected String              currentTitle;
+    protected final ProductEngine  engine;
+    protected final String         href;
+    protected String               currentTitle;
 
     public GenericPage(final ProductEngine engine, final SimpleURI uri) {
         this.engine = engine;

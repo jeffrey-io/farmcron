@@ -5,10 +5,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.regex.Pattern;
 
+import farm.bsg.EventBus.Event;
+import farm.bsg.EventBus.EventPayload;
 import farm.bsg.data.UriBlobCache.UriBlob;
 import farm.bsg.models.Cart;
 import farm.bsg.models.CartItem;
 import farm.bsg.models.Product;
+import farm.bsg.models.SiteProperties;
+import farm.bsg.models.Task;
 import farm.bsg.ops.CounterCodeGen;
 import farm.bsg.pages.common.CustomerPage;
 import farm.bsg.pages.common.ParameterHelper;
@@ -128,17 +132,76 @@ public class YourCart extends CustomerPage {
             }
         }
         final HashMap<String, Object> root = new HashMap<>();
+        final SiteProperties properties = query().siteproperties_get();
+        String strategy = properties.get("fulfilment_strategy");
+        if (strategy == null) {
+            strategy = "none";
+        }
+        final ArrayList<Object> phases = new ArrayList<>();
+        int stepCounter = 0;
 
         String phase = this.request.getParam("phase");
         if (phase == null || "".equals(phase)) {
+            phase = "start";
+        }
+
+        if ("checkout".equals(phase) && this.request.hasCustomer) {
+            final Cart cart = query().cart_by_id(this.request.getCartId(), false);
+            if (cart != null) {
+                final Task task = new Task();
+                task.generateAndSetId();
+                task.set("name", "Complete " + ticketPrice + " purchase for " + this.request.customer.get("email"));
+                task.set("cart_id", cart.getId());
+                task.set("priority", "0");
+                task.setState("created");
+
+                // TODO: add a notification token for close.
+
+                query().put(task);
+                final EventPayload payload = new EventPayload("'" + task.get("name") + "' was created; only order for: " + ticketPrice);
+                this.engine.eventBus.trigger(Event.TaskCreation, payload);
+                cart.set("task", task.getId());
+                cart.set("state", "wait");
+                query().put(cart);
+                this.request.generateNewCartId();
+            }
+            return "Yo, execute the checkout";
+        }
+
+        phases.add(createPhase(phase, "start", ++stepCounter, "Shopping Cart"));
+        if (!this.request.hasCustomer) {
+            phases.add(createPhase(phase, "assoc", ++stepCounter, "Sign In"));
+        }
+
+        String nextPhaseAfterAssoc = "assoc";
+        switch (strategy) {
+            case "both":
+                nextPhaseAfterAssoc = "pickup_or_delivery";
+                phases.add(createPhase(phase, "pickup_or_delivery", ++stepCounter, "Select Fulfilment"));
+                break;
+            case "pickup":
+                nextPhaseAfterAssoc = "pickup";
+                phases.add(createPhase(phase, "pickup", ++stepCounter, "Decide When to Pickup"));
+                break;
+            case "delivery":
+                nextPhaseAfterAssoc = "delivery";
+                phases.add(createPhase(phase, "delivery", ++stepCounter, "Delivery Options"));
+                break;
+            default:
+                nextPhaseAfterAssoc = "payment";
+                break;
+        }
+
+        if ("start".equals(phase)) {
             final HashMap<String, Object> show_cart = new HashMap<>();
             show_cart.put("items", items);
             show_cart.put("total", ticketPrice);
             final String current = injectBack(show_cart, phase);
             String nextPhase = "assoc";
-            if (!request.hasCustomer) {
-                nextPhase = "pickup";
+            if (this.request.hasCustomer) {
+                nextPhase = nextPhaseAfterAssoc;
             }
+
             // if I have a customer logged in already, then go right to the next step after that.
             show_cart.put("next_url", CART.href("back", current, "phase", nextPhase).value);
             root.put("cart", show_cart);
@@ -151,38 +214,36 @@ public class YourCart extends CustomerPage {
             assoc.put("total", ticketPrice);
             root.put("assoc", assoc);
         }
-        
+
+        if ("pickup_or_delivery".equals(phase)) {
+            final HashMap<String, Object> pickup_or_delivery = new HashMap<>();
+            injectBack(pickup_or_delivery, phase);
+            root.put("pickup_or_delivery", pickup_or_delivery);
+        }
+
         if ("pickup".equals(phase)) {
             final HashMap<String, Object> pickup = new HashMap<>();
             injectBack(pickup, phase);
             root.put("pickup", pickup);
-        }        
+        }
 
         if ("delivery".equals(phase)) {
             final HashMap<String, Object> delivery = new HashMap<>();
             injectBack(delivery, phase);
             root.put("delivery", delivery);
-        } 
-        
+        }
+
         if ("payment".equals(phase)) {
             final HashMap<String, Object> payment = new HashMap<>();
             injectBack(payment, phase);
+            payment.put("agree_total", ticketPrice);
+            payment.put("checkout_url", CART.href("phase", "checkout").value);
             root.put("payment", payment);
-        } 
-
-        
-        final ArrayList<Object> phases = new ArrayList<>();
-        int stepCounter = 0;
-        phases.add(createPhase(phase, "start", ++stepCounter, "Shopping Cart"));
-        if (!request.hasCustomer) {
-            phases.add(createPhase(phase, "assoc", ++stepCounter, "Sign In"));
         }
-        phases.add(createPhase(phase, "pickup", ++stepCounter, "Pick up Timing"));
-        phases.add(createPhase(phase, "delivery", ++stepCounter, "Delivery Options"));
-        phases.add(createPhase(phase, "delivery", ++stepCounter, "Payment"));
+
+        phases.add(createPhase(phase, "payment", ++stepCounter, "Payment"));
 
         root.put("phases", phases);
-
         return blob.transform((s) -> {
             try {
                 final String template = s.replaceAll(Pattern.quote("%["), "{{").replaceAll(Pattern.quote("]%"), "}}");

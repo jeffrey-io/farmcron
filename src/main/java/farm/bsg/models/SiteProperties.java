@@ -27,14 +27,12 @@ public class SiteProperties extends RawObject {
             Field.NUMBER("product_imaging_thumbprint_size").withDefault(120), //
             Field.NUMBER("product_imaging_normal_size").withDefault(400), //
             Field.STRING("description"),
-            
+
             Field.STRING("business_hours"), // need a good way to edits
-            Field.STRING("business_phone"), // 
-            Field.STRING("business_timezone"), // 
-            
-            
-            Field.STRING("fulfilment_strategy"),
-            Field.NUMBER("delivery_radius"), // need a good way to edits
+            Field.STRING("business_phone"), //
+            Field.STRING("business_timezone"), //
+
+            Field.STRING("fulfilment_strategy"), Field.NUMBER("delivery_radius"), // need a good way to edits
             Field.STRING("pickup_rule"), // (i) every tuesday at 2 pm for next 5 tuesdays; (ii) every business day at 4pm
 
             Field.STRING("business_address1"), //
@@ -42,7 +40,7 @@ public class SiteProperties extends RawObject {
             Field.STRING("business_city"), //
             Field.STRING("business_state"), //
             Field.STRING("business_postal") //
-            );
+    );
 
     public static void link(final CounterCodeGen c) {
         c.section("Data: SiteProperties");
