@@ -11,6 +11,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import org.apache.commons.codec.binary.Hex;
 
 import farm.bsg.Security.Permission;
+import farm.bsg.data.Field;
 import farm.bsg.data.RawObject;
 import farm.bsg.html.Block;
 import farm.bsg.html.Html;
@@ -20,7 +21,7 @@ import farm.bsg.html.Table;
 import farm.bsg.models.Check;
 import farm.bsg.models.PayrollEntry;
 import farm.bsg.models.Person;
-import farm.bsg.models.TaxBaton;
+import farm.bsg.models.Baton;
 import farm.bsg.ops.CounterCodeGen;
 import farm.bsg.pages.common.SessionPage;
 import farm.bsg.route.RoutingTable;
@@ -31,6 +32,9 @@ public class Checks extends SessionPage {
     public static final SimpleURI CHECKS_HOME       = new SimpleURI("/admin/checks");
 
     public static final SimpleURI CHECKS_TAXES      = new SimpleURI("/admin/checks;taxes");
+
+    public static final SimpleURI CHECKS_BONUS      = new SimpleURI("/admin/checks;bonus");
+    public static final SimpleURI CHECKS_GIVE_BONUS = new SimpleURI("/admin/checks;give_bonus");
 
     public static final SimpleURI CHECKS_TAXES_PAID = new SimpleURI("/admin/checks;taxes-paid");
 
@@ -48,6 +52,10 @@ public class Checks extends SessionPage {
         routing.navbar(CHECKS_HOME, "Checks", Permission.CheckWriter);
         routing.get(CHECKS_HOME, (session) -> new Checks(session).show());
         routing.get(CHECKS_TAXES, (session) -> new Checks(session).taxes());
+
+        routing.get(CHECKS_BONUS, (session) -> new Checks(session).bonus());
+        routing.get(CHECKS_GIVE_BONUS, (session) -> new Checks(session).bonus_grant());
+
         routing.get(CHECKS_TAXES_PAID, (session) -> new Checks(session).indicateTaxsDone());
         routing.get(CHECKS_AUDIT, (session) -> new Checks(session).audit());
         routing.get(CHECKS_CONFIRM, (session) -> new Checks(session).confirm());
@@ -91,11 +99,47 @@ public class Checks extends SessionPage {
                         sum += check.getAsDouble("payment");
                     }
                     final String batonId = person.getId() + ";UNEMPLOYMENT;" + quarter;
-                    final TaxBaton baton = query().taxbaton_by_id(batonId, false);
+                    final Baton baton = query().baton_by_id(batonId, false);
 
                     if (baton == null) {
                         final HtmlPump action = Html.link(CHECKS_TAXES_PAID.href("id", batonId), "Indicate Paid").btn_primary();
                         table.row(person.get("name"), "Unemployment Taxes:" + quarter, sum, action);
+                    }
+                }
+            }
+        }
+        return table;
+    }
+
+    public Table computeBonusAvail(final String currentPeriod) {
+        String[] ratingLabels = new String[] { "bad", "meh", "good", "great", "fantastic" };
+        final Table table = Html.table("Person", "Quarter", "Value", "Actions");
+        for (final Person person : query().select_person().done()) {
+            final HashMap<String, ArrayList<Check>> checksByQuater = query().select_check().where_person_eq(person.getId()).to_list().groupBy((c) -> {
+                return c.getFiscalQuarter();
+            });
+            final TreeSet<String> domain = new TreeSet<>(checksByQuater.keySet());
+            for (final String quarter : domain) {
+                final boolean ready = quarter.compareTo(currentPeriod) < 0;
+                if (ready) {
+                    double sum = 0;
+                    for (final Check check : checksByQuater.get(quarter)) {
+                        if (!check.getAsBoolean("bonus_related")) {
+                          sum += check.getAsDouble("payment");
+                        }
+                    }
+                    final String batonId = person.getId() + ";GRANTBONUS;" + quarter;
+                    final Baton baton = query().baton_by_id(batonId, false);
+                    if (baton == null && sum >= 0.01) {
+                        double mn = person.getAsDouble("min_performance_multiplier") * person.getAsDouble("bonus_target") * sum;
+                        double mx = person.getAsDouble("max_performance_multiplier") * person.getAsDouble("bonus_target") * sum;
+                        
+                        double[] ratings = new double[] { mn, mn * 0.7 + mx * 0.3, mn * 0.5 + mx * 0.5, mn * 0.7 + mx * 0.3, mx };
+                        Block action = Html.block();
+                        for (int k = 0; k < ratingLabels.length; k++) {
+                            action.add(Html.link(CHECKS_GIVE_BONUS.href("id", batonId, "quarter", quarter, "person", person.getId(), "rating", ratingLabels[k], "bonus", Double.toString(ratings[k])), "Bonus: " + ratingLabels[k] + " (" + ratings[k] + ")").btn_primary());    
+                        }
+                        table.row(person.get("name"), quarter, sum, action);
                     }
                 }
             }
@@ -111,8 +155,10 @@ public class Checks extends SessionPage {
         }
         double owed = 0.0;
         final List<PayrollEntry> entries = PayrollEntry.getUnpaidEntries(query(), employee.getId());
+        double pto_change = 0;
         for (final PayrollEntry payrollEntry : entries) {
             owed += payrollEntry.getAsDouble("owed");
+            pto_change += payrollEntry.getAsDouble("pto_change");
         }
         final int checksum = ((int) Math.round(owed * 100) * 10009 + entries.size() * 7) % 109859;
         final int expected = Integer.parseInt(this.session.getParam("checksum"));
@@ -132,6 +178,7 @@ public class Checks extends SessionPage {
             // commit the check to being ready
             check.set("ready", "yes");
             check.set("payment", owed);
+            check.set("pto_change", pto_change);
             query().put(check);
 
             // populate the check
@@ -149,11 +196,11 @@ public class Checks extends SessionPage {
         if (checks.size() == 0) {
             return null;
         }
-        final Table table = Table.start("Quarter", "Date", "Payment", "Action");
+        final Table table = Table.start("Quarter", "Date", "Payment", "PTO+/-", "Action");
         for (final Check check : checks) {
             final Link action = Html.link(CHECKS_VIEW.href("id", check.getId()), "View").btn_success();
             final String day = check.get("fiscal_day");
-            table.row(check.getFiscalQuarter(), day, check.get("payment"), action);
+            table.row(check.getFiscalQuarter(), day, check.get("payment"), check.get("pto_change"), action);
         }
 
         final Block fragment = Html.block();
@@ -172,7 +219,7 @@ public class Checks extends SessionPage {
 
         final Block fragment = Html.block();
         fragment.add(Html.wrapped().h5().wrap("Outstanding Balances"));
-        final Table table = new Table("employee", "owed", "actions");
+        final Table table = new Table("employee", "owed", "pto+/-", "actions");
         for (final String unpaidEmployee : unpaidEmployees) {
             final Person person = query().person_by_id(unpaidEmployee, false);
             if (person == null) {
@@ -183,11 +230,13 @@ public class Checks extends SessionPage {
                 name = person.login();
             }
             double owed = 0.0;
+            double pto = 0.0;
             for (final PayrollEntry value : PayrollEntry.getUnpaidEntries(query(), unpaidEmployee)) {
                 owed += value.getAsDouble("owed");
+                pto += value.getAsDouble("pto_change");
             }
             final HtmlPump action = Html.link(CHECKS_AUDIT.href("employee", unpaidEmployee), "Pay").btn_success();
-            table.row(person.login(), owed, action);
+            table.row(person.login(), owed, pto, action);
         }
         fragment.add(table);
         return fragment;
@@ -203,7 +252,7 @@ public class Checks extends SessionPage {
 
     public String indicateTaxsDone() {
         final String id = this.session.getParam("id");
-        final TaxBaton baton = new TaxBaton();
+        final Baton baton = new Baton();
         baton.set("id", id);
         query().put(baton);
         redirect(CHECKS_TAXES.href());
@@ -228,6 +277,7 @@ public class Checks extends SessionPage {
         person().mustHave(Permission.CheckWriter);
         final Block page = Html.block();
         page.add(Html.link(CHECKS_TAXES.href(), "Check Tax Status").btn_success());
+        page.add(Html.link(CHECKS_BONUS.href(), "Grant Bonuses").btn_success());
         page.add(fragmentOutstandingBalancesForAllEmployees());
         page.add(fragmentChecksPaidWithin());
         return finish_pump(page);
@@ -241,6 +291,41 @@ public class Checks extends SessionPage {
         final Table table = computeTaxTable(currentPeriod);
         page.add(table);
         return finish_pump(page);
+    }
+
+    public String bonus() {
+        person().mustHave(Permission.CheckWriter);
+        final Block page = Html.block();
+        final String currentPeriod = Check.fiscalQuarterFromFiscalDay(person().getCurrentDay());
+        page.add(Html.wrapped().h5().wrap("Available Bonuses"));
+        final Table table = computeBonusAvail(currentPeriod);
+        page.add(table);
+        return finish_pump(page);
+    }
+
+    public String bonus_grant() {
+        final String id = this.session.getParam("id");
+        
+        // dumb a baton (need to rename this...)
+        final Baton baton = new Baton();
+        baton.set("id", id);
+        query().put(baton);
+
+        Check check = new Check();
+        check.set("id", session.getParam("person") + "_bonus_" + session.getParam("quarter"));
+        check.set("ref", session.getParam("quarter") + "BONUS");
+        check.set("person", session.getParam("person"));
+        check.set("generated", RawObject.isoTimestamp());
+        check.set("fiscal_day", person().getCurrentDay());
+        check.set("ready", "yes");
+        check.set("checksum", "-1");
+        check.set("bonus_related", true);
+        check.set("payment", session.getParam("bonus"));
+        check.set("pto_change", "0");
+        query().put(check);
+        
+        redirect(CHECKS_VIEW.href("id", check.getId()));
+        return null;
     }
 
     public String visualize() {
@@ -264,6 +349,7 @@ public class Checks extends SessionPage {
         table.row("Amount", check.get("payment"));
         table.row("For", check.get("ref"));
         table.row("Was Properly Commited", check.get("ready"));
+        table.row("Bonus", check.getAsBoolean("bonus_related"));
         page.add(table);
 
         page.add(Html.wrapped().h5().wrap("Payroll from Check"));

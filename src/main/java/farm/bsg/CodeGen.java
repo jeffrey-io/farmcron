@@ -18,7 +18,7 @@ import farm.bsg.models.Subscriber;
 import farm.bsg.models.Subscription;
 import farm.bsg.models.Task;
 import farm.bsg.models.TaskFactory;
-import farm.bsg.models.TaxBaton;
+import farm.bsg.models.Baton;
 import farm.bsg.models.WakeInputFile;
 import farm.bsg.ops.CounterCodeGen;
 import farm.bsg.pages.Checks;
@@ -76,7 +76,7 @@ public class CodeGen {
         codegen.addSample(new Subscription());
         codegen.addSample(new Task());
         codegen.addSample(new TaskFactory());
-        codegen.addSample(new TaxBaton());
+        codegen.addSample(new Baton());
         codegen.addSample(new WakeInputFile());
         final String java = codegen.java();
         final File f = new File(this.path + "QueryEngine.java");

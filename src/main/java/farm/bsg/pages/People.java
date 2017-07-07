@@ -133,7 +133,11 @@ public class People extends SessionPage {
         formInner.add(Html.wrapped().form_group() //
                 .wrap(Html.label("max_performance_multiplier", "Maximum Performance Multiplier")) //
                 .wrap(Html.input("max_performance_multiplier").id_from_name().pull(person).text()));
-
+        
+        formInner.add(Html.wrapped().form_group() //
+                .wrap(Html.label("pto_earning_rate", "PTO Earning Rate")) //
+                .wrap(Html.input("pto_earning_rate").id_from_name().pull(person).text()));
+        
         formInner.add(Html.W().h3().wrap("Benefits"));
 
         formInner.add(Html.wrapped().form_group() //

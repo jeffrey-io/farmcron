@@ -46,6 +46,8 @@ public class Person extends RawObject {
             Field.NUMBER("default_mileage"), // copied; used
             Field.NUMBER("hourly_wage_compesation"), // used
             Field.NUMBER("mileage_compensation"), // copied
+            Field.NUMBER("ideal_weekly_hours"), //
+            Field.NUMBER("pto_earning_rate"), //
 
             Field.NUMBER("bonus_target"), //
             Field.NUMBER("min_performance_multiplier"), //

@@ -13,7 +13,9 @@ public class Check extends RawObject {
             Field.STRING("fiscal_day").makeIndex(false), // made
             Field.NUMBER("payment"), // made
             Field.STRING("ready").makeIndex(false), // made
-            Field.NUMBER("checksum") // made
+            Field.NUMBER("checksum"), // made
+            Field.BOOL("bonus_related"), // made
+            Field.NUMBER("pto_change") // made
     );
 
     public static String fiscalQuarterFromFiscalDay(final String day) {

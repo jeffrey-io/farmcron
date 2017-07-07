@@ -4,12 +4,12 @@ import farm.bsg.data.Field;
 import farm.bsg.data.ObjectSchema;
 import farm.bsg.data.RawObject;
 
-public class TaxBaton extends RawObject {
-    public static final ObjectSchema SCHEMA = ObjectSchema.persisted("tax-baton/", //
+public class Baton extends RawObject {
+    public static final ObjectSchema SCHEMA = ObjectSchema.persisted("baton/", //
             Field.STRING("code") // made; inserted
     );
 
-    public TaxBaton() {
+    public Baton() {
         super(SCHEMA);
     }
 

@@ -1,6 +1,9 @@
 package farm.bsg.pages;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.TreeSet;
 
 import farm.bsg.Security.Permission;
 import farm.bsg.data.RawObject;
@@ -41,11 +44,12 @@ public class Payroll extends SessionPage {
     }
 
     public static HtmlPump payrollTable(final List<PayrollEntry> entries, final boolean sessionEdit, final boolean summary) {
-        final Table table = Html.table("Date", "Hours", "Mileage", "Benefits", "Taxes", "Owed", "Actions");
+        final Table table = Html.table("Date", "Hours", "Mileage", "Benefits", "Taxes", "PTO +/-", "Owed", "Actions");
         double totalHours = 0.0;
         double totalMileage = 0.0;
         double totalBenefits = 0.0;
         double totalTaxes = 0.0;
+        double totalPTO = 0.0;
         double totalOwed = 0.0;
         for (final PayrollEntry entry : entries) {
             HtmlPump actions = null;
@@ -58,6 +62,7 @@ public class Payroll extends SessionPage {
             totalMileage += entry.getAsDouble("mileage");
             totalBenefits += entry.getAsDouble("benefits");
             totalTaxes += entry.getAsDouble("taxes");
+            totalPTO += entry.getAsDouble("pto_change");
             totalOwed += entry.getAsDouble("owed");
 
             table.row( //
@@ -66,12 +71,13 @@ public class Payroll extends SessionPage {
                     entry.get("mileage"), //
                     entry.get("benefits"), //
                     entry.get("taxes"), //
+                    entry.getAsDouble("pto_change"), //
                     entry.get("owed"), //
                     actions);
         }
 
         if (summary && entries.size() > 0) {
-            table.footer("*", totalHours, totalMileage, totalBenefits, totalTaxes, totalOwed, "");
+            table.footer("*", totalHours, totalMileage, totalBenefits, totalTaxes, totalPTO, totalOwed, "");
         }
 
         return table;
@@ -214,17 +220,34 @@ public class Payroll extends SessionPage {
 
     public String summary() {
         final List<Check> checks = query().select_check().where_ready_eq("yes").where_person_eq(this.session.getPerson().getId()).to_list().inline_order_lexographically_desc_by("generated").done();
-        final Table table = Table.start("Date", "Payment");
+        final Table tableAll = Table.start("Date", "Payment", "PTO+/-");
 
+        HashMap<String, ArrayList<Check>> byQuarter = query().select_check().where_ready_eq("yes").where_person_eq(this.session.getPerson().getId()).to_list().groupBy((c) -> c.getFiscalQuarter());
+        final Table tableQuarter = Table.start("Date", "Payment", "PTO+/-");
+        for (String quarter : new TreeSet<>(byQuarter.keySet())) {
+            double paidByQuarter = 0;
+            double ptoChange = 0;
+            for (Check check : byQuarter.get(quarter)) {
+                paidByQuarter += check.getAsDouble("payment");
+                ptoChange += check.getAsDouble("pto_change");
+            }
+            tableQuarter.row(quarter, paidByQuarter, ptoChange);
+        }
+        
         double paid = 0;
 
         for (final Check check : checks) {
-            table.row(check.get("fiscal_day"), check.get("payment"));
+            tableAll.row(check.get("fiscal_day"), check.get("payment"), check.get("pto_change"));
             paid += check.getAsDouble("payment");
         }
         final Block fragment = Html.block();
+        fragment.add(Html.link(PAYROLL.href(), "Back to Payroll Reporting").btn_success());
+        fragment.add(Html.W().h5().wrap("By Quarter"));
+        fragment.add(tableQuarter);
+
         fragment.add(Html.W().h5().wrap("Checks Written"));
-        fragment.add(table);
+        fragment.add(tableAll);
+
         fragment.add(Html.W().h5().wrap("Summary"));
         fragment.add(Html.table("Key", "Value").row("Total Paid", paid));
         return finish_pump(fragment);

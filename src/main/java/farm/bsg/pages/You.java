@@ -175,6 +175,8 @@ public class You extends SessionPage {
         table.row("Bonus Target", person.getAsDouble("bonus_target"));
         table.row("Minimum Performance Multipler for Bonus", person.getAsDouble("min_performance_multiplier"));
         table.row("Maximum Performance Multipler for Bonus", person.getAsDouble("max_performance_multiplier"));
+        table.row("Ideal Weekly Hours", person.getAsDouble("ideal_weekly_hours"));
+        table.row("PTO Earning Rate (hr/hr)", person.getAsDouble("pto_earning_rate"));
 
         page.add(Html.W().h5().wrap("Employment"));
         page.add(table);

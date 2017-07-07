@@ -22,11 +22,15 @@ public class PayrollEntry extends RawObject {
 
             Field.NUMBER("hourly_wage_compesation"), // done; copied
             Field.NUMBER("mileage_compensation"), // done; copied
+            
+            Field.NUMBER("pto_change"), // done; computed
+            
             Field.NUMBER("owed"), // done; computed
             Field.NUMBER("tax_withholding"), // done; copied
             Field.NUMBER("taxes"), // done; computed
             Field.NUMBER("benefits"), // done; used (NEED INPUT)
-            Field.BOOL("is_performance_related_bonus"), Field.STRING("check").makeIndex(false), // indicates a payment was made
+
+            Field.STRING("check").makeIndex(false), // indicates a payment was made
             Field.STRING("unpaid").makeIndex(false) // if not "paid", then it is the employee id; DONE; indexed
     );
 
@@ -97,11 +101,18 @@ public class PayrollEntry extends RawObject {
 
     private void sharedNormalize(final Person person) {
         copyFrom(person, "hourly_wage_compesation", "mileage_compensation", "tax_withholding");
+        double pto_earning_rate = person.getAsDouble("pto_earning_rate");
         final double hoursWorked = getAsDouble("hours_worked");
+
+        final double ptoUsed = getAsDouble("pto_used");
+        if (pto_earning_rate > 0.0001) {
+            set("pto_change", pto_earning_rate * hoursWorked - ptoUsed);
+        } else {
+            set("pto_change", -ptoUsed);
+        }
         final double mileageReported = getAsDouble("mileage");
         final double wageRate = getAsDouble("hourly_wage_compesation");
         final double mileageRate = getAsDouble("mileage_compensation");
-        final double ptoUsed = getAsDouble("pto_used");
         final double sickLeaveUsed = getAsDouble("sick_leave_used");
         final double hoursOwed = hoursWorked + ptoUsed + sickLeaveUsed;
         final double benefitsOwed = getAsDouble("benefits");
