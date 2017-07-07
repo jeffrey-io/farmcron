@@ -135,6 +135,10 @@ public class People extends SessionPage {
                 .wrap(Html.input("max_performance_multiplier").id_from_name().pull(person).text()));
         
         formInner.add(Html.wrapped().form_group() //
+                .wrap(Html.label("ideal_weekly_hours", "Ideal Weekly Hours")) //
+                .wrap(Html.input("ideal_weekly_hours").id_from_name().pull(person).text()));
+        
+        formInner.add(Html.wrapped().form_group() //
                 .wrap(Html.label("pto_earning_rate", "PTO Earning Rate")) //
                 .wrap(Html.input("pto_earning_rate").id_from_name().pull(person).text()));
         

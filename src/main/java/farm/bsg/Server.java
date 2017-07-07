@@ -32,7 +32,7 @@ import spark.Service;
 
 public class Server {
 
-    private static final Logger LOG = makeLogAndCaptureStdOutputs(true);
+    private static final Logger LOG = makeLogAndCaptureStdOutputs(false);
 
     public static ProductEngine devEngine() throws Exception {
         final JobManager jobManager = new JobManager();

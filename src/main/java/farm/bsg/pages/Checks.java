@@ -134,7 +134,7 @@ public class Checks extends SessionPage {
                         double mn = person.getAsDouble("min_performance_multiplier") * person.getAsDouble("bonus_target") * sum;
                         double mx = person.getAsDouble("max_performance_multiplier") * person.getAsDouble("bonus_target") * sum;
                         
-                        double[] ratings = new double[] { mn, mn * 0.7 + mx * 0.3, mn * 0.5 + mx * 0.5, mn * 0.7 + mx * 0.3, mx };
+                        double[] ratings = new double[] { mn, mn * 0.7 + mx * 0.3, mn * 0.5 + mx * 0.5, mn * 0.3 + mx * 0.7, mx };
                         Block action = Html.block();
                         for (int k = 0; k < ratingLabels.length; k++) {
                             action.add(Html.link(CHECKS_GIVE_BONUS.href("id", batonId, "quarter", quarter, "person", person.getId(), "rating", ratingLabels[k], "bonus", Double.toString(ratings[k])), "Bonus: " + ratingLabels[k] + " (" + ratings[k] + ")").btn_primary());    
