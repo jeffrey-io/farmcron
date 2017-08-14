@@ -202,7 +202,7 @@ public class TaskFactoryManagement extends SessionPage {
             }
             final Block actions = Html.block().add_if(person().has(Permission.EditTaskFactory), Html.link(TASKS_FACTORY_EDIT.href("id", factory.getId()), "{update}").btn_primary());
             final HtmlPump progress = getProgress(factory, currentTask, System.currentTimeMillis());
-            final HtmlPump name = Html.block().add(factory.get("name")).add(Tasks.priorityRender(factory.getAsInt("priority")));
+            final HtmlPump name = Html.block().add(factory.get("name")).add(" ").add(Tasks.priorityRender((int) factory.getAsDouble("priority")));
             table.row(name, progress, actions);
         }
         block.add(table);

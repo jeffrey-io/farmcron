@@ -11,7 +11,6 @@ import farm.bsg.models.Cart;
 import farm.bsg.models.CartItem;
 import farm.bsg.models.Check;
 import farm.bsg.models.Customer;
-import farm.bsg.models.Habit;
 import farm.bsg.models.PayrollEntry;
 import farm.bsg.models.Person;
 import farm.bsg.models.Product;
@@ -327,45 +326,6 @@ public class QueryEngine {
   public String make_key_customer(String id) {
     StringBuilder key = new StringBuilder();
     key.append("customer/");
-    key.append(id);
-    return key.toString();
-}
-
-  /**************************************************
-  Basic Operations (look up, type transfer, keys, immutable copies) (habits/)
-  **************************************************/
-
-  public Habit habit_by_id(String id, boolean create) {
-    Value v = storage.get("habits/" + id);
-    if (v == null && !create) {
-      return null;
-    }
-    Habit result = habit_of(v);
-    result.set("id", id);
-    return result;
-  }
-
-  private Habit habit_of(Value v) {
-    Habit item = new Habit();
-    if (v != null) {
-      item.injectValue(v);
-    }
-    return item;
-  }
-
-  private ArrayList<Habit> habits_of(ArrayList<Value> values) {
-    ArrayList<Habit> list = new ArrayList<>(values.size());
-    for (Value v : values) {
-      list.add(habit_of(v));
-    }
-    return list;
-  }
-
-  public String make_key_habit(String who, String id) {
-    StringBuilder key = new StringBuilder();
-    key.append("habits/");
-    key.append(who);
-    key.append("/");
     key.append(id);
     return key.toString();
 }
@@ -760,10 +720,6 @@ public class QueryEngine {
   public HashSet<String> get_customer_notification_token_index_keys() {
     return customer_notification_token.getIndexKeys();
   }
-
-  /**************************************************
-  Indexing (habits/)
-  **************************************************/
 
   /**************************************************
   Indexing (payroll/)
@@ -1719,140 +1675,6 @@ public class QueryEngine {
       } else {
         this.keys = BinaryOperators.intersect(this.keys, lookup_notification_token(values));
       }
-      return this;
-    }
-  }
-
-  /**************************************************
-  Query Engine (habits/)
-  **************************************************/
-
-  public HabitSetQuery select_habit() {
-    return new HabitSetQuery();
-  }
-
-  public class HabitListHolder {
-    private final ArrayList<Habit> list;
-
-    private HabitListHolder(HashSet<String> keys, String scope) {
-      if (keys == null) {
-        this.list = habits_of(fetch_all("habits/" + scope));
-      } else {
-        this.list = habits_of(fetch(keys));
-      }
-    }
-
-    private HabitListHolder(ArrayList<Habit> list) {
-      this.list = list;
-    }
-
-    public HabitListHolder inline_filter(Predicate<Habit> filter) {
-      Iterator<Habit> it = list.iterator();
-      while (it.hasNext()) {
-        if (filter.test(it.next())) {
-          it.remove();
-        }
-      }
-      return this;
-    }
-
-    public HabitListHolder limit(int count) {
-      Iterator<Habit> it = list.iterator();
-      int at = 0;
-      while (it.hasNext()) {
-        it.next();
-        if (at >= count) {
-          it.remove();
-        }
-        at++;
-      }
-      return this;
-    }
-
-    public HabitListHolder inline_apply(Consumer<Habit> consumer) {
-      Iterator<Habit> it = list.iterator();
-      while (it.hasNext()) {
-        consumer.accept(it.next());
-      }
-      return this;
-    }
-
-    public HabitListHolder fork() {
-      return new HabitListHolder(this.list);
-    }
-
-    public HashMap<String, ArrayList<Habit>> groupBy(Function<Habit, String> f) {
-      StringGroupBy<Habit> map = new StringGroupBy<>();
-      Iterator<Habit> it = list.iterator();
-      while (it.hasNext()) {
-        Habit v = it.next();
-        String key = f.apply(v);
-        map.add(key, v);
-      }
-      return map.index;
-    }
-
-    public HabitListHolder inline_order_lexographically_asc_by(String... keys) {
-      Collections.sort(this.list, new LexographicalOrder<Habit>(keys, true, true));
-      return this;
-    }
-
-    public HabitListHolder inline_order_lexographically_desc_by(String... keys) {
-      Collections.sort(this.list, new LexographicalOrder<Habit>(keys, false, true));
-      return this;
-    }
-
-    public HabitListHolder inline_order_lexographically_by(boolean asc, boolean caseSensitive, String... keys) {
-      Collections.sort(this.list, new LexographicalOrder<Habit>(keys, asc, caseSensitive));
-      return this;
-    }
-
-    public HabitListHolder inline_order_by(Comparator<Habit> comparator) {
-      Collections.sort(this.list, comparator);
-      return this;
-    }
-
-    public int count() {
-      return this.list.size();
-    }
-    public Habit first() {
-      if (this.list.size() == 0) {
-        return null;
-      }
-      return this.list.get(0);
-    }
-    public ArrayList<Habit> done() {
-      return this.list;
-    }
-  }
-
-  public class HabitSetQuery {
-    private String scope;
-    private HashSet<String> keys;
-
-    private HabitSetQuery() {
-      this.scope = "";
-      this.keys = null;
-    }
-
-    public HabitListHolder to_list() {
-      return new HabitListHolder(this.keys, this.scope);
-    }
-
-    public ArrayList<Habit> done() {
-      return new HabitListHolder(this.keys, this.scope).done();
-    }
-
-    public int count() {
-      if (this.keys == null) {
-        return to_list().count();
-      } else {
-        return this.keys.size();
-      }
-    }
-
-    public HabitSetQuery scope(String scope) {
-      this.scope += scope + "/";
       return this;
     }
   }
@@ -3362,6 +3184,7 @@ public class QueryEngine {
       this.data.put("payment", farm.bsg.data.types.TypeNumber.project(pp, "payment"));
       this.data.put("ready", farm.bsg.data.types.TypeString.project(pp, "ready"));
       this.data.put("checksum", farm.bsg.data.types.TypeNumber.project(pp, "checksum"));
+      this.data.put("bonus_related", farm.bsg.data.types.TypeBoolean.project(pp, "bonus_related"));
       this.data.put("pto_change", farm.bsg.data.types.TypeNumber.project(pp, "pto_change"));
     }
 
@@ -3407,58 +3230,6 @@ public class QueryEngine {
 
 
   /**************************************************
-  Projects (habits/)
-  **************************************************/
-
-  public class HabitProjection_admin {
-    private final HashMap<String, String> data;
-    
-    public HabitProjection_admin(ProjectionProvider pp) {
-      this.data = new HashMap<String, String>();
-      this.data.put("id", farm.bsg.data.types.TypeUUID.project(pp, "id"));
-      this.data.put("__token", farm.bsg.data.types.TypeString.project(pp, "__token"));
-      this.data.put("who", farm.bsg.data.types.TypeString.project(pp, "who"));
-      this.data.put("last_done", farm.bsg.data.types.TypeString.project(pp, "last_done"));
-      this.data.put("unlock_time", farm.bsg.data.types.TypeString.project(pp, "unlock_time"));
-      this.data.put("warn_time", farm.bsg.data.types.TypeString.project(pp, "warn_time"));
-      this.data.put("name", farm.bsg.data.types.TypeString.project(pp, "name"));
-      this.data.put("has_arg", farm.bsg.data.types.TypeString.project(pp, "has_arg"));
-      this.data.put("last_arg_given", farm.bsg.data.types.TypeString.project(pp, "last_arg_given"));
-      this.data.put("history", farm.bsg.data.types.TypeString.project(pp, "history"));
-    }
-
-    public PutResult apply(Habit habit) {
-      return habit.validateAndApplyProjection(this.data);
-    }
-  }
-
-  public HabitProjection_admin projection_habit_admin_of(ProjectionProvider pp) {
-    return new HabitProjection_admin(pp);
-  }
-
-
-  public class HabitProjection_edit {
-    private final HashMap<String, String> data;
-    
-    public HabitProjection_edit(ProjectionProvider pp) {
-      this.data = new HashMap<String, String>();
-      this.data.put("unlock_time", farm.bsg.data.types.TypeString.project(pp, "unlock_time"));
-      this.data.put("warn_time", farm.bsg.data.types.TypeString.project(pp, "warn_time"));
-      this.data.put("name", farm.bsg.data.types.TypeString.project(pp, "name"));
-      this.data.put("has_arg", farm.bsg.data.types.TypeString.project(pp, "has_arg"));
-    }
-
-    public PutResult apply(Habit habit) {
-      return habit.validateAndApplyProjection(this.data);
-    }
-  }
-
-  public HabitProjection_edit projection_habit_edit_of(ProjectionProvider pp) {
-    return new HabitProjection_edit(pp);
-  }
-
-
-  /**************************************************
   Projects (payroll/)
   **************************************************/
 
@@ -3483,7 +3254,6 @@ public class QueryEngine {
       this.data.put("tax_withholding", farm.bsg.data.types.TypeNumber.project(pp, "tax_withholding"));
       this.data.put("taxes", farm.bsg.data.types.TypeNumber.project(pp, "taxes"));
       this.data.put("benefits", farm.bsg.data.types.TypeNumber.project(pp, "benefits"));
-      this.data.put("is_performance_related_bonus", farm.bsg.data.types.TypeBoolean.project(pp, "is_performance_related_bonus"));
       this.data.put("check", farm.bsg.data.types.TypeString.project(pp, "check"));
       this.data.put("unpaid", farm.bsg.data.types.TypeString.project(pp, "unpaid"));
     }
@@ -3905,18 +3675,6 @@ public class QueryEngine {
 
   public PutResult del(Customer customer) {
     return storage.put(customer.getStorageKey(), null, false);
-  }
-
-  /**************************************************
-  Writing Back to DB (habits/)
-  **************************************************/
-
-  public PutResult put(Habit habit) {
-    return storage.put(habit.getStorageKey(), new Value(habit.toJson()), false);
-  }
-
-  public PutResult del(Habit habit) {
-    return storage.put(habit.getStorageKey(), null, false);
   }
 
   /**************************************************

@@ -26,9 +26,6 @@ public class Security {
         SubscriptionWrite("subscriptions_write", Roles.GOD, Roles.OWNER), //
         SubscriptionPublish("subscriptions_publish", Roles.GOD, Roles.OWNER), //
 
-        // HABITS
-        HabitsUnlocked("habits_unlocked", Roles.GOD, Roles.OWNER), //
-
         // for employees to report wages
         SeePayrollTab("see_payroll_tab", Roles.GOD, Roles.OWNER, Roles.PAID_EMPLOYEE),
 

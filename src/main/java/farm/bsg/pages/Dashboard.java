@@ -30,10 +30,6 @@ public class Dashboard extends SessionPage {
     public Object show() {
         BsgCounters.I.dashboard_hits.bump();
         final Block page = Html.block();
-        if (has(Permission.HabitsUnlocked)) {
-            page.add(Html.wrapped().h5().wrap("Habit Briefing"));
-            page.add(new Habits(this.session).habits_as_cards());
-        }
         page.add(Html.wrapped().h5().wrap("Actions"));
         page.add(Html.wrapped().ul() //
                 .wrap(Html.W().li().wrap(new Payroll(this.session).getReportPayrollLink(person()))) //

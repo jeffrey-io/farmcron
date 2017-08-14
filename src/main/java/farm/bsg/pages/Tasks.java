@@ -102,7 +102,7 @@ public class Tasks extends SessionPage {
 
         formInner.add(Html.wrapped().form_group() //
                 .wrap(Html.label("description", "Description")) //
-                .wrap(Html.input("description").id_from_name().pull(task).text()));
+                .wrap(Html.input("description").id_from_name().pull(task).textarea(3, 40)));
 
         formInner.add(Html.wrapped().form_group() //
                 .wrap(Html.input("submit").id_from_name().value(commitLabel).submit()));
@@ -129,8 +129,8 @@ public class Tasks extends SessionPage {
                     .add(Html.link(TASKS_UPDATE.href("id", task.getId()), "{update}").btn_primary()) //
                     .add_if(ableToStart && task.canStart(), Html.link(TASKS_TRANSITION.href("id", task.getId(), "state", "started"), "{start}").btn_primary())//
                     .add_if(ableToClose && task.canClose(), Html.link(TASKS_TRANSITION.href("id", task.getId(), "state", "closed"), "{close}").btn_primary());
-            final HtmlPump name = Html.block().add(task.get("name")).add(priorityRender((int) task.getAsDouble("priority")));
-            table.row(name + ":" + task.get("cart_id"), task.get("state"), task.get("due_date"), actions);
+            final HtmlPump name = Html.block().add(task.get("name")).add(" ").add(priorityRender((int) task.getAsDouble("priority")));
+            table.row(name, task.get("state"), task.get("due_date"), actions);
         }
 
         block.add(table);

@@ -42,9 +42,6 @@ public class BsgCounters {
   public final Counter auth_cache_populate;
   public final Counter auth_super_cookie_conversion;
 
-  // Section{DATA: HABIT}
-  public final Counter habit_bad_history;
-
   // Section{DATA: TASKS}
   public final Counter task_transition;
 
@@ -101,9 +98,6 @@ public class BsgCounters {
     this.auth_cache_hit = src.counter("auth_cache_hit", "the cookie was found in the local cache");
     this.auth_cache_populate = src.counter("auth_cache_populate", "the cookie was found in the DB and went into local cache");
     this.auth_super_cookie_conversion = src.counter("auth_super_cookie_conversion", "a super cookie was converted into a new cookie");
-
-    src.setSection("Data: Habit");
-    this.habit_bad_history = src.counter("habit_bad_history", "Contained poorly formated history");
 
     src.setSection("Data: Tasks");
     this.task_transition = src.counter("task_transition", "a task was transitioned to a new state");
