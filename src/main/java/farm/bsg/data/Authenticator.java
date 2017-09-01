@@ -152,6 +152,10 @@ public class Authenticator {
         return result;
     }
 
+    public Person authenticateByDeviceToken(final String deviceToken) {
+        return this.engine.select_person().where_device_token_eq(deviceToken).to_list().first();
+    }
+
     public AuthResult authenticateByUsernameAndPassword(final String usernameRaw, final String password) {
         BsgCounters.I.auth_login_attempt.bump();
         final String[] splitUsername = usernameRaw.toLowerCase().split(":");
@@ -207,11 +211,6 @@ public class Authenticator {
         BsgCounters.I.auth_customer_login_failure.bump();
         return AuthResultCustomer.DENIED();
     }
-    
-    public Person authenticateByDeviceToken(String deviceToken) {
-        return engine.select_person().where_device_token_eq(deviceToken).to_list().first();
-    }
-    
 
     public AuthResultCustomer authenticateCustomerByCookies(final String cookie) {
         BsgCounters.I.auth_attempt_cookie.bump();

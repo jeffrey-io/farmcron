@@ -5,7 +5,7 @@ import farm.bsg.models.Person;
 
 public class ApiRequest extends DelegateRequest {
     public final ProductEngine engine;
-    public final Person person;
+    public final Person        person;
 
     /**
      * @param engine
@@ -13,7 +13,7 @@ public class ApiRequest extends DelegateRequest {
      * @param delegate
      *            the request and response wrapper
      */
-    public ApiRequest(final ProductEngine engine, final RequestResponseWrapper delegate, Person person) {
+    public ApiRequest(final ProductEngine engine, final RequestResponseWrapper delegate, final Person person) {
         super(delegate);
         this.engine = engine;
         this.person = person;

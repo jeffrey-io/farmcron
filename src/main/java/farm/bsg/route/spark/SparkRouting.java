@@ -53,13 +53,13 @@ public class SparkRouting extends RoutingTable {
                 log(req);
                 final SparkBox sparked = new SparkBox(req, res, this.secure);
                 final ProductEngine engine = engineOf(req);
-                String deviceToken = "cake";
-                Person person = engine.auth.authenticateByDeviceToken(deviceToken);
+                final String deviceToken = "cake";
+                final Person person = engine.auth.authenticateByDeviceToken(deviceToken);
                 if (person == null) {
-                  return exceptionalize(new IllegalStateException("invalid device token"));  
+                    return exceptionalize(new IllegalStateException("invalid device token"));
                 } else {
-                  final ApiRequest request = new ApiRequest(engine, sparked, person);
-                  return localHandle(route.handle(request), req, res);
+                    final ApiRequest request = new ApiRequest(engine, sparked, person);
+                    return localHandle(route.handle(request), req, res);
                 }
             } catch (final Exception err) {
                 return exceptionalize(err);
