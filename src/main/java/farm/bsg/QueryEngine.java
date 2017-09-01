@@ -3512,13 +3512,15 @@ public class QueryEngine {
       this.data.put("id", farm.bsg.data.types.TypeUUID.project(pp, "id"));
       this.data.put("__token", farm.bsg.data.types.TypeString.project(pp, "__token"));
       this.data.put("owner", farm.bsg.data.types.TypeString.project(pp, "owner"));
+      this.data.put("blocked_by", farm.bsg.data.types.TypeString.project(pp, "blocked_by"));
       this.data.put("cart_id", farm.bsg.data.types.TypeString.project(pp, "cart_id"));
       this.data.put("name", farm.bsg.data.types.TypeString.project(pp, "name"));
       this.data.put("description", farm.bsg.data.types.TypeString.project(pp, "description"));
       this.data.put("priority", farm.bsg.data.types.TypeNumber.project(pp, "priority"));
       this.data.put("due_date", farm.bsg.data.types.TypeDateTime.project(pp, "due_date"));
+      this.data.put("snooze_time", farm.bsg.data.types.TypeNumber.project(pp, "snooze_time"));
       this.data.put("created", farm.bsg.data.types.TypeDateTime.project(pp, "created"));
-      this.data.put("started", farm.bsg.data.types.TypeDateTime.project(pp, "started"));
+      this.data.put("snoozed", farm.bsg.data.types.TypeDateTime.project(pp, "snoozed"));
       this.data.put("closed", farm.bsg.data.types.TypeDateTime.project(pp, "closed"));
       this.data.put("notification_token_for_closed", farm.bsg.data.types.TypeString.project(pp, "notification_token_for_closed"));
       this.data.put("notification_short_text_for_closed", farm.bsg.data.types.TypeString.project(pp, "notification_short_text_for_closed"));
@@ -3551,6 +3553,7 @@ public class QueryEngine {
       this.data.put("current_task", farm.bsg.data.types.TypeString.project(pp, "current_task"));
       this.data.put("priority", farm.bsg.data.types.TypeNumber.project(pp, "priority"));
       this.data.put("frequency", farm.bsg.data.types.TypeNumber.project(pp, "frequency"));
+      this.data.put("snooze_time", farm.bsg.data.types.TypeNumber.project(pp, "snooze_time"));
       this.data.put("slack", farm.bsg.data.types.TypeNumber.project(pp, "slack"));
       this.data.put("month_filter", farm.bsg.data.types.TypeMonthFilter.project(pp, "month_filter"));
       this.data.put("day_filter", farm.bsg.data.types.TypeDayFilter.project(pp, "day_filter"));
@@ -3575,6 +3578,7 @@ public class QueryEngine {
       this.data.put("description", farm.bsg.data.types.TypeString.project(pp, "description"));
       this.data.put("priority", farm.bsg.data.types.TypeNumber.project(pp, "priority"));
       this.data.put("frequency", farm.bsg.data.types.TypeNumber.project(pp, "frequency"));
+      this.data.put("snooze_time", farm.bsg.data.types.TypeNumber.project(pp, "snooze_time"));
       this.data.put("slack", farm.bsg.data.types.TypeNumber.project(pp, "slack"));
       this.data.put("month_filter", farm.bsg.data.types.TypeMonthFilter.project(pp, "month_filter"));
       this.data.put("day_filter", farm.bsg.data.types.TypeDayFilter.project(pp, "day_filter"));

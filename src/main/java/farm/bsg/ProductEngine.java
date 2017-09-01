@@ -5,6 +5,7 @@ import farm.bsg.data.Authenticator;
 import farm.bsg.data.contracts.PersistenceLogger;
 import farm.bsg.html.GenericTemplate;
 import farm.bsg.pages.TaskFactoryManagement;
+import farm.bsg.pages.Tasks;
 import farm.bsg.pages.common.NavBar;
 
 public class ProductEngine extends QueryEngine {
@@ -24,5 +25,6 @@ public class ProductEngine extends QueryEngine {
         this.template = new GenericTemplate(pageTemplate);
         this.eventBus = new EventBus(this);
         manager.add(new TaskFactoryManagement.TaskFactoryMonitor(this));
+        manager.add(new Tasks.TasksMonitor(this));
     }
 }

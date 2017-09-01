@@ -14,6 +14,7 @@ import farm.bsg.ops.Logs;
 import farm.bsg.ops.RequestMetrics;
 import farm.bsg.route.AnonymousRequest;
 import farm.bsg.route.AnonymousRoute;
+import farm.bsg.route.ApiAction;
 import farm.bsg.route.ControlledURI;
 import farm.bsg.route.CustomerRequest;
 import farm.bsg.route.CustomerRoute;
@@ -254,5 +255,24 @@ public class SparkRouting extends RoutingTable {
         final Route routeFacebook = new FacebookSparkRoute(this.router, this);
         spark.Spark.post("/facebook-messenger", routeFacebook);
         spark.Spark.get("/facebook-messenger", routeFacebook);
+    }
+    
+    @Override
+    public void api_post(ControlledURI path, ApiAction route) {
+        final RequestMetrics metrics = this.counterSource.request("post", path.toRoutingPattern());
+        spark.Spark.post(path.toRoutingPattern(), (req, res) -> {
+            final RequestMetrics.InflightRequest local = metrics.begin();
+            try {
+                log(req);
+                final ProductEngine engine = engineOf(req);
+                // look for API token
+                return null;
+            } catch (final Exception err) {
+                return exceptionalize(err);
+            } finally {
+                local.complete(true);
+            }
+        });
+
     }
 }

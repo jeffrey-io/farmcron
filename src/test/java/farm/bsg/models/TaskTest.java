@@ -7,7 +7,7 @@ public class TaskTest {
     @Test
     public void dueDate() {
         final Task task = new Task();
-        task.setState("created");
+        task.created();
         task.set("created", "2017-06-22T02:40Z");
         final long now = 1498099238370L;
         task.setDue(now, 4);
@@ -19,27 +19,18 @@ public class TaskTest {
     @Test
     public void stateMachineAndTimeline() {
         final Task task = new Task();
-        task.setState("created");
+        task.created();
         task.set("created", "2017-06-22T02:40Z");
         final long now = 1498099238370L;
 
-        Assert.assertTrue(task.canStart());
-        Assert.assertTrue(task.canClose());
+        Assert.assertTrue(task.canTransition());
         for (int delta = -100; delta < 100; delta++) {
             Assert.assertFalse(task.isClosedAndReadyForTransition(now + delta * 1000 * 60 * 60 * 24, 1));
         }
 
-        task.setState("started");
-        Assert.assertFalse(task.canStart());
-        Assert.assertTrue(task.canClose());
-        for (int delta = -100; delta < 100; delta++) {
-            Assert.assertFalse(task.isClosedAndReadyForTransition(now + delta * 1000 * 60 * 60 * 24, 1));
-        }
-
-        task.setState("closed");
+        task.close();
         task.set("closed", "2017-06-22T02:40Z");
-        Assert.assertFalse(task.canStart());
-        Assert.assertFalse(task.canClose());
+        Assert.assertFalse(task.canTransition());
         Assert.assertFalse(task.isClosedAndReadyForTransition(now, 1));
 
         for (long delta = -100; delta < 0; delta++) {

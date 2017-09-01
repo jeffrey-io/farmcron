@@ -2,6 +2,7 @@ package farm.bsg.cron;
 
 import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ThreadLocalRandom;
 
 import org.slf4j.Logger;
 
@@ -15,12 +16,12 @@ import farm.bsg.ops.Logs;
 public class JobManager {
     private final Logger               LOG = Logs.of(JobManager.class);
 
-    private final ArrayList<HourlyJob> hourlyJobs;
+    private final ArrayList<PeriodicJob> jobs;
     private boolean                    alive;
     private Thread                     lastThread;
 
     public JobManager() {
-        this.hourlyJobs = new ArrayList<>();
+        this.jobs = new ArrayList<>();
         this.alive = false;
     }
 
@@ -29,16 +30,24 @@ public class JobManager {
      *
      * @param job
      */
-    public synchronized void add(final HourlyJob job) {
-        this.hourlyJobs.add(job);
+    public synchronized void add(final PeriodicJob job) {
+        this.jobs.add(job);
     }
 
-    private synchronized boolean runHourly() {
-        this.LOG.info("running hourly jobs");
-        for (final HourlyJob job : this.hourlyJobs) {
+    private synchronized boolean runJobs() {
+        this.LOG.info("running jobs");
+        for (final PeriodicJob job : this.jobs) {
             job.run(System.currentTimeMillis());
         }
         return this.alive;
+    }
+    
+    private static long inventTime() {
+        long time = 30 * 1000;
+        for (int k = 0; k < 5; k++) {
+            time += ThreadLocalRandom.current().nextInt(30 * 1000);
+        }
+        return time;
     }
 
     /**
@@ -52,10 +61,11 @@ public class JobManager {
         final CountDownLatch started = new CountDownLatch(1);
         this.lastThread = new Thread(() -> {
             started.countDown();
-            while (runHourly()) {
+            while (runJobs()) {
                 try {
-                    JobManager.this.LOG.info("sleeping");
-                    Thread.sleep(60 * 60 * 1000);
+                    long timeToSleep = inventTime();
+                    JobManager.this.LOG.info("sleeping:" + timeToSleep);
+                    Thread.sleep(timeToSleep);
                 } catch (final InterruptedException ie) {
                 }
             }

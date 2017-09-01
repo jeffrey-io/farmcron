@@ -11,7 +11,7 @@ public class DashboardTest extends PageTesting {
     @Test
     public void Coverage() throws Exception {
         final PageBootstrap bootstrap = go();
-        final String html = bootstrap.GET("/dashboard", params());
+        final String html = bootstrap.GET("/admin/dashboard", params());
         Assert.assertNotNull(html);
     }
 }

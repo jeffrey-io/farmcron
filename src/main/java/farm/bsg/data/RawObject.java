@@ -118,15 +118,7 @@ public abstract class RawObject {
     }
 
     public int getAsInt(final String name) {
-        String value = this.data.get(name);
-        if (value == null) {
-            return 0;
-        }
-        value = value.trim();
-        if (value.length() == 0) {
-            return 0;
-        }
-        return Integer.parseInt(value);
+        return (int) getAsDouble(name);
     }
 
     public synchronized String getId() {

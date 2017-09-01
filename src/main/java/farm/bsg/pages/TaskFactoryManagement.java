@@ -10,7 +10,7 @@ import farm.bsg.EventBus.Event;
 import farm.bsg.EventBus.EventPayload;
 import farm.bsg.ProductEngine;
 import farm.bsg.Security.Permission;
-import farm.bsg.cron.HourlyJob;
+import farm.bsg.cron.PeriodicJob;
 import farm.bsg.data.RawObject;
 import farm.bsg.data.types.TypeDayFilter;
 import farm.bsg.data.types.TypeMonthFilter;
@@ -28,7 +28,7 @@ import farm.bsg.route.SessionRequest;
 import farm.bsg.route.SimpleURI;
 
 public class TaskFactoryManagement extends SessionPage {
-    public static class TaskFactoryMonitor implements HourlyJob {
+    public static class TaskFactoryMonitor implements PeriodicJob {
 
         private final ProductEngine engine;
 
@@ -65,7 +65,7 @@ public class TaskFactoryManagement extends SessionPage {
                     final Task task = new Task();
                     task.generateAndSetId();
                     task.copyFrom(factory, "name", "description", "priority");
-                    task.setState("created");
+                    task.created();
                     task.setDue(now, factory.getAsInt("slack"));
                     factory.set("current_task", task.getId());
                     engine.put(factory);
@@ -160,6 +160,12 @@ public class TaskFactoryManagement extends SessionPage {
                 .wrap(Html.label("frequency", "Frequency")) //
                 .wrap(Html.input("frequency").id_from_name().pull(factory).text()) //
                 .wrap(Html.wrapped().small().muted_form_text().wrap("How many days should be this done (i.e. 7 = 1 week).")));
+
+        // snooze_time
+        formInner.add(Html.wrapped().form_group() //
+                .wrap(Html.label("snooze_time", "Snooze Time")) //
+                .wrap(Html.input("snooze_time").id_from_name().pull(factory).text()) //
+                .wrap(Html.wrapped().small().muted_form_text().wrap("How many minutes can this item be snoozed for.")));
 
         // slack
         formInner.add(Html.wrapped().form_group() //

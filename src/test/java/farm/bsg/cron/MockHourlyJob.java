@@ -5,7 +5,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.Assert;
 
-public class MockHourlyJob implements HourlyJob {
+public class MockHourlyJob implements PeriodicJob {
 
     private final CountDownLatch latch;
 

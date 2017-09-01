@@ -6,7 +6,7 @@ package farm.bsg.cron;
  * @author jeffrey
  */
 @FunctionalInterface
-public interface HourlyJob {
-
+public interface PeriodicJob {
+    
     void run(long now);
 }

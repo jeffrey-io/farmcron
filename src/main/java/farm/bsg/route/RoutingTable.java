@@ -88,5 +88,8 @@ public abstract class RoutingTable {
     public void text(final TextRoute route) {
         this.textRoutes.add(route);
     }
+    
+    public abstract void api_post(ControlledURI path, ApiAction route);
+
 
 }

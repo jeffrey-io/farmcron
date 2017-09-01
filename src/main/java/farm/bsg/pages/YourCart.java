@@ -153,7 +153,7 @@ public class YourCart extends CustomerPage {
                 task.set("name", "Complete " + ticketPrice + " purchase for " + this.request.customer.get("email"));
                 task.set("cart_id", cart.getId());
                 task.set("priority", "0");
-                task.setState("created");
+                task.created();
 
                 // TODO: add a notification token for close.
 

@@ -44,6 +44,9 @@ public class BsgCounters {
 
   // Section{DATA: TASKS}
   public final Counter task_transition;
+  public final Counter task_snooze;
+  public final Counter task_woke;
+  public final Counter task_close;
 
   // Section{DATA: WAKE INPUT FILE}
   public final Counter compile_wake;
@@ -101,6 +104,9 @@ public class BsgCounters {
 
     src.setSection("Data: Tasks");
     this.task_transition = src.counter("task_transition", "a task was transitioned to a new state");
+    this.task_snooze = src.counter("task_snooze", "a task was put to sleep");
+    this.task_woke = src.counter("task_woke", "a task was brought back from sleep");
+    this.task_close = src.counter("task_close", "a task was close");
 
     src.setSection("Data: Wake Input File");
     this.compile_wake = src.counter("compile_wake", "wake files are being compiled");

@@ -18,7 +18,6 @@ public class Security {
         EditTaskFactory("edit_task_factories", Roles.GOD, Roles.OWNER, Roles.MANAGER), //
         SeeTasksTab("see_tasks_tab", Roles.GOD, Roles.OWNER, Roles.MANAGER), //
         EditTasks("edit_tasks", Roles.GOD, Roles.OWNER, Roles.MANAGER), //
-        StartTask("start_task", Roles.GOD, Roles.OWNER, Roles.MANAGER, Roles.PAID_EMPLOYEE), //
         CloseTask("close_task", Roles.GOD, Roles.OWNER, Roles.MANAGER, Roles.PAID_EMPLOYEE), //
 
         // SUBSCRIPTION RELATED activities
