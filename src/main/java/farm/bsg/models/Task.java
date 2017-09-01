@@ -52,7 +52,21 @@ public class Task extends RawObject {
         super(SCHEMA);
     }
 
+    public boolean canTransition() {
+        return "created".equals(get("state"));
+    }
 
+    public boolean close() {
+        if (setInternalState("closed", true)) {
+            BsgCounters.I.task_close.bump();
+            return true;
+        }
+        return false;
+    }
+
+    public boolean created() {
+        return setInternalState("created", true);
+    }
 
     @Override
     protected void invalidateCache() {
@@ -69,64 +83,48 @@ public class Task extends RawObject {
         return today.isAfter(dayAfterPerformed);
     }
 
+    public boolean ready() {
+        return isoTimestamp().compareTo(readyIsoTime()) >= 0;
+    }
+
+    public String readyIsoTime() {
+        final long snoozeTime = getTimestamp("snoozed").plusMinutes(getAsInt("snooze_time")).getMillis();
+        return isoTimestamp(snoozeTime);
+    }
+
     public void setDue(final long now, final int daysDue) {
         DateTime dueDate = new DateTime(now).withMillisOfDay(0).withHourOfDay(17).plusDays(daysDue + 1);
         dueDate = dueDate.minusMillis(dueDate.getMillisOfDay());
         set("due_date", RawObject.isoTimestamp(dueDate.getMillis()));
     }
 
-    public boolean canTransition() {
-        return "created".equals(get("state"));
-    }
-
-    public boolean close() {
-        if (setInternalState("closed", true)) {
-            BsgCounters.I.task_close.bump();
-            return true;
-        }
-        return false;
-    }
-    
-    public String readyIsoTime() {
-        long snoozeTime = getTimestamp("snoozed").plusMinutes(getAsInt("snooze_time")).getMillis();
-        return isoTimestamp(snoozeTime);
-    }
-    
-    public boolean ready() {
-        return isoTimestamp().compareTo(readyIsoTime()) >= 0;
-    }
-    
-    public boolean snooze() {
-        if (setInternalState("snoozed", true)) {
-            BsgCounters.I.task_snooze.bump();
-            // set sleeping until
-           return true; 
-        }
-        return false;
-    }
-    
-    public void wake() {
-        if (setInternalState("created", false)) {
-            BsgCounters.I.task_woke.bump();
-        }
-    }
-    
-    public boolean created() {
-        return setInternalState("created", true);
-    }
-
-    private boolean setInternalState(final String state, boolean recordTime) {
+    private boolean setInternalState(final String state, final boolean recordTime) {
         final String prior = get("state");
         if (state.equals(prior)) {
             // no-op
             return false;
         } else {
             if (recordTime) {
-              set(state, isoTimestamp());
+                set(state, isoTimestamp());
             }
             set("state", state);
             BsgCounters.I.task_transition.bump();
             return true;
+        }
+    }
+
+    public boolean snooze() {
+        if (setInternalState("snoozed", true)) {
+            BsgCounters.I.task_snooze.bump();
+            // set sleeping until
+            return true;
+        }
+        return false;
+    }
+
+    public void wake() {
+        if (setInternalState("created", false)) {
+            BsgCounters.I.task_woke.bump();
         }
     }
 }

@@ -43,6 +43,25 @@ public class SparkRouting extends RoutingTable {
     }
 
     @Override
+    public void api_post(final ControlledURI path, final ApiAction route) {
+        final RequestMetrics metrics = this.counterSource.request("post", path.toRoutingPattern());
+        spark.Spark.post(path.toRoutingPattern(), (req, res) -> {
+            final RequestMetrics.InflightRequest local = metrics.begin();
+            try {
+                log(req);
+                final ProductEngine engine = engineOf(req);
+                // look for API token
+                return null;
+            } catch (final Exception err) {
+                return exceptionalize(err);
+            } finally {
+                local.complete(true);
+            }
+        });
+
+    }
+
+    @Override
     public void customer_get(final ControlledURI path, final CustomerRoute route) {
         final RequestMetrics metrics = this.counterSource.request("get", path.toRoutingPattern());
         spark.Spark.get(path.toRoutingPattern(), (req, res) -> {
@@ -255,24 +274,5 @@ public class SparkRouting extends RoutingTable {
         final Route routeFacebook = new FacebookSparkRoute(this.router, this);
         spark.Spark.post("/facebook-messenger", routeFacebook);
         spark.Spark.get("/facebook-messenger", routeFacebook);
-    }
-    
-    @Override
-    public void api_post(ControlledURI path, ApiAction route) {
-        final RequestMetrics metrics = this.counterSource.request("post", path.toRoutingPattern());
-        spark.Spark.post(path.toRoutingPattern(), (req, res) -> {
-            final RequestMetrics.InflightRequest local = metrics.begin();
-            try {
-                log(req);
-                final ProductEngine engine = engineOf(req);
-                // look for API token
-                return null;
-            } catch (final Exception err) {
-                return exceptionalize(err);
-            } finally {
-                local.complete(true);
-            }
-        });
-
     }
 }

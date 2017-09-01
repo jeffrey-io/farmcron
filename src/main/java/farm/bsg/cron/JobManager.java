@@ -14,11 +14,19 @@ import farm.bsg.ops.Logs;
  * @author jeffrey
  */
 public class JobManager {
-    private final Logger               LOG = Logs.of(JobManager.class);
+    private static long inventTime() {
+        long time = 30 * 1000;
+        for (int k = 0; k < 5; k++) {
+            time += ThreadLocalRandom.current().nextInt(30 * 1000);
+        }
+        return time;
+    }
 
+    private final Logger                 LOG = Logs.of(JobManager.class);
     private final ArrayList<PeriodicJob> jobs;
-    private boolean                    alive;
-    private Thread                     lastThread;
+    private boolean                      alive;
+
+    private Thread                       lastThread;
 
     public JobManager() {
         this.jobs = new ArrayList<>();
@@ -41,14 +49,6 @@ public class JobManager {
         }
         return this.alive;
     }
-    
-    private static long inventTime() {
-        long time = 30 * 1000;
-        for (int k = 0; k < 5; k++) {
-            time += ThreadLocalRandom.current().nextInt(30 * 1000);
-        }
-        return time;
-    }
 
     /**
      * start the job manager thread
@@ -63,7 +63,7 @@ public class JobManager {
             started.countDown();
             while (runJobs()) {
                 try {
-                    long timeToSleep = inventTime();
+                    final long timeToSleep = inventTime();
                     JobManager.this.LOG.info("sleeping:" + timeToSleep);
                     Thread.sleep(timeToSleep);
                 } catch (final InterruptedException ie) {

@@ -222,18 +222,18 @@ public class Payroll extends SessionPage {
         final List<Check> checks = query().select_check().where_ready_eq("yes").where_person_eq(this.session.getPerson().getId()).to_list().inline_order_lexographically_desc_by("generated").done();
         final Table tableAll = Table.start("Date", "Payment", "PTO+/-");
 
-        HashMap<String, ArrayList<Check>> byQuarter = query().select_check().where_ready_eq("yes").where_person_eq(this.session.getPerson().getId()).to_list().groupBy((c) -> c.getFiscalQuarter());
+        final HashMap<String, ArrayList<Check>> byQuarter = query().select_check().where_ready_eq("yes").where_person_eq(this.session.getPerson().getId()).to_list().groupBy((c) -> c.getFiscalQuarter());
         final Table tableQuarter = Table.start("Date", "Payment", "PTO+/-");
-        for (String quarter : new TreeSet<>(byQuarter.keySet())) {
+        for (final String quarter : new TreeSet<>(byQuarter.keySet())) {
             double paidByQuarter = 0;
             double ptoChange = 0;
-            for (Check check : byQuarter.get(quarter)) {
+            for (final Check check : byQuarter.get(quarter)) {
                 paidByQuarter += check.getAsDouble("payment");
                 ptoChange += check.getAsDouble("pto_change");
             }
             tableQuarter.row(quarter, paidByQuarter, ptoChange);
         }
-        
+
         double paid = 0;
 
         for (final Check check : checks) {

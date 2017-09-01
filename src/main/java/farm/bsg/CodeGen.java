@@ -5,6 +5,7 @@ import java.nio.file.Files;
 
 import farm.bsg.data.Authenticator;
 import farm.bsg.data.SchemaCodeGenerator;
+import farm.bsg.models.Baton;
 import farm.bsg.models.Cart;
 import farm.bsg.models.CartItem;
 import farm.bsg.models.Check;
@@ -17,7 +18,6 @@ import farm.bsg.models.Subscriber;
 import farm.bsg.models.Subscription;
 import farm.bsg.models.Task;
 import farm.bsg.models.TaskFactory;
-import farm.bsg.models.Baton;
 import farm.bsg.models.WakeInputFile;
 import farm.bsg.ops.CounterCodeGen;
 import farm.bsg.pages.Checks;

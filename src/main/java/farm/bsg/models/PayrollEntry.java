@@ -22,9 +22,9 @@ public class PayrollEntry extends RawObject {
 
             Field.NUMBER("hourly_wage_compesation"), // done; copied
             Field.NUMBER("mileage_compensation"), // done; copied
-            
+
             Field.NUMBER("pto_change"), // done; computed
-            
+
             Field.NUMBER("owed"), // done; computed
             Field.NUMBER("tax_withholding"), // done; copied
             Field.NUMBER("taxes"), // done; computed
@@ -101,7 +101,7 @@ public class PayrollEntry extends RawObject {
 
     private void sharedNormalize(final Person person) {
         copyFrom(person, "hourly_wage_compesation", "mileage_compensation", "tax_withholding");
-        double pto_earning_rate = person.getAsDouble("pto_earning_rate");
+        final double pto_earning_rate = person.getAsDouble("pto_earning_rate");
         final double hoursWorked = getAsDouble("hours_worked");
 
         final double ptoUsed = getAsDouble("pto_used");

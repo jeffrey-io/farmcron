@@ -10,7 +10,7 @@ public class MockRoutingTable extends RoutingTable {
     private final HashMap<String, AnonymousRoute> public_post;
     private final HashMap<String, CustomerRoute>  customer_get;
     private final HashMap<String, CustomerRoute>  customer_post;
-    private final HashMap<String, ApiAction>  api_port;
+    private final HashMap<String, ApiAction>      api_port;
     private AnonymousRoute                        notFound = null;
 
     public MockRoutingTable() {
@@ -21,6 +21,11 @@ public class MockRoutingTable extends RoutingTable {
         this.customer_get = new HashMap<>();
         this.customer_post = new HashMap<>();
         this.api_port = new HashMap<>();
+    }
+
+    @Override
+    public void api_post(final ControlledURI path, final ApiAction route) {
+        this.api_port.put(path.toRoutingPattern(), route);
     }
 
     @Override
@@ -90,11 +95,6 @@ public class MockRoutingTable extends RoutingTable {
     @Override
     public void setupTexting() {
 
-    }
-    
-    @Override
-    public void api_post(ControlledURI path, ApiAction route) {
-        api_port.put(path.toRoutingPattern(),  route);
     }
 
 }

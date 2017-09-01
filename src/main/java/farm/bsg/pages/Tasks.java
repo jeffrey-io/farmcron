@@ -5,9 +5,9 @@ import java.util.List;
 import java.util.UUID;
 
 import farm.bsg.BsgCounters;
-import farm.bsg.ProductEngine;
 import farm.bsg.EventBus.Event;
 import farm.bsg.EventBus.EventPayload;
+import farm.bsg.ProductEngine;
 import farm.bsg.Security.Permission;
 import farm.bsg.cron.PeriodicJob;
 import farm.bsg.html.Block;
@@ -38,7 +38,7 @@ public class Tasks extends SessionPage {
             advance(this.engine, now);
         }
     }
-    
+
     public static SimpleURI TASKS            = new SimpleURI("/admin/tasks");
 
     public static SimpleURI TASKS_CREATE     = new SimpleURI("/admin/tasks;create");
@@ -49,9 +49,18 @@ public class Tasks extends SessionPage {
 
     public static SimpleURI TASKS_TRANSITION = new SimpleURI("/admin/tasks;transition");
 
-    public static SimpleURI GOSSIP            = new SimpleURI("/gossip");
+    public static SimpleURI GOSSIP           = new SimpleURI("/gossip");
 
-    
+    public static void advance(final ProductEngine engine, final long now) {
+        final ArrayList<Task> tasks = engine.select_task().where_state_eq("snoozed").done();
+        for (final Task task : tasks) {
+            if (task.ready()) {
+                task.wake();
+                engine.put(task);
+            }
+        }
+    }
+
     public static void link(final CounterCodeGen c) {
         c.section("Page: Chores");
     }
@@ -79,6 +88,23 @@ public class Tasks extends SessionPage {
         super(session, TASKS);
     }
 
+    private Table active() {
+        final boolean ableToClose = person().has(Permission.CloseTask);
+        final Table table = new Table("Name", "Due", "Actions");
+        final List<Task> tasks = query().select_task().where_state_eq("created", "started").to_list().done();
+        for (final Task task : tasks) {
+            final boolean canExecute = ableToClose && task.canTransition();
+            final Block actions = Html.block() //
+                    .add(Html.link(TASKS_UPDATE.href("id", task.getId()), "{update}").btn_primary()) //
+                    .add_if(canExecute, Html.link(TASKS_TRANSITION.href("id", task.getId(), "state", "snoozed"), "Snooze").btn_secondary()) //
+                    .add_if(canExecute, Html.link(TASKS_TRANSITION.href("id", task.getId(), "state", "closed"), "Close").btn_primary()) //
+                    ;
+            final HtmlPump name = Html.block().add(task.get("name")).add(" ").add(priorityRender((int) task.getAsDouble("priority")));
+            table.row(name, task.get("due_date"), actions);
+        }
+        return table;
+    }
+
     public String commit() {
         person().mustHave(Permission.EditTasks);
         final Task task = query().task_by_id(this.session.getParam("id"), true);
@@ -104,16 +130,6 @@ public class Tasks extends SessionPage {
         return createUpdateForm("Create Task", UUID.randomUUID().toString(), "create", TASKS_CREATE, true);
     }
 
-    public static void advance(final ProductEngine engine, final long now) {
-        ArrayList<Task> tasks = engine.select_task().where_state_eq("snoozed").done();
-        for (Task task : tasks) {
-            if (task.ready()) {
-                task.wake();
-                engine.put(task);
-            }
-        }
-    }
-    
     private String createUpdateForm(final String title, final String id, final String commitLabel, final SimpleURI caller, final boolean notify) {
         final Task task = query().task_by_id(id, true);
         final Block formInner = Html.block();
@@ -148,22 +164,14 @@ public class Tasks extends SessionPage {
         page.add(Html.form("post", TASKS_COMMIT.href()).inner(formInner));
         return finish_pump(page);
     }
-    
-    private Table active() {
-        final boolean ableToClose = person().has(Permission.CloseTask);
-        final Table table = new Table("Name", "Due", "Actions");
-        final List<Task> tasks = query().select_task().where_state_eq("created", "started").to_list().done();
-        for (final Task task : tasks) {
-            boolean canExecute = ableToClose && task.canTransition();
-            final Block actions = Html.block() //
-                    .add(Html.link(TASKS_UPDATE.href("id", task.getId()), "{update}").btn_primary()) //
-                    .add_if(canExecute, Html.link(TASKS_TRANSITION.href("id", task.getId(), "state", "snoozed"), "Snooze").btn_secondary()) //
-                    .add_if(canExecute, Html.link(TASKS_TRANSITION.href("id", task.getId(), "state", "closed"), "Close").btn_primary()) //
-                    ;
-            final HtmlPump name = Html.block().add(task.get("name")).add(" ").add(priorityRender((int) task.getAsDouble("priority")));
-            table.row(name, task.get("due_date"), actions);
-        }
-        return table;
+
+    public String list() {
+        person().mustHave(Permission.SeeTasksTab);
+        final Block block = Html.block();
+        block.add(tabs(TASKS));
+        block.add(active());
+        block.add(snoozed());
+        return finish_pump(block);
     }
 
     private Table snoozed() {
@@ -171,7 +179,7 @@ public class Tasks extends SessionPage {
         final Table table = new Table("Name", "Ready At", "Actions");
         final List<Task> tasks = query().select_task().where_state_eq("snoozed").to_list().done();
         for (final Task task : tasks) {
-            boolean canExecute = ableToClose && task.canTransition();
+            final boolean canExecute = ableToClose && task.canTransition();
             final Block actions = Html.block() //
                     .add(Html.link(TASKS_UPDATE.href("id", task.getId()), "{update}").btn_primary()) //
                     .add_if(canExecute, Html.link(TASKS_TRANSITION.href("id", task.getId(), "state", "closed"), "Close").btn_primary()) //
@@ -180,14 +188,6 @@ public class Tasks extends SessionPage {
             table.row(name, task.readyIsoTime(), actions);
         }
         return table;
-    }
-    public String list() {
-        person().mustHave(Permission.SeeTasksTab);
-        final Block block = Html.block();
-        block.add(tabs(TASKS));
-        block.add(active());
-        block.add(snoozed());
-        return finish_pump(block);
     }
 
     public HtmlPump tabs(final SimpleURI current) {
@@ -207,7 +207,7 @@ public class Tasks extends SessionPage {
                 cart = query().cart_by_id(cartId, false);
             }
             boolean write = false;
-            
+
             if ("snoozed".equals(newState)) {
                 person().mustHave(Permission.CloseTask);
                 write = task.snooze();

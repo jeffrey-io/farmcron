@@ -24,6 +24,8 @@ public abstract class RoutingTable {
         this.textRoutes = new ArrayList<>();
     }
 
+    public abstract void api_post(ControlledURI path, ApiAction route);
+
     public abstract void customer_get(ControlledURI path, CustomerRoute route);
 
     public void customer_get_or_post(final ControlledURI path, final CustomerRoute route) {
@@ -88,8 +90,5 @@ public abstract class RoutingTable {
     public void text(final TextRoute route) {
         this.textRoutes.add(route);
     }
-    
-    public abstract void api_post(ControlledURI path, ApiAction route);
-
 
 }
