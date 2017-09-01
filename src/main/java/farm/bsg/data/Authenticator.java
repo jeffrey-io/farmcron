@@ -95,6 +95,11 @@ public class Authenticator {
         c.counter("auth_cache_hit", "the cookie was found in the local cache");
         c.counter("auth_cache_populate", "the cookie was found in the DB and went into local cache");
         c.counter("auth_super_cookie_conversion", "a super cookie was converted into a new cookie");
+
+        c.counter("auth_attempt_token", "an auth was attempted by token");
+        c.counter("auth_token_found", "a token for  device auth was found");
+        c.counter("auth_token_notfound", "a token for device auth was not found");
+
     }
 
     Logger                                            LOG = Logs.of(Authenticator.class);
@@ -202,6 +207,11 @@ public class Authenticator {
         BsgCounters.I.auth_customer_login_failure.bump();
         return AuthResultCustomer.DENIED();
     }
+    
+    public Person authenticateByDeviceToken(String deviceToken) {
+        return engine.select_person().where_device_token_eq(deviceToken).to_list().first();
+    }
+    
 
     public AuthResultCustomer authenticateCustomerByCookies(final String cookie) {
         BsgCounters.I.auth_attempt_cookie.bump();

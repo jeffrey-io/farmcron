@@ -1,5 +1,6 @@
 package farm.bsg.route;
 
-public class ApiAction {
-
+@FunctionalInterface
+public interface ApiAction {
+    public Object handle(ApiRequest request);
 }

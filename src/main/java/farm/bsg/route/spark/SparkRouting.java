@@ -9,12 +9,14 @@ import com.amazonaws.util.json.Jackson;
 
 import farm.bsg.ProductEngine;
 import farm.bsg.data.UriBlobCache.UriBlob;
+import farm.bsg.models.Person;
 import farm.bsg.ops.CounterSource;
 import farm.bsg.ops.Logs;
 import farm.bsg.ops.RequestMetrics;
 import farm.bsg.route.AnonymousRequest;
 import farm.bsg.route.AnonymousRoute;
 import farm.bsg.route.ApiAction;
+import farm.bsg.route.ApiRequest;
 import farm.bsg.route.ControlledURI;
 import farm.bsg.route.CustomerRequest;
 import farm.bsg.route.CustomerRoute;
@@ -49,9 +51,16 @@ public class SparkRouting extends RoutingTable {
             final RequestMetrics.InflightRequest local = metrics.begin();
             try {
                 log(req);
+                final SparkBox sparked = new SparkBox(req, res, this.secure);
                 final ProductEngine engine = engineOf(req);
-                // look for API token
-                return null;
+                String deviceToken = "cake";
+                Person person = engine.auth.authenticateByDeviceToken(deviceToken);
+                if (person == null) {
+                  return exceptionalize(new IllegalStateException("invalid device token"));  
+                } else {
+                  final ApiRequest request = new ApiRequest(engine, sparked, person);
+                  return localHandle(route.handle(request), req, res);
+                }
             } catch (final Exception err) {
                 return exceptionalize(err);
             } finally {

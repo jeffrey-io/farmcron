@@ -39,6 +39,9 @@ public class Person extends RawObject {
 
             Field.STRING("cookie").makeIndex(false), // generated once
             Field.STRING("super_cookie").makeIndex(false), // generated once
+            
+            Field.STRING("device_token").makeIndex(false), // generated once
+
             Field.STRING("notification_token").makeIndex(false), // token to map SMS, Facebook to user habits
             Field.STRING("notification_uri"),
 
