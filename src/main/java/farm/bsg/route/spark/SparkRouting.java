@@ -47,7 +47,7 @@ public class SparkRouting extends RoutingTable {
     @Override
     public void api_post(final ControlledURI path, final ApiAction route) {
         final RequestMetrics metrics = this.counterSource.request("post", path.toRoutingPattern());
-        Route sparkRoute = (req, res) -> {
+        final Route sparkRoute = (req, res) -> {
             final RequestMetrics.InflightRequest local = metrics.begin();
             try {
                 log(req);

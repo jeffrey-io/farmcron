@@ -22,8 +22,6 @@ import farm.bsg.models.Cart;
 import farm.bsg.models.Task;
 import farm.bsg.ops.CounterCodeGen;
 import farm.bsg.pages.common.SessionPage;
-import farm.bsg.route.ApiAction;
-import farm.bsg.route.ApiRequest;
 import farm.bsg.route.RoutingTable;
 import farm.bsg.route.SessionRequest;
 import farm.bsg.route.SimpleURI;
@@ -77,21 +75,32 @@ public class Tasks extends SessionPage {
         routing.get(TASKS_UPDATE, (sr) -> new Tasks(sr).update());
         routing.post(TASKS_COMMIT, (sr) -> new Tasks(sr).commit());
         routing.get_or_post(TASKS_TRANSITION, (sr) -> new Tasks(sr).transition());
-        
-        routing.api_post(GOSSIP, new ApiAction() {
-            
-            @Override
-            public Object handle(ApiRequest request) {
-                // apply the changes
-                
-                HashMap<String, Object> root = new HashMap<>();
-                for (Task task : request.engine.select_task().where_state_eq("created").done()) {
-                    HashMap<String, String> item = new HashMap<>();
-                    item.put("name", task.get("name"));
-                    root.put(task.getId(), item);
+
+        routing.api_post(GOSSIP, request -> {
+            for (final String snoozeId : request.getIdsFromCommaEncodedParam("snooze")) {
+                final Task task1 = request.engine.task_by_id(snoozeId, false);
+                if (task1 != null) {
+                    if (task1.snooze()) {
+                        request.engine.put(task1);
+                    }
                 }
-                return Jackson.toJsonString(root);
             }
+            for (final String completeId : request.getIdsFromCommaEncodedParam("complete")) {
+                final Task task2 = request.engine.task_by_id(completeId, false);
+                if (task2 != null) {
+                    if (task2.close()) {
+                        request.engine.put(task2);
+                    }
+                }
+            }
+
+            final HashMap<String, Object> root = new HashMap<>();
+            for (final Task task3 : request.engine.select_task().where_state_eq("created").done()) {
+                final HashMap<String, String> item = new HashMap<>();
+                item.put("name", task3.get("name"));
+                root.put(task3.getId(), item);
+            }
+            return Jackson.toJsonString(root);
         });
     }
 
