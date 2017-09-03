@@ -1,8 +1,11 @@
 package farm.bsg.pages;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
+
+import com.amazonaws.util.json.Jackson;
 
 import farm.bsg.BsgCounters;
 import farm.bsg.EventBus.Event;
@@ -19,6 +22,8 @@ import farm.bsg.models.Cart;
 import farm.bsg.models.Task;
 import farm.bsg.ops.CounterCodeGen;
 import farm.bsg.pages.common.SessionPage;
+import farm.bsg.route.ApiAction;
+import farm.bsg.route.ApiRequest;
 import farm.bsg.route.RoutingTable;
 import farm.bsg.route.SessionRequest;
 import farm.bsg.route.SimpleURI;
@@ -49,7 +54,7 @@ public class Tasks extends SessionPage {
 
     public static SimpleURI TASKS_TRANSITION = new SimpleURI("/admin/tasks;transition");
 
-    public static SimpleURI GOSSIP           = new SimpleURI("/gossip");
+    public static SimpleURI GOSSIP           = new SimpleURI("/api/gossip;tasks");
 
     public static void advance(final ProductEngine engine, final long now) {
         final ArrayList<Task> tasks = engine.select_task().where_state_eq("snoozed").done();
@@ -72,6 +77,22 @@ public class Tasks extends SessionPage {
         routing.get(TASKS_UPDATE, (sr) -> new Tasks(sr).update());
         routing.post(TASKS_COMMIT, (sr) -> new Tasks(sr).commit());
         routing.get_or_post(TASKS_TRANSITION, (sr) -> new Tasks(sr).transition());
+        
+        routing.api_post(GOSSIP, new ApiAction() {
+            
+            @Override
+            public Object handle(ApiRequest request) {
+                // apply the changes
+                
+                HashMap<String, Object> root = new HashMap<>();
+                for (Task task : request.engine.select_task().where_state_eq("created").done()) {
+                    HashMap<String, String> item = new HashMap<>();
+                    item.put("name", task.get("name"));
+                    root.put(task.getId(), item);
+                }
+                return Jackson.toJsonString(root);
+            }
+        });
     }
 
     public static HtmlPump priorityRender(final int status) {

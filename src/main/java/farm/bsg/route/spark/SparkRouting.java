@@ -47,13 +47,16 @@ public class SparkRouting extends RoutingTable {
     @Override
     public void api_post(final ControlledURI path, final ApiAction route) {
         final RequestMetrics metrics = this.counterSource.request("post", path.toRoutingPattern());
-        spark.Spark.post(path.toRoutingPattern(), (req, res) -> {
+        Route sparkRoute = (req, res) -> {
             final RequestMetrics.InflightRequest local = metrics.begin();
             try {
                 log(req);
                 final SparkBox sparked = new SparkBox(req, res, this.secure);
                 final ProductEngine engine = engineOf(req);
-                final String deviceToken = "cake";
+                final String deviceToken = sparked.getParam("token");
+                if (deviceToken == null) {
+                    return exceptionalize(new IllegalStateException("no device"));
+                }
                 final Person person = engine.auth.authenticateByDeviceToken(deviceToken);
                 if (person == null) {
                     return exceptionalize(new IllegalStateException("invalid device token"));
@@ -66,7 +69,9 @@ public class SparkRouting extends RoutingTable {
             } finally {
                 local.complete(true);
             }
-        });
+        };
+        spark.Spark.post(path.toRoutingPattern(), sparkRoute);
+        spark.Spark.get(path.toRoutingPattern(), sparkRoute);
 
     }
 

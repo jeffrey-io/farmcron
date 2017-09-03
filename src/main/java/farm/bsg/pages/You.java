@@ -1,5 +1,6 @@
 package farm.bsg.pages;
 
+import java.security.SecureRandom;
 import java.util.concurrent.ThreadLocalRandom;
 
 import org.apache.commons.codec.binary.Hex;
@@ -8,6 +9,7 @@ import org.slf4j.Logger;
 import farm.bsg.Security.Permission;
 import farm.bsg.html.Block;
 import farm.bsg.html.Html;
+import farm.bsg.html.HtmlPump;
 import farm.bsg.html.Input;
 import farm.bsg.html.Table;
 import farm.bsg.models.Person;
@@ -28,6 +30,8 @@ public class You extends SessionPage {
     public static SimpleURI     YOU_UPDATE_CONTACT_INFO = new SimpleURI("/admin/you;update-contact-info");
 
     public static SimpleURI     YOU_COMMIT_CONTACT_INFO = new SimpleURI("/admin/you;commit-contact-info");
+
+    public static SimpleURI     GENERATE_DEVICE_TOKEN = new SimpleURI("/admin/you;generate-device-token");
 
     public static void link(final CounterCodeGen c) {
         c.section("Page: You");
@@ -62,11 +66,23 @@ public class You extends SessionPage {
         routing.get_or_post(YOU_CHANGE_PW, (session) -> new You(session).changepw());
         routing.get_or_post(YOU_UPDATE_CONTACT_INFO, (session) -> new You(session).edit_contact());
         routing.get_or_post(YOU_COMMIT_CONTACT_INFO, (session) -> new You(session).commit_contact());
+        routing.get(GENERATE_DEVICE_TOKEN, (session) -> new You(session).generate_device_token());
     }
 
     public You(final SessionRequest session) {
         super(session, YOU);
         ensurePersonHasNotificationToken();
+    }
+    
+    public String generate_device_token() {
+        final Person person = person();
+        byte[] token = new byte[10];
+        ThreadLocalRandom.current().nextBytes(token);
+        person.set("device_token", new String(Hex.encodeHex(token)));
+        this.engine.put(person);
+        person.sync(this.session.engine);
+        redirect(YOU.href());
+        return null;
     }
 
     public String changepw() {
@@ -167,6 +183,7 @@ public class You extends SessionPage {
         page.add(Html.W().h5().wrap("Contact Information"));
         page.add(table);
 
+        
         table = new Table("Field", "Value");
         table.row("Hourly Wage", person.getAsDouble("hourly_wage_compesation"));
         table.row("Monthly Benefits", person.getAsDouble("monthly_benefits"));
@@ -189,10 +206,17 @@ public class You extends SessionPage {
             final String uri = person.get("notification_uri");
             page.add(Html.W().p().wrap("Notifications are currently set up to use this token: \"" + uri + "\" If this is not working, then please clear the notification uri to start over."));
         }
+        String deviceToken = person.get("device_token");
+        if (deviceToken != null && !deviceToken.equals("")) {
+            page.add(Html.W().h5().wrap("Device Token: " + deviceToken));
+            page.add(Html.input("dt").text().value(engine.siteproperties_get().get("domain") + "::" + deviceToken));
+        }
+
         page.add(Html.W().h5().wrap("Actions"));
         final Block actions = Html.block();
         actions.add(Html.W().li().wrap(Html.link(YOU_CHANGE_PW.href(), "Change Password").btn_secondary()));
         actions.add(Html.W().li().wrap(Html.link(YOU_UPDATE_CONTACT_INFO.href(), "Edit Contact Information").btn_secondary()));
+        actions.add(Html.W().li().wrap(Html.link(GENERATE_DEVICE_TOKEN.href(), "Generate Device Token").btn_secondary()));
         page.add(Html.wrapped().ul().wrap(actions));
 
         return finish_pump(page);

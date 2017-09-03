@@ -58,14 +58,6 @@ public abstract class RoutingTable {
         return message.generateResponse("Failed to understand '" + message.message + "'... Fun message coming soon");
     }
 
-    public void js_api_get(final SimpleURI path, final String... args) {
-
-    }
-
-    public void js_api_post(final SimpleURI path, final String... args) {
-
-    }
-
     public void navbar(final ControlledURI uri, final String label, final Permission permission) {
         this.latentNavbar.add((navbar) -> {
             navbar.add(uri.href().value, label, permission);
