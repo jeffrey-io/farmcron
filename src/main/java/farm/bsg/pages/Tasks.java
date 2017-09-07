@@ -248,7 +248,7 @@ public class Tasks extends SessionPage {
                     cart.set("state", "done");
                     saveCart = true;
                 }
-                task.close();
+                write = task.close();
             }
 
             if (write) {

@@ -51,6 +51,8 @@ public class TaskFactoryManagement extends SessionPage {
 
     public static SimpleURI TASKS_FACTORY_COMMIT = new SimpleURI("/admin/tasks-factory;commit");
 
+    public static SimpleURI TASK_FACTORY_CONVERT_NOW = new SimpleURI("/admin/tasks-factory;convert-now");
+
     public static void advance(final ProductEngine engine, final long now) {
         final List<TaskFactory> factories = engine.select_taskfactory().to_list().done();
         for (final TaskFactory factory : factories) {
@@ -64,7 +66,7 @@ public class TaskFactoryManagement extends SessionPage {
                 if (Task.isClosedAndReadyForTransition(currentTask, now, daysAfter)) {
                     final Task task = new Task();
                     task.generateAndSetId();
-                    task.copyFrom(factory, "name", "description", "priority");
+                    task.copyFrom(factory, "name", "description", "priority", "snooze_time");
                     task.created();
                     task.setDue(now, factory.getAsInt("slack"));
                     factory.set("current_task", task.getId());
@@ -110,10 +112,39 @@ public class TaskFactoryManagement extends SessionPage {
         routing.get(TASKS_FACTORY_CREATE, (sr) -> new TaskFactoryManagement(sr).create());
         routing.get(TASKS_FACTORY_EDIT, (sr) -> new TaskFactoryManagement(sr).update());
         routing.post(TASKS_FACTORY_COMMIT, (sr) -> new TaskFactoryManagement(sr).commit());
+        routing.get(TASK_FACTORY_CONVERT_NOW, (sr) -> new TaskFactoryManagement(sr).convertNow());
     }
 
     public TaskFactoryManagement(final SessionRequest session) {
         super(session, TASKS_FACTORY);
+    }
+    
+    public String convertNow() {
+        person().mustHave(Permission.EditTaskFactory);
+        final TaskFactory factory = query().taskfactory_by_id(this.session.getParam("id"), false);
+        if (factory != null) {
+            final String currentTaskId = factory.get("current_task");
+            boolean openForCreation = true;
+            if (currentTaskId != null) {
+                Task currentTask = query().task_by_id(currentTaskId, false);
+                openForCreation = "closed".equals(currentTask.get("state"));
+            }
+            if (openForCreation) {
+                final Task task = new Task();
+                task.generateAndSetId();
+                task.copyFrom(factory, "name", "description", "priority", "snooze_time");
+                task.created();
+                task.setDue(System.currentTimeMillis(), factory.getAsInt("slack"));
+                //task.close();
+                factory.set("current_task", task.getId());
+                engine.put(factory);
+                engine.put(task);
+                final EventPayload payload = new EventPayload("'" + task.get("name") + "' has been manually executed.");
+                engine.eventBus.trigger(Event.TaskCreation, payload);
+            }
+        }
+        redirect(TASKS_FACTORY.href());
+        return null;
     }
 
     public String commit() {
@@ -203,10 +234,15 @@ public class TaskFactoryManagement extends SessionPage {
         for (final TaskFactory factory : factories) {
             Task currentTask = null;
             final String currentTaskId = factory.get("current_task");
+            boolean open = true;
             if (currentTaskId != null) {
                 currentTask = query().task_by_id(currentTaskId, false);
+                open = "closed".equals(currentTask.get("state"));
             }
-            final Block actions = Html.block().add_if(person().has(Permission.EditTaskFactory), Html.link(TASKS_FACTORY_EDIT.href("id", factory.getId()), "{update}").btn_primary());
+            
+            final Block actions = Html.block() //
+                    .add_if(person().has(Permission.EditTaskFactory), Html.link(TASKS_FACTORY_EDIT.href("id", factory.getId()), "Update").btn_primary())
+                    .add_if(person().has(Permission.EditTaskFactory) && open, Html.link(TASK_FACTORY_CONVERT_NOW.href("id", factory.getId()), "Convert").btn_secondary());
             final HtmlPump progress = getProgress(factory, currentTask, System.currentTimeMillis());
             final HtmlPump name = Html.block().add(factory.get("name")).add(" ").add(Tasks.priorityRender((int) factory.getAsDouble("priority")));
             table.row(name, progress, actions);
