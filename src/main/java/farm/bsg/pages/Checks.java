@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ThreadLocalRandom;
@@ -43,6 +44,8 @@ public class Checks extends SessionPage {
 
     public static final SimpleURI CHECKS_VIEW       = new SimpleURI("/admin/checks;view");
 
+    public static final SimpleURI CHECKS_W2         = new SimpleURI("/admin/checks;w2");
+
     public static void link(final CounterCodeGen c) {
         c.section("Page: Checks");
     }
@@ -59,6 +62,7 @@ public class Checks extends SessionPage {
         routing.get(CHECKS_AUDIT, (session) -> new Checks(session).audit());
         routing.get(CHECKS_CONFIRM, (session) -> new Checks(session).confirm());
         routing.get(CHECKS_VIEW, (session) -> new Checks(session).visualize());
+        routing.get(CHECKS_W2, (session) -> new Checks(session).w2());
     }
 
     public Checks(final SessionRequest session) {
@@ -312,6 +316,7 @@ public class Checks extends SessionPage {
         final Block page = Html.block();
         page.add(Html.link(CHECKS_TAXES.href(), "Check Tax Status").btn_success());
         page.add(Html.link(CHECKS_BONUS.href(), "Grant Bonuses").btn_success());
+        page.add(Html.link(CHECKS_W2.href(), "W2 By Year").btn_success());
         page.add(fragmentOutstandingBalancesForAllEmployees());
         page.add(fragmentChecksPaidWithin());
         return finish_pump(page);
@@ -355,6 +360,53 @@ public class Checks extends SessionPage {
         final List<PayrollEntry> entries = query().select_payrollentry().where_unpaid_eq("not_" + checkId).done();
         page.add(Payroll.payrollTable(entries, false, true));
 
+        return finish_pump(page);
+    }
+
+    public class W2 {
+        public final Person person;
+        public final String year;
+        public double       paid;
+        public double       withheld;
+
+        public W2(Person person, String year) {
+            this.person = person;
+            this.year = year;
+        }
+
+        public void add(PayrollEntry payroll) {
+            this.withheld += payroll.getAsDouble("taxes");
+            this.paid += payroll.getAsDouble("owed");
+        }
+    }
+
+    public String w2() {
+        person().mustHave(Permission.CheckWriter);
+
+        final Block page = Html.block();
+
+        page.add(Html.wrapped().h5().wrap("All W2"));
+        final Table table = Html.table("Employee", "Year", "Paid", "Withheld");
+
+        HashMap<String, W2> entries = new HashMap<>();
+
+        for (PayrollEntry payroll : query().select_payrollentry().done()) {
+            String year = payroll.get("fiscal_day").substring(0, 4);
+            String key = payroll.get("person") + ";" + year;
+            W2 w2 = entries.get(key);
+            if (w2 == null) {
+                w2 = new W2(query().person_by_id(payroll.get("person"), false), year);
+                entries.put(key, w2);
+            }
+            w2.add(payroll);
+        }
+
+        for (Entry<String, W2> entry : entries.entrySet()) {
+            W2 w2 = entry.getValue();
+            table.row(entry.getValue().person.get("name"), w2.year, w2.paid, w2.withheld);
+        }
+
+        page.add(table);
         return finish_pump(page);
     }
 }
