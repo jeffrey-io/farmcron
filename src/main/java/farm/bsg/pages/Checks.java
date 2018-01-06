@@ -12,6 +12,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import org.apache.commons.codec.binary.Hex;
 
 import farm.bsg.Security.Permission;
+import farm.bsg.data.Field;
 import farm.bsg.data.RawObject;
 import farm.bsg.html.Block;
 import farm.bsg.html.Html;
@@ -367,6 +368,8 @@ public class Checks extends SessionPage {
         public final Person person;
         public final String year;
         public double       paid;
+        public double       travel;
+        public double       benefits;
         public double       withheld;
 
         public W2(Person person, String year) {
@@ -375,8 +378,14 @@ public class Checks extends SessionPage {
         }
 
         public void add(PayrollEntry payroll) {
-            this.withheld += payroll.getAsDouble("taxes");
             this.paid += payroll.getAsDouble("owed");
+            this.withheld += payroll.getAsDouble("taxes");
+            this.travel += payroll.getAsDouble("mileage") * payroll.getAsDouble("mileage_compensation");
+            this.benefits += payroll.getAsDouble("benefits");
+        }
+        
+        public void add(Check check) {
+            this.paid += check.getAsDouble("payment");
         }
     }
 
@@ -386,7 +395,7 @@ public class Checks extends SessionPage {
         final Block page = Html.block();
 
         page.add(Html.wrapped().h5().wrap("All W2"));
-        final Table table = Html.table("Employee", "Year", "Paid", "Withheld");
+        final Table table = Html.table("Employee", "Year", "Paid", "Travel", "Benefits", "Withheld");
 
         HashMap<String, W2> entries = new HashMap<>();
 
@@ -400,10 +409,24 @@ public class Checks extends SessionPage {
             }
             w2.add(payroll);
         }
+        
+        for (Check check : query().select_check().done()) {
+            if (check.getAsBoolean("bonus_related")) {
+                String year = check.get("fiscal_day").substring(0, 4);
+                String key = check.get("person") + ";" + year;
+                W2 w2 = entries.get(key);
+                if (w2 == null) {
+                    w2 = new W2(query().person_by_id(check.get("person"), false), year);
+                    entries.put(key, w2);
+                }
+                w2.add(check);
+                
+            }
+        }
 
         for (Entry<String, W2> entry : entries.entrySet()) {
             W2 w2 = entry.getValue();
-            table.row(entry.getValue().person.get("name"), w2.year, w2.paid, w2.withheld);
+            table.row(entry.getValue().person.get("name"), w2.year, w2.paid, w2.travel, w2.benefits, w2.withheld);
         }
 
         page.add(table);

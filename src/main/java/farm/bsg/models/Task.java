@@ -12,9 +12,11 @@ public class Task extends RawObject {
     public static final ObjectSchema SCHEMA = ObjectSchema.persisted("task/", //
             Field.STRING("owner").makeIndex(false),
 
-            Field.STRING("blocked_by"), // a task that will block the rendering of this task.
+            Field.STRING("blocked_by").makeIndex(false), // a task that will block the rendering of this task.
 
             Field.STRING("cart_id"), // for when tasks are created by an order
+            
+            Field.BOOL("public"), // is the task open for all to see?
 
             Field.STRING("name"), //
             Field.STRING("description"), //

@@ -117,8 +117,11 @@ public class PayrollEntry extends RawObject {
         final double hoursOwed = hoursWorked + ptoUsed + sickLeaveUsed;
         final double benefitsOwed = getAsDouble("benefits");
         final double taxWithholding = getAsDouble("tax_withholding");
-        final double beforeTaxes = hoursOwed * wageRate + mileageReported * mileageRate + benefitsOwed;
-        double taxes = taxWithholding * beforeTaxes;
+        
+        final double taxableBeforeTaxes = hoursOwed * wageRate;
+        final double nonTaxableBeforeTaxes = mileageReported * mileageRate + benefitsOwed; 
+        final double beforeTaxes = taxableBeforeTaxes + nonTaxableBeforeTaxes;
+        double taxes = taxableBeforeTaxes * taxWithholding;
         taxes = Math.ceil(taxes * 100) / 100.0;
         double owed = beforeTaxes - taxes;
         owed = Math.ceil(owed * 10) / 10.0;
