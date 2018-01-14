@@ -24,6 +24,8 @@ public class People extends SessionPage {
 
     public static SimpleURI PERSON_EDIT        = new SimpleURI("/admin/people;edit");
 
+    public static SimpleURI PERSON_EDIT_NEW    = new SimpleURI("/admin/people;edit-new");
+
     public static SimpleURI PERSON_EDIT_COMMIT = new SimpleURI("/admin/people;edit;commit");
 
     public static void injectContact(final Block formInner, final Person person) {
@@ -70,7 +72,8 @@ public class People extends SessionPage {
         routing.get(PERSON_CREATE, (session) -> new People(session).create());
         routing.get(PERSON_VIEW, (session) -> new People(session).view());
 
-        routing.get_or_post(PERSON_EDIT, (session) -> new People(session).admin_edit());
+        routing.get_or_post(PERSON_EDIT, (session) -> new People(session).admin_edit(false));
+        routing.get_or_post(PERSON_EDIT_NEW, (session) -> new People(session).admin_edit(true));
         routing.post(PERSON_EDIT_COMMIT, (session) -> new People(session).commit());
     }
 
@@ -78,9 +81,9 @@ public class People extends SessionPage {
         super(session, PEOPLE);
     }
 
-    public String admin_edit() {
+    public String admin_edit(boolean create) {
         person().mustHave(Permission.PeopleManagement);
-        final Person person = pullPerson();
+        final Person person = pullPerson(create);
 
         final String new_password_1 = this.session.getParam("new_password_1");
         final String new_password_2 = this.session.getParam("new_password_2");
@@ -162,7 +165,7 @@ public class People extends SessionPage {
 
     public Object commit() {
         person().mustHave(Permission.PeopleManagement);
-        final Person person = pullPerson();
+        final Person person = pullPerson(false);
         if (this.session.hasNonNullQueryParam("_delete_")) {
             query().storage.put(person.getStorageKey(), null);
         } else {
@@ -196,7 +199,7 @@ public class People extends SessionPage {
 
         formInner.add(Html.wrapped().form_group() //
                 .wrap(Html.input("submit").id_from_name().value("Create").submit()));
-        page.add(Html.form("post", PERSON_EDIT.href()).inner(formInner));
+        page.add(Html.form("post", PERSON_EDIT_NEW.href()).inner(formInner));
         return finish_pump(page);
     }
 
@@ -219,15 +222,15 @@ public class People extends SessionPage {
         return finish_pump(page);
     }
 
-    public Person pullPerson() {
-        final Person person = query().person_by_id(this.session.getParam("id"), false);
+    public Person pullPerson(boolean create) {
+        final Person person = query().person_by_id(this.session.getParam("id"), create);
         person.importValuesFromReqeust(this.session, "");
         return person;
     }
 
     public String view() {
         person().mustHave(Permission.PeopleManagement);
-        final Person person = pullPerson();
+        final Person person = pullPerson(false);
         final Block page = Html.block();
         page.add(Html.W().h3().wrap("Viewing: " + person.get("name")));
         final Table table = new Table("Field", "Value", "Type");
