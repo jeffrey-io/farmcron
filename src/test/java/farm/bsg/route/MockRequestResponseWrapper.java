@@ -8,7 +8,7 @@ public class MockRequestResponseWrapper implements RequestResponseWrapper {
     public final HashMap<String, String>     params;
     public final HashMap<String, String>     cookies;
     public final HashMap<String, BinaryFile> files;
-    private FinishedHref                     redirected = null;
+    public FinishedHref                     redirected = null;
 
     public MockRequestResponseWrapper() {
         this.params = new HashMap<>();

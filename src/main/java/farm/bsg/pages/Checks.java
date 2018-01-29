@@ -12,7 +12,6 @@ import java.util.concurrent.ThreadLocalRandom;
 import org.apache.commons.codec.binary.Hex;
 
 import farm.bsg.Security.Permission;
-import farm.bsg.data.Field;
 import farm.bsg.data.RawObject;
 import farm.bsg.html.Block;
 import farm.bsg.html.Html;
