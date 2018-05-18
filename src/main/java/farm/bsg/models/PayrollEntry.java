@@ -11,7 +11,7 @@ import farm.bsg.ops.CounterCodeGen;
 public class PayrollEntry extends RawObject {
 
     public static final ObjectSchema SCHEMA = ObjectSchema.persisted("payroll/", //
-            Field.STRING("person"), // done; copied
+            Field.STRING("person").makeIndex(false), // done; copied
             Field.DATETIME("reported"), // done; generated
             Field.STRING("fiscal_day"), // done; generated
 

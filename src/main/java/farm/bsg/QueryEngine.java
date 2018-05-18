@@ -63,6 +63,7 @@ public class QueryEngine {
   public final KeyIndex customer_notification_token;  // BY[notification_token]
 
   // INDEX[PayrollEntry]
+  public final KeyIndex payrollentry_person;  // BY[person]
   public final KeyIndex payrollentry_check;  // BY[check]
   public final KeyIndex payrollentry_unpaid;  // BY[unpaid]
 
@@ -110,6 +111,7 @@ public class QueryEngine {
     this.customer_phone = indexing.add("customer/", new KeyIndex("phone", false));
     this.customer_cookie = indexing.add("customer/", new KeyIndex("cookie", false));
     this.customer_notification_token = indexing.add("customer/", new KeyIndex("notification_token", false));
+    this.payrollentry_person = indexing.add("payroll/", new KeyIndex("person", false));
     this.payrollentry_check = indexing.add("payroll/", new KeyIndex("check", false));
     this.payrollentry_unpaid = indexing.add("payroll/", new KeyIndex("unpaid", false));
     this.person_login = indexing.add("person/", new KeyIndex("login", true));
@@ -728,6 +730,10 @@ public class QueryEngine {
   /**************************************************
   Indexing (payroll/)
   **************************************************/
+
+  public HashSet<String> get_payrollentry_person_index_keys() {
+    return payrollentry_person.getIndexKeys();
+  }
 
   public HashSet<String> get_payrollentry_check_index_keys() {
     return payrollentry_check.getIndexKeys();
@@ -1821,6 +1827,23 @@ public class QueryEngine {
 
     public PayrollEntrySetQuery scope(String scope) {
       this.scope += scope + "/";
+      return this;
+    }
+
+    private HashSet<String> lookup_person(String... values) {
+      HashSet<String> keys = new HashSet<>();
+      for(String value : values) {
+        keys.addAll(payrollentry_person.getKeys(value));
+      }
+      return keys;
+    }
+
+    public PayrollEntrySetQuery where_person_eq(String... values) {
+      if (this.keys == null) {
+        this.keys = lookup_person(values);
+      } else {
+        this.keys = BinaryOperators.intersect(this.keys, lookup_person(values));
+      }
       return this;
     }
 

@@ -45,6 +45,7 @@ public class Checks extends SessionPage {
     public static final SimpleURI CHECKS_VIEW       = new SimpleURI("/admin/checks;view");
 
     public static final SimpleURI CHECKS_W2         = new SimpleURI("/admin/checks;w2");
+    public static final SimpleURI CHECKS_PTO         = new SimpleURI("/admin/checks;pto");
 
     public static void link(final CounterCodeGen c) {
         c.section("Page: Checks");
@@ -63,6 +64,7 @@ public class Checks extends SessionPage {
         routing.get(CHECKS_CONFIRM, (session) -> new Checks(session).confirm());
         routing.get(CHECKS_VIEW, (session) -> new Checks(session).visualize());
         routing.get(CHECKS_W2, (session) -> new Checks(session).w2());
+        routing.get(CHECKS_PTO, (session) -> new Checks(session).pto());
     }
 
     public Checks(final SessionRequest session) {
@@ -317,6 +319,7 @@ public class Checks extends SessionPage {
         page.add(Html.link(CHECKS_TAXES.href(), "Check Tax Status").btn_success());
         page.add(Html.link(CHECKS_BONUS.href(), "Grant Bonuses").btn_success());
         page.add(Html.link(CHECKS_W2.href(), "W2 By Year").btn_success());
+        page.add(Html.link(CHECKS_PTO.href(), "PTO By Person").btn_success());
         page.add(fragmentOutstandingBalancesForAllEmployees());
         page.add(fragmentChecksPaidWithin());
         return finish_pump(page);
@@ -363,17 +366,24 @@ public class Checks extends SessionPage {
         return finish_pump(page);
     }
 
-    public class W2 {
+    public static class W2 {
         public final Person person;
         public final String year;
         public double       paid;
         public double       travel;
         public double       benefits;
         public double       withheld;
+        public double       miles;
 
         public W2(Person person, String year) {
             this.person = person;
             this.year = year;
+            this.paid = 0;
+            this.travel = 0;
+            this.benefits = 0;
+            this.withheld = 0;
+            this.miles = 0;
+                    
         }
 
         public void add(PayrollEntry payroll) {
@@ -381,11 +391,39 @@ public class Checks extends SessionPage {
             this.withheld += payroll.getAsDouble("taxes");
             this.travel += payroll.getAsDouble("mileage") * payroll.getAsDouble("mileage_compensation");
             this.benefits += payroll.getAsDouble("benefits");
+            this.miles += payroll.getAsDouble("mileage");
         }
         
         public void add(Check check) {
             this.paid += check.getAsDouble("payment");
         }
+    }
+
+    public String pto() {
+        person().mustHave(Permission.CheckWriter);
+        final Block page = Html.block();
+        page.add(Html.wrapped().h5().wrap("PTO Balance"));
+        final Table table = Html.table("Employee", "PTO Balance");
+
+        HashMap<String, Double> entries = new HashMap<>();
+
+        for (PayrollEntry payroll : query().select_payrollentry().done()) {
+            String key = payroll.get("person");
+            Double pto = entries.get(key);
+            if (pto == null) {
+                pto = 0d;
+            }
+            entries.put(key, pto + payroll.getAsDouble("pto_change"));
+        }
+        
+        for (Entry<String, Double> entry : entries.entrySet()) {
+            Person person =  query().person_by_id(entry.getKey(), false);
+            table.row(person.get("name"), entry.getValue());
+        }
+
+        page.add(table);
+        return finish_pump(page);
+
     }
 
     public String w2() {
@@ -394,7 +432,7 @@ public class Checks extends SessionPage {
         final Block page = Html.block();
 
         page.add(Html.wrapped().h5().wrap("All W2"));
-        final Table table = Html.table("Employee", "Year", "Paid", "Travel", "Benefits", "Withheld");
+        final Table table = Html.table("Employee", "Year", "Paid", "Travel", "Miles", "Benefits", "Withheld");
 
         HashMap<String, W2> entries = new HashMap<>();
 
@@ -425,7 +463,7 @@ public class Checks extends SessionPage {
 
         for (Entry<String, W2> entry : entries.entrySet()) {
             W2 w2 = entry.getValue();
-            table.row(entry.getValue().person.get("name"), w2.year, w2.paid, w2.travel, w2.benefits, w2.withheld);
+            table.row(entry.getValue().person.get("name"), w2.year, w2.paid, w2.travel, w2.miles, w2.benefits, w2.withheld);
         }
 
         page.add(table);
